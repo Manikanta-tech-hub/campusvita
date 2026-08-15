@@ -11,6 +11,8 @@ import {
   BarChart3,
   Settings,
   ShieldCheck,
+  CreditCard,
+  Users,
 } from "lucide-react";
 
 import SidebarItem from "./SidebarItem";
@@ -44,6 +46,16 @@ const navigation = [
         label: "Categories",
         href: "/admin/category",
         icon: Layers3,
+      },
+      {
+        label: "Customers",
+        href: "/admin/customers",
+        icon: Users,
+      },
+      {
+        label: "Payments",
+        href: "/admin/payments",
+        icon: CreditCard,
       },
     ],
   },
@@ -94,14 +106,11 @@ export default function Sidebar() {
       {/* Navigation */}
 
       <div className="flex-1 overflow-y-auto py-4">
-
         {navigation.map((section) => (
           <div key={section.title}>
-
             <SidebarSection title={section.title} />
 
             <div className="space-y-1 px-3">
-
               {section.items.map((item) => (
                 <SidebarItem
                   key={item.href}
@@ -111,28 +120,23 @@ export default function Sidebar() {
                   active={pathname === item.href}
                 />
               ))}
-
             </div>
-
           </div>
         ))}
-
       </div>
 
       {/* Footer */}
 
       <div className="border-t border-zinc-800 p-5">
-
         <div className="flex items-center gap-3 rounded-2xl bg-zinc-900 p-3">
-
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500">
-
-            <ShieldCheck size={22} className="text-white" />
-
+            <ShieldCheck
+              size={22}
+              className="text-white"
+            />
           </div>
 
           <div>
-
             <p className="font-semibold text-white">
               Administrator
             </p>
@@ -140,13 +144,9 @@ export default function Sidebar() {
             <p className="text-xs text-zinc-500">
               CampusVita
             </p>
-
           </div>
-
         </div>
-
       </div>
-
     </motion.aside>
   );
 }

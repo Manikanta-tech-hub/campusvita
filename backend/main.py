@@ -23,6 +23,9 @@ import socketio
 import cloudinary
 import cloudinary.uploader
 import razorpay
+import csv
+import io
+from fastapi.responses import StreamingResponse
 from typing import Dict, Any
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -361,6 +364,91 @@ def decode_signed_intent(token: str, expected_type: str) -> Dict[str, Any]:
 # =====================================
 # DATABASE INDEXES
 # =====================================
+LEGACY_PAYMENT_DATE_FORMAT = "%d %b %Y, %I:%M %p"
+
+
+def parse_legacy_payment_date(value):
+    if isinstance(value, datetime):
+        return value
+
+    if not isinstance(value, str):
+        return None
+
+    try:
+        return datetime.strptime(
+            value.strip(),
+            LEGACY_PAYMENT_DATE_FORMAT
+        )
+    except (ValueError, TypeError):
+        return None
+
+
+def migrate_payment_schema():
+    """
+    Converts existing payment date strings into MongoDB datetime values.
+
+    This migration NEVER invents a date.
+    If a legacy date cannot be parsed, it is left untouched and logged.
+    """
+    migrated = 0
+    skipped = 0
+
+    cursor = payments_collection.find({})
+
+    for payment in cursor:
+        updates = {}
+
+        # -----------------------------------------
+        # DATE MIGRATION
+        # -----------------------------------------
+        if not isinstance(payment.get("payment_date"), datetime):
+            parsed_date = parse_legacy_payment_date(
+                payment.get("date")
+            )
+
+            if parsed_date:
+                updates["payment_date"] = parsed_date
+            elif payment.get("date") is not None:
+                logger.warning(
+                    "Could not parse payment date for payment_id=%s",
+                    payment.get("payment_id")
+                )
+                skipped += 1
+
+        # -----------------------------------------
+        # USER EMAIL NORMALIZATION
+        # -----------------------------------------
+        email = payment.get("user_email") or payment.get("email")
+
+        if email:
+            normalized = normalize_email(email)
+
+            if payment.get("email") != normalized:
+                updates["email"] = normalized
+
+            if payment.get("user_email") != normalized:
+                updates["user_email"] = normalized
+
+        # -----------------------------------------
+        # EXISTING WALLET TOP-UP RECORDS
+        # -----------------------------------------
+        if payment.get("purpose") == "wallet_topup":
+            if not payment.get("payment_method"):
+                updates["payment_method"] = "WALLET"
+
+        if updates:
+            payments_collection.update_one(
+                {"_id": payment["_id"]},
+                {"$set": updates}
+            )
+
+            migrated += 1
+
+    logger.info(
+        "Payment schema migration completed: migrated=%s skipped=%s",
+        migrated,
+        skipped
+    )
 
 async def create_indexes():
     try:
@@ -403,7 +491,11 @@ async def create_indexes():
             "payment_id",
             unique=True
         )
-
+        payments_collection.create_index("order_id")
+        payments_collection.create_index("user_email")
+        payments_collection.create_index("status")
+        payments_collection.create_index("payment_method")
+        payments_collection.create_index("date")
         logger.info(
             "✅ Payments collection index created"
         )
@@ -1205,16 +1297,31 @@ def verify_wallet_topup(data: VerifyWalletTopupData, current_user: Dict[str, Any
         amount = intent["amount"]
 
         payment = {
-            "email": current_user["email"],
-            "payment_id": data.razorpay_payment_id,
-            "order_id": data.razorpay_order_id,
-            "razorpay_signature": data.razorpay_signature,  # kept for auditing
-            "amount": amount,
-            "status": PaymentStatus.PAID,
-            "purpose": "wallet_topup",
-            "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
-            "user_email": current_user["email"],
-        }
+    "payment_id": data.razorpay_payment_id,
+
+    # Wallet top-up is not a food order
+    "order_id": None,
+
+    # Real Razorpay order ID
+    "razorpay_order_id": data.razorpay_order_id,
+
+    "email": current_user["email"],
+    "user_email": current_user["email"],
+
+    "amount": float(amount),
+    "currency": "INR",
+
+    "status": PaymentStatus.PAID,
+    "payment_method": "ONLINE",
+    "purpose": "wallet_topup",
+
+    "payment_date": datetime.now(timezone.utc),
+
+    "refund_status": None,
+    "refund_amount": 0.0,
+    "refund_date": None,
+    "refund_payment_id": None,
+}
 
         try:
             payments_collection.insert_one(payment)
@@ -1344,23 +1451,41 @@ def _price_items_from_db(items: List[OrderItemRequest]) -> tuple[list, float]:
 
 
 @fastapi_app.post("/place-order")
-async def place_order(order: OrderData, current_user: Dict[str, Any] = Depends(get_current_user)):
-    """'Pay with Wallet' order path. Prices come from the DB, and the
-    wallet balance is checked and debited atomically so two concurrent
-    submissions can't both succeed and overdraw the balance."""
+async def place_order(
+    order: OrderData,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Pay with Wallet order path.
+
+    Prices are taken from the database and the wallet balance is
+    checked/debited atomically.
+    """
     try:
+        # ============================================================
+        # 1. GET AUTHORITATIVE FOOD DATA + TOTAL
+        # ============================================================
         order_items, total = _price_items_from_db(order.items)
 
+        # ============================================================
+        # 2. ATOMICALLY DEBIT WALLET
+        # ============================================================
         updated_user = users_collection.find_one_and_update(
-            {"email": current_user["email"], "wallet": {"$gte": total}},
             {
-                "$inc": {"wallet": -total},
+                "email": current_user["email"],
+                "wallet": {"$gte": total},
+            },
+            {
+                "$inc": {
+                    "wallet": -total
+                },
                 "$push": {
                     "wallet_history": {
                         "type": "debit",
                         "amount": total,
                         "reason": "Order payment",
-                        "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+                        "date": datetime.now().strftime(
+                            "%d %b %Y, %I:%M %p"
+                        ),
                     }
                 },
             },
@@ -1372,6 +1497,9 @@ async def place_order(order: OrderData, current_user: Dict[str, Any] = Depends(g
                 detail="Insufficient wallet balance"
             )
 
+        # ============================================================
+        # 3. CREATE ORDER
+        # ============================================================
         order_dict = {
             "items": order_items,
             "total": total,
@@ -1381,7 +1509,9 @@ async def place_order(order: OrderData, current_user: Dict[str, Any] = Depends(g
             "status": OrderStatus.PREPARING,
             "payment_method": "WALLET",
             "payment_status": PaymentStatus.PAID,
-            "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+            "date": datetime.now().strftime(
+                "%d %b %Y, %I:%M %p"
+            ),
             "estimated_time": "15-20 mins",
             "pickup_code": random.randint(1000, 9999),
         }
@@ -1393,36 +1523,118 @@ async def place_order(order: OrderData, current_user: Dict[str, Any] = Depends(g
             {"_id": 0}
         )
 
+        # ============================================================
+        # 4. CREATE REAL PAYMENT RECORD
+        # ============================================================
+        #
+        # This ID is deterministic:
+        #
+        # WALLET-<real MongoDB order ID>
+        #
+        # It is NOT randomly generated.
+        # It uniquely connects this payment to this order.
+        # ============================================================
+
+        wallet_payment_id = f"WALLET-{result.inserted_id}"
+
+        payment = {
+            "payment_id": wallet_payment_id,
+
+            # Real CampusVita MongoDB order ID
+            "order_id": str(result.inserted_id),
+
+            # Wallet payment does not use Razorpay
+            "razorpay_order_id": None,
+
+            "email": current_user["email"],
+            "user_email": current_user["email"],
+
+            "amount": float(total),
+            "currency": "INR",
+
+            "status": PaymentStatus.PAID,
+            "payment_method": "WALLET",
+            "purpose": "food_order",
+
+            # Proper database datetime
+            "payment_date": datetime.now(timezone.utc),
+
+            # No refund exists at the moment
+            "refund_status": None,
+            "refund_amount": 0.0,
+            "refund_date": None,
+            "refund_payment_id": None,
+        }
+
+        # ============================================================
+        # 5. SAVE PAYMENT RECORD
+        # ============================================================
+        try:
+            payments_collection.insert_one(payment)
+
+        except DuplicateKeyError:
+            logger.error(
+                "Duplicate wallet payment for order %s",
+                result.inserted_id
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Payment already recorded for this order"
+            )
+
+        # ============================================================
+        # 6. UPDATE USER ORDER STATISTICS
+        # ============================================================
         users_collection.update_one(
             {"email": current_user["email"]},
-            {"$inc": {"total_orders": 1, "total_spent": total}}
+            {
+                "$inc": {
+                    "total_orders": 1,
+                    "total_spent": total,
+                }
+            },
         )
 
+        # ============================================================
+        # 7. NOTIFY ADMIN / ORDER WEBSOCKET
+        # ============================================================
         await safe_emit_order_update(saved_order)
 
+        # ============================================================
+        # 8. START ORDER STATUS FLOW
+        # ============================================================
         threading.Thread(
             target=update_order_flow,
             args=(result.inserted_id,),
             daemon=True
         ).start()
 
-        logger.info(f"✅ New wallet order placed: #{saved_order['token']} by {current_user['email']}")
+        logger.info(
+            "✅ New wallet order placed: #%s by %s",
+            saved_order["token"],
+            current_user["email"]
+        )
 
         return {
             "success": True,
             "message": "Order Placed Successfully 🚀",
-            "order": saved_order
+            "order": saved_order,
         }
 
     except HTTPException:
         raise
+
     except Exception as e:
-        logger.error(f"Place order error: {e}")
+        logger.error(
+            "Place order error: %s",
+            e
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
-
 
 @fastapi_app.put("/update-order-status/{order_id}")
 async def update_order_status(
@@ -2625,15 +2837,34 @@ async def verify_payment(data: VerifyPaymentData, current_user: Dict[str, Any] =
         )
 
         payment = {
-            "email": intent["email"],
-            "payment_id": data.razorpay_payment_id,
-            "order_id": data.razorpay_order_id,
-            "razorpay_signature": data.razorpay_signature,  # kept for auditing
-            "amount": intent["total"],
-            "status": PaymentStatus.PAID,
-            "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
-            "user_email": current_user["email"],
-        }
+    "payment_id": data.razorpay_payment_id,
+
+    # Real CampusVita MongoDB order ID
+    "order_id": str(result.inserted_id),
+
+    # Real Razorpay order ID
+    "razorpay_order_id": data.razorpay_order_id,
+
+    "email": intent["email"],
+    "user_email": current_user["email"],
+
+    "amount": float(intent["total"]),
+    "currency": "INR",
+
+    "status": PaymentStatus.PAID,
+    "payment_method": "ONLINE",
+    "purpose": "food_order",
+
+    "payment_date": datetime.now(timezone.utc),
+
+    "refund_status": None,
+    "refund_amount": 0.0,
+    "refund_date": None,
+    "refund_payment_id": None,
+
+    # Keep for backend auditing only
+    "razorpay_signature": data.razorpay_signature,
+}
 
         try:
             payments_collection.insert_one(payment)
@@ -2671,46 +2902,6 @@ async def verify_payment(data: VerifyPaymentData, current_user: Dict[str, Any] =
             detail="Internal Server Error"
         )
 
-
-@fastapi_app.post("/save-payment")
-def save_payment(payment: SavePaymentData, _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN))):
-    # Restricted to admins: this endpoint accepts a payment record with no
-    # signature verification, so letting any authenticated user call it
-    # would mean anyone could insert a fake "Paid" record for themselves.
-    # Kept for manual reconciliation by staff only.
-    try:
-        payment_data = {
-            "email": normalize_email(payment.order_id) if "@" in payment.order_id else None,
-            "order_id": payment.order_id,
-            "payment_id": payment.payment_id,
-            "amount": payment.amount,
-            "status": payment.status,
-            "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
-            "recorded_by": _["email"],
-        }
-
-        try:
-            payments_collection.insert_one(payment_data)
-        except DuplicateKeyError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Payment already recorded"
-            )
-
-        logger.info(f"💳 Payment manually saved by admin {_['email']}: {payment.payment_id}")
-
-        return {"success": True, "message": "Payment Saved Successfully"}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Save payment error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
-        )
-
-
 # =====================================
 # ADMIN ROUTES (Protected)
 # =====================================
@@ -2719,40 +2910,188 @@ def save_payment(payment: SavePaymentData, _: Dict[str, Any] = Depends(require_r
 def get_admin_orders(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
-    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+    search: str = "",
+    status_filter: str = "ALL",
+    payment_status: str = "ALL",
 ):
     try:
-        total = orders_collection.count_documents({})
+        # ============================================================
+        # ADMIN AUTHORIZATION
+        # ============================================================
+
+        # Keep your existing admin dependency.
+        # If your project already has this dependency, use it here.
+        # Example:
+        # _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN))
+
+        query = {}
+
+        # ============================================================
+        # ORDER STATUS FILTER
+        # ============================================================
+
+        if (
+            status_filter
+            and status_filter.upper() != "ALL"
+        ):
+            query["status"] = status_filter
+
+        # ============================================================
+        # PAYMENT STATUS FILTER
+        # ============================================================
+
+        if (
+            payment_status
+            and payment_status.upper() != "ALL"
+        ):
+            query["payment_status"] = payment_status
+
+        # ============================================================
+        # SEARCH
+        #
+        # Searches REAL DATABASE fields:
+        # - token
+        # - MongoDB order ID
+        # - name
+        # - email
+        # - user_email
+        # ============================================================
+
+        if search.strip():
+
+            search_value = search.strip()
+
+            search_conditions = [
+                {
+                    "name": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+                {
+                    "email": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+                {
+                    "user_email": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+            ]
+
+            # Search token when the search value is numeric.
+            if search_value.isdigit():
+                search_conditions.append(
+                    {
+                        "token": int(search_value)
+                    }
+                )
+
+            # Search MongoDB ObjectId safely.
+            try:
+                search_conditions.append(
+                    {
+                        "_id": parse_object_id(
+                            search_value
+                        )
+                    }
+                )
+            except Exception:
+                pass
+
+            query["$or"] = search_conditions
+
+        # ============================================================
+        # COUNT
+        # ============================================================
+
+        total = orders_collection.count_documents(
+            query
+        )
+
         skip = (page - 1) * limit
 
+        # ============================================================
+        # FETCH REAL ORDERS
+        # ============================================================
+
         orders = list(
-            orders_collection.find({})
-            .sort("token", -1)
+            orders_collection.find(query)
+            .sort(
+                [
+                    ("token", -1),
+                    ("_id", -1),
+                ]
+            )
             .skip(skip)
             .limit(limit)
         )
 
-        for order in orders:
-            order["order_id"] = str(order["_id"])
-            del order["_id"]
+        # ============================================================
+        # SERIALIZE MONGODB DATA
+        # ============================================================
 
-        pages = (total + limit - 1) // limit if total else 0
+        response_orders = []
+
+        for order in orders:
+
+            order_id = str(
+                order.get("_id")
+            )
+
+            order.pop("_id", None)
+
+            # Convert datetime values to JSON-safe strings.
+            for field in [
+                "created_at",
+                "payment_date",
+            ]:
+                value = order.get(field)
+
+                if hasattr(value, "isoformat"):
+                    order[field] = value.isoformat()
+
+            order["order_id"] = order_id
+
+            response_orders.append(order)
+
+        # ============================================================
+        # PAGINATION
+        # ============================================================
+
+        pages = (
+            (total + limit - 1) // limit
+            if total
+            else 0
+        )
 
         return {
             "success": True,
-            "orders": orders,
+            "orders": response_orders,
             "page": page,
             "limit": limit,
             "total": total,
             "pages": pages,
         }
 
+    except HTTPException:
+        raise
+
     except Exception as e:
-        logger.error(f"Get admin orders error: {e}")
+
+        logger.error(
+            "Get admin orders error: %s",
+            e,
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
+            detail="Internal Server Error",
         )
+
 @fastapi_app.get("/admin/revenue-chart-data")
 def get_revenue_chart_data(
     year: int | None = None,
@@ -3747,6 +4086,789 @@ async def admin_orders_socket(websocket: WebSocket):
         print("WebSocket Error:", e)
 
         manager.disconnect(websocket)
+
+@fastapi_app.get("/admin/payments")
+def get_admin_payments(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    search: str = "",
+    status_filter: str = "ALL",
+    payment_method: str = "ALL",
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    try:
+        # ============================================================
+        # 1. BUILD DATABASE QUERY
+        # ============================================================
+
+        query: Dict[str, Any] = {}
+
+        # ------------------------------------------------------------
+        # Payment status filter
+        # ------------------------------------------------------------
+
+        if status_filter and status_filter.upper() != "ALL":
+            query["status"] = status_filter
+
+        logger.info(
+            "PAYMENT STATUS FILTER RECEIVED: %r",
+            status_filter,
+        )
+
+        # ------------------------------------------------------------
+        # Payment method filter
+        # ------------------------------------------------------------
+
+        if payment_method and payment_method.upper() != "ALL":
+            query["payment_method"] = payment_method
+
+        # ------------------------------------------------------------
+        # Search
+        #
+        # Search by:
+        # - payment_id
+        # - order_id
+        # - customer name
+        # - customer email
+        # ------------------------------------------------------------
+
+        if search and search.strip():
+            search_value = search.strip()
+
+            # --------------------------------------------------------
+            # Find users matching name/email
+            # --------------------------------------------------------
+
+            matching_users = users_collection.find(
+                {
+                    "$or": [
+                        {
+                            "name": {
+                                "$regex": search_value,
+                                "$options": "i",
+                            }
+                        },
+                        {
+                            "email": {
+                                "$regex": search_value,
+                                "$options": "i",
+                            }
+                        },
+                    ]
+                },
+                {
+                    "email": 1,
+                    "_id": 0,
+                },
+            )
+
+            matching_emails = [
+                user["email"]
+                for user in matching_users
+                if user.get("email")
+            ]
+
+            # --------------------------------------------------------
+            # Payment search conditions
+            # --------------------------------------------------------
+
+            search_conditions = [
+                {
+                    "payment_id": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+                {
+                    "order_id": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+                {
+                    "user_email": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+                {
+                    "email": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+            ]
+
+            # --------------------------------------------------------
+            # Add matching customer emails
+            # --------------------------------------------------------
+
+            if matching_emails:
+                search_conditions.append(
+                    {
+                        "user_email": {
+                            "$in": matching_emails
+                        }
+                    }
+                )
+
+                search_conditions.append(
+                    {
+                        "email": {
+                            "$in": matching_emails
+                        }
+                    }
+                )
+
+            query["$or"] = search_conditions
+
+        # ------------------------------------------------------------
+        # Debug logging
+        # ------------------------------------------------------------
+
+        logger.info(
+            "PAYMENT FILTER DEBUG: status=%r method=%r query=%r",
+            status_filter,
+            payment_method,
+            query,
+        )
+
+        # ============================================================
+        # 2. COUNT REAL PAYMENTS
+        # ============================================================
+
+        total = payments_collection.count_documents(query)
+
+        skip = (page - 1) * limit
+
+        # ============================================================
+        # 3. FETCH REAL PAYMENTS
+        # ============================================================
+
+        payments = list(
+            payments_collection.find(query)
+            .sort(
+                [
+                    ("payment_date", -1),
+                    ("_id", -1),
+                ]
+            )
+            .skip(skip)
+            .limit(limit)
+        )
+
+        # ============================================================
+        # 4. REMOVE DUPLICATE PAYMENT IDS
+        # ============================================================
+
+        seen_payment_ids = set()
+        unique_payments = []
+
+        for payment in payments:
+
+            payment_id = payment.get("payment_id")
+
+            # --------------------------------------------------------
+            # Ignore records without payment_id
+            # --------------------------------------------------------
+
+            if not payment_id:
+                continue
+
+            # --------------------------------------------------------
+            # Prevent duplicate payment IDs
+            # --------------------------------------------------------
+
+            if payment_id in seen_payment_ids:
+                continue
+
+            seen_payment_ids.add(payment_id)
+
+            # ========================================================
+            # 5. FIND REAL CUSTOMER
+            # ========================================================
+
+            email = (
+                payment.get("user_email")
+                or payment.get("email")
+            )
+
+            customer = None
+
+            if email:
+                customer = users_collection.find_one(
+                    {"email": email},
+                    {
+                        "_id": 0,
+                        "name": 1,
+                        "email": 1,
+                        "phone": 1,
+                    },
+                )
+
+            # ========================================================
+            # 6. FIND REAL ORDER
+            # ========================================================
+
+            order = None
+
+            order_id = payment.get("order_id")
+
+            if order_id:
+
+                try:
+                    order = orders_collection.find_one(
+                        {
+                            "$or": [
+                                {
+                                    "order_id": str(order_id)
+                                },
+                                {
+                                    "razorpay_order_id": str(
+                                        order_id
+                                    )
+                                },
+                            ]
+                        },
+                        {
+                            "_id": 0,
+                            "order_id": 1,
+                            "razorpay_order_id": 1,
+                            "token": 1,
+                            "items": 1,
+                            "total": 1,
+                            "status": 1,
+                            "payment_method": 1,
+                            "payment_status": 1,
+                            "date": 1,
+                        },
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        "Order lookup failed for %s: %s",
+                        order_id,
+                        e,
+                        exc_info=True,
+                    )
+
+                    order = None
+
+            # ========================================================
+            # 7. BUILD API RESPONSE
+            # ========================================================
+
+            unique_payments.append(
+                {
+                    "database_id": str(
+                        payment["_id"]
+                    ),
+
+                    "payment_id": payment.get(
+                        "payment_id"
+                    ),
+
+                    "order_id": payment.get(
+                        "order_id"
+                    ),
+
+                    "razorpay_order_id": payment.get(
+                        "razorpay_order_id"
+                    ),
+
+                    "customer": customer,
+
+                    "amount": float(
+                        payment.get(
+                            "amount",
+                            0,
+                        )
+                        or 0
+                    ),
+
+                    "currency": payment.get(
+                        "currency",
+                        "INR",
+                    ),
+
+                    "status": payment.get(
+                        "status"
+                    ),
+
+                    "payment_method": payment.get(
+                        "payment_method"
+                    ),
+
+                    "purpose": payment.get(
+                        "purpose"
+                    ),
+
+                    "payment_date": payment.get(
+                        "payment_date"
+                    ),
+
+                    "refund_status": payment.get(
+                        "refund_status"
+                    ),
+
+                    "refund_amount": float(
+                        payment.get(
+                            "refund_amount",
+                            0,
+                        )
+                        or 0
+                    ),
+
+                    "refund_date": payment.get(
+                        "refund_date"
+                    ),
+
+                    "refund_payment_id": payment.get(
+                        "refund_payment_id"
+                    ),
+
+                    "order": order,
+                }
+            )
+
+        # ============================================================
+        # 8. PAGINATION
+        # ============================================================
+
+        pages = (
+            (total + limit - 1) // limit
+            if total
+            else 0
+        )
+
+        # ============================================================
+        # 9. RETURN RESPONSE
+        # ============================================================
+
+        return {
+            "success": True,
+            "payments": unique_payments,
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "pages": pages,
+        }
+
+    # ================================================================
+    # HTTP EXCEPTION
+    # ================================================================
+
+    except HTTPException:
+        raise
+
+    # ================================================================
+    # UNEXPECTED ERROR
+    # ================================================================
+
+    except Exception as e:
+        logger.error(
+            "Get admin payments error: %s",
+            e,
+            exc_info=True,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch payment data",
+        )
+@fastapi_app.get("/admin/payments/export")
+def export_admin_payments(
+    status_filter: str = "ALL",
+    payment_method: str = "ALL",
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    try:
+        # ============================================================
+        # 1. BUILD REAL DATABASE QUERY
+        # ============================================================
+        query = {}
+
+        if status_filter and status_filter.upper() != "ALL":
+            query["status"] = status_filter
+
+        if payment_method and payment_method.upper() != "ALL":
+            query["payment_method"] = payment_method
+
+        # ============================================================
+        # 2. FETCH REAL PAYMENT RECORDS
+        # ============================================================
+        payments = list(
+            payments_collection.find(query).sort(
+                [
+                    ("payment_date", -1),
+                    ("_id", -1),
+                ]
+            )
+        )
+
+        # ============================================================
+        # 3. CREATE CSV IN MEMORY
+        # ============================================================
+        output = io.StringIO()
+
+        writer = csv.writer(output)
+
+        writer.writerow([
+            "Payment ID",
+            "Order ID",
+            "Customer Email",
+            "Amount",
+            "Currency",
+            "Status",
+            "Payment Method",
+            "Purpose",
+            "Payment Date",
+            "Refund Status",
+            "Refund Amount",
+            "Refund Date",
+            "Refund Payment ID",
+        ])
+
+        # ============================================================
+        # 4. WRITE REAL DATABASE DATA
+        # ============================================================
+        for payment in payments:
+
+            payment_date = payment.get("payment_date")
+
+            if payment_date:
+                if hasattr(payment_date, "isoformat"):
+                    payment_date = payment_date.isoformat()
+                else:
+                    payment_date = str(payment_date)
+            else:
+                payment_date = ""
+
+            refund_date = payment.get("refund_date")
+
+            if refund_date:
+                if hasattr(refund_date, "isoformat"):
+                    refund_date = refund_date.isoformat()
+                else:
+                    refund_date = str(refund_date)
+            else:
+                refund_date = ""
+
+            writer.writerow([
+                payment.get("payment_id", ""),
+                payment.get("order_id", ""),
+                (
+                    payment.get("user_email")
+                    or payment.get("email", "")
+                ),
+                payment.get("amount", 0),
+                payment.get("currency", "INR"),
+                payment.get("status", ""),
+                payment.get("payment_method", ""),
+                payment.get("purpose", ""),
+                payment_date,
+                payment.get("refund_status", ""),
+                payment.get("refund_amount", 0),
+                refund_date,
+                payment.get("refund_payment_id", ""),
+            ])
+
+        # ============================================================
+        # 5. RESET CSV POINTER
+        # ============================================================
+        output.seek(0)
+
+        # ============================================================
+        # 6. RETURN CSV FILE
+        # ============================================================
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": (
+                    "attachment; filename=payments.csv"
+                )
+            },
+        )
+
+    except Exception as e:
+        logger.error(
+            "Export admin payments error: %s",
+            e,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to export payments",
+        )
+@fastapi_app.get("/admin/payments/stats")
+def get_admin_payment_stats(
+    status_filter: str = "ALL",
+    payment_method: str = "ALL",
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    try:
+        query = {}
+
+        if status_filter != "ALL":
+            query["status"] = status_filter
+
+        if payment_method != "ALL":
+            query["payment_method"] = payment_method
+
+        # Only read real payment records.
+        payments = payments_collection.find(query)
+
+        total_transactions = 0
+        total_amount = 0.0
+        paid_transactions = 0
+        pending_transactions = 0
+        failed_transactions = 0
+
+        for payment in payments:
+            total_transactions += 1
+
+            try:
+                total_amount += float(
+                    payment.get("amount", 0) or 0
+                )
+            except (TypeError, ValueError):
+                pass
+
+            payment_status = payment.get("status")
+
+            if payment_status == PaymentStatus.PAID:
+                paid_transactions += 1
+
+            elif payment_status == PaymentStatus.PENDING:
+                pending_transactions += 1
+
+            elif payment_status == PaymentStatus.FAILED:
+                failed_transactions += 1
+
+        return {
+            "success": True,
+            "total_transactions": total_transactions,
+            "total_amount": round(total_amount, 2),
+            "paid_transactions": paid_transactions,
+            "pending_transactions": pending_transactions,
+            "failed_transactions": failed_transactions,
+        }
+
+    except Exception as e:
+        logger.error(
+            "Admin payment statistics error: %s",
+            e
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to calculate payment statistics"
+        )
+
+@fastapi_app.get("/admin/payments/{payment_id}")
+def get_admin_payment(
+    payment_id: str,
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    try:
+        # ============================================================
+        # 1. FIND REAL PAYMENT
+        # ============================================================
+
+        payment = payments_collection.find_one(
+            {"payment_id": payment_id}
+        )
+
+        if not payment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Payment not found",
+            )
+
+        # ============================================================
+        # 2. FIND REAL CUSTOMER
+        # ============================================================
+
+        email = (
+            payment.get("user_email")
+            or payment.get("email")
+        )
+
+        customer = None
+
+        if email:
+            customer = users_collection.find_one(
+                {"email": email},
+                {
+                    "_id": 0,
+                    "name": 1,
+                    "email": 1,
+                    "phone": 1,
+                },
+            )
+
+        # ============================================================
+        # 3. FIND REAL ORDER
+        # ============================================================
+
+        order = None
+
+        order_id = payment.get("order_id")
+
+        if order_id:
+            try:
+                order = orders_collection.find_one(
+                    {
+                        "$or": [
+                            {
+                                "order_id": str(order_id)
+                            },
+                            {
+                                "razorpay_order_id": str(
+                                    order_id
+                                )
+                            },
+                        ]
+                    },
+                    {
+                        "_id": 0,
+                        "order_id": 1,
+                        "razorpay_order_id": 1,
+                        "token": 1,
+                        "items": 1,
+                        "total": 1,
+                        "status": 1,
+                        "payment_method": 1,
+                        "payment_status": 1,
+                        "date": 1,
+                    },
+                )
+
+            except Exception as e:
+                logger.error(
+                    "Order lookup failed for %s: %s",
+                    order_id,
+                    e,
+                    exc_info=True,
+                )
+
+                order = None
+
+        # ============================================================
+        # 4. BUILD PAYMENT RESPONSE
+        # ============================================================
+
+        payment_response = {
+            "database_id": str(
+                payment["_id"]
+            ),
+
+            "payment_id": payment.get(
+                "payment_id"
+            ),
+
+            "order_id": payment.get(
+                "order_id"
+            ),
+
+            "razorpay_order_id": payment.get(
+                "razorpay_order_id"
+            ),
+
+            "customer": customer,
+
+            "amount": float(
+                payment.get(
+                    "amount",
+                    0,
+                )
+                or 0
+            ),
+
+            "currency": payment.get(
+                "currency",
+                "INR",
+            ),
+
+            "status": payment.get(
+                "status"
+            ),
+
+            "payment_method": payment.get(
+                "payment_method"
+            ),
+
+            "purpose": payment.get(
+                "purpose"
+            ),
+
+            "payment_date": payment.get(
+                "payment_date"
+            ),
+
+            "refund_status": payment.get(
+                "refund_status"
+            ),
+
+            "refund_amount": float(
+                payment.get(
+                    "refund_amount",
+                    0,
+                )
+                or 0
+            ),
+
+            "refund_date": payment.get(
+                "refund_date"
+            ),
+
+            "refund_payment_id": payment.get(
+                "refund_payment_id"
+            ),
+
+            "order": order,
+        }
+
+        # ============================================================
+        # 5. RETURN RESPONSE
+        # ============================================================
+
+        return {
+            "success": True,
+            "payment": payment_response,
+        }
+
+    # ================================================================
+    # HTTP EXCEPTION
+    # ================================================================
+
+    except HTTPException:
+        raise
+
+    # ================================================================
+    # UNEXPECTED ERROR
+    # ================================================================
+
+    except Exception as e:
+        logger.error(
+            "Get admin payment error: %s",
+            e,
+            exc_info=True,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch payment details",
+        )
 # =====================================
 # FINAL SOCKET APP
 # =====================================
