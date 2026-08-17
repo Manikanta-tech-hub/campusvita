@@ -33,8 +33,6 @@ def create_user_document(
 
         "wallet_history": [],
 
-        "favorite_foods": [],
-
         "notifications": True,
 
         "theme": "dark",
