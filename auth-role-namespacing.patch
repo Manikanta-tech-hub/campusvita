@@ -1,0 +1,774 @@
+diff -ruN a/app/admin/payments/page.tsx b/app/admin/payments/page.tsx
+--- a/app/admin/payments/page.tsx	2026-08-17 18:42:43.885251067 +0000
++++ b/app/admin/payments/page.tsx	2026-08-17 18:42:43.886847399 +0000
+@@ -10,6 +10,7 @@
+   Eye,
+   CreditCard,
+ } from "lucide-react";
++import { getAccessToken } from "@/app/lib/auth";
+ 
+ const API_URL =
+   process.env.NEXT_PUBLIC_API_URL ||
+@@ -65,10 +66,7 @@
+   const [loading, setLoading] = useState(true);
+ 
+   const getToken = () => {
+-    return (
+-      sessionStorage.getItem("access_token") ||
+-      sessionStorage.getItem("token")
+-    );
++    return getAccessToken("admin");
+   };
+ 
+   const getAuthHeaders = () => {
+diff -ruN a/app/checkout/page.tsx b/app/checkout/page.tsx
+--- a/app/checkout/page.tsx	2026-08-17 18:42:43.885089398 +0000
++++ b/app/checkout/page.tsx	2026-08-17 18:42:43.886957021 +0000
+@@ -15,6 +15,7 @@
+ 
+ import Navbar from "@/components/layout/Navbar";
+ import { useCart } from "../../context/CartContext";
++import { getAccessToken, getSessionField } from "@/app/lib/auth";
+ 
+ // =====================================
+ // TYPESCRIPT DECLARATION
+@@ -107,7 +108,7 @@
+       setLoading(true);
+ 
+       const token =
+-        sessionStorage.getItem("access_token");
++        getAccessToken("user");
+ 
+       if (!token) {
+         toast.error("Please login again");
+@@ -217,12 +218,7 @@
+           contact: phone,
+ 
+           email:
+-            sessionStorage.getItem(
+-              "userEmail"
+-            ) ||
+-            sessionStorage.getItem(
+-              "email"
+-            ) ||
++            getSessionField("userEmail", "user") || getSessionField("email", "user") ||
+             "",
+         },
+ 
+@@ -298,9 +294,7 @@
+       setLoading(true);
+ 
+       const token =
+-        sessionStorage.getItem(
+-          "access_token"
+-        );
++        getAccessToken("user");
+ 
+       if (!token) {
+         toast.error(
+@@ -449,9 +443,7 @@
+         setLoading(true);
+ 
+         const token =
+-          sessionStorage.getItem(
+-            "access_token"
+-          );
++          getAccessToken("user");
+ 
+         if (!token) {
+           toast.error(
+@@ -603,9 +595,7 @@
+         setLoading(true);
+ 
+         const token =
+-          sessionStorage.getItem(
+-            "access_token"
+-          );
++          getAccessToken("user");
+ 
+         if (!token) {
+           toast.error(
+@@ -637,12 +627,7 @@
+                 total: totalAmount,
+ 
+                 email:
+-                  sessionStorage.getItem(
+-                    "userEmail"
+-                  ) ||
+-                  sessionStorage.getItem(
+-                    "email"
+-                  ),
++                  getSessionField("userEmail", "user") || getSessionField("email", "user"),
+ 
+                 name: name,
+ 
+diff -ruN a/app/lib/api.ts b/app/lib/api.ts
+--- a/app/lib/api.ts	2026-08-17 18:42:43.885012725 +0000
++++ b/app/lib/api.ts	2026-08-17 18:42:43.887124956 +0000
+@@ -1,7 +1,9 @@
++import { getAccessToken } from "@/app/lib/auth";
++
+ const API_URL = "http://127.0.0.1:8000";
+ 
+ export async function getDashboard() {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const res = await fetch(`${API_URL}/admin/dashboard`, {
+     headers: {
+@@ -17,7 +19,7 @@
+ }
+ 
+ export async function getTopSelling() {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const res = await fetch(`${API_URL}/admin/top-selling`, {
+     headers: {
+@@ -29,7 +31,7 @@
+ }
+ 
+ export async function getLiveQueue() {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const res = await fetch(`${API_URL}/admin/live-queue`, {
+     headers: {
+@@ -41,7 +43,7 @@
+ }
+ 
+ export async function getOrders() {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const res = await fetch(`${API_URL}/admin/orders`, {
+     headers: {
+@@ -59,9 +61,7 @@
+ export async function getTopSellingFoods(
+   month: string
+ ) {
+-  const token = sessionStorage.getItem(
+-    "access_token"
+-  );
++  const token = getAccessToken("admin");
+ 
+   const res = await fetch(
+     `${API_URL}/admin/top-selling-foods?month=${encodeURIComponent(month)}`,
+@@ -82,7 +82,7 @@
+ }
+ 
+ export async function getSalesDistribution(month: string) {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   if (!token) {
+     throw new Error("No access token found");
+@@ -116,7 +116,7 @@
+   return response.json();
+ }
+ export async function getOrderChartData() {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const res = await fetch(`${API_URL}/admin/order-chart-data`, {
+     headers: {
+@@ -132,7 +132,7 @@
+ }
+ 
+ export async function getRevenueChartData(year?: number) {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const params = year
+     ? `?year=${year}`
+@@ -160,7 +160,7 @@
+   orderToken: number,
+   status: string
+ ) {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const res = await fetch(`${API_URL}/admin/orders/${orderToken}`, {
+     method: "PUT",
+@@ -259,7 +259,7 @@
+   sortBy = "token",
+   sortOrder = "desc"
+ ) {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   const params = new URLSearchParams({
+     page: String(page),
+@@ -296,7 +296,7 @@
+   status = "ALL",
+   sort = "LATEST"
+ ) {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   if (!token) {
+     throw new Error("No access token found");
+diff -ruN a/app/lib/auth.ts b/app/lib/auth.ts
+--- a/app/lib/auth.ts	1970-01-01 00:00:00.000000000 +0000
++++ b/app/lib/auth.ts	2026-08-17 18:42:43.887251500 +0000
+@@ -0,0 +1,114 @@
++// =====================================================================
++// Role-namespaced auth session storage
++// =====================================================================
++// Problem this fixes:
++//   Every page used to call sessionStorage.getItem("access_token") /
++//   setItem("access_token", ...) with the SAME key regardless of who
++//   was logging in. Logging in as a regular user in one tab (or after
++//   the admin panel was already open) silently overwrote the admin's
++//   token, refresh token, and profile fields — because there was only
++//   ever one slot for all of that data.
++//
++// Fix:
++//   Namespace every stored key by role ("admin" | "user") so an admin
++//   session and a regular user session can never collide, even in the
++//   same browser tab.
++// =====================================================================
++
++export type AuthRole = "admin" | "user";
++
++const SESSION_FIELDS = [
++  "access_token",
++  "refresh_token",
++  "token_type",
++  "expires_in",
++  "isLoggedIn",
++  "userEmail",
++  "email",
++  "userName",
++  "userRole",
++] as const;
++
++type SessionField = (typeof SESSION_FIELDS)[number];
++
++function keyFor(field: SessionField, role: AuthRole): string {
++  return `${role}_${field}`;
++}
++
++export type LoginResponseData = {
++  access_token: string;
++  refresh_token: string;
++  token_type: string;
++  expires_in: number;
++  user: {
++    email: string;
++    name: string;
++    role: string;
++  };
++};
++
++/**
++ * Normalizes whatever the backend sends back in `user.role` into one of
++ * our two storage namespaces. Anything that isn't literally "admin" is
++ * treated as a regular user.
++ */
++export function normalizeRole(role: string | undefined | null): AuthRole {
++  // Backend sends UserRole.ADMIN = "ADMIN" (see main.py). Anything else
++  // (including missing/unknown values) is treated as a regular user.
++  return role === "ADMIN" ? "admin" : "user";
++}
++
++/** Save a login response under its own role's namespace only. */
++export function saveAuthSession(data: LoginResponseData): AuthRole {
++  const role = normalizeRole(data.user.role);
++
++  sessionStorage.setItem(keyFor("isLoggedIn", role), "true");
++  sessionStorage.setItem(keyFor("access_token", role), data.access_token);
++  sessionStorage.setItem(keyFor("refresh_token", role), data.refresh_token);
++  sessionStorage.setItem(keyFor("token_type", role), data.token_type);
++  sessionStorage.setItem(keyFor("expires_in", role), String(data.expires_in));
++  sessionStorage.setItem(keyFor("userEmail", role), data.user.email);
++  sessionStorage.setItem(keyFor("email", role), data.user.email);
++  sessionStorage.setItem(keyFor("userName", role), data.user.name);
++  sessionStorage.setItem(keyFor("userRole", role), data.user.role);
++
++  return role;
++}
++
++export function getAccessToken(role: AuthRole): string | null {
++  return sessionStorage.getItem(keyFor("access_token", role));
++}
++
++export function getSessionField(
++  field: SessionField,
++  role: AuthRole
++): string | null {
++  return sessionStorage.getItem(keyFor(field, role));
++}
++
++export function setSessionField(
++  field: SessionField,
++  value: string,
++  role: AuthRole
++): void {
++  sessionStorage.setItem(keyFor(field, role), value);
++}
++
++export function isLoggedIn(role: AuthRole): boolean {
++  return sessionStorage.getItem(keyFor("isLoggedIn", role)) === "true";
++}
++
++export function clearAuthSession(role: AuthRole): void {
++  for (const field of SESSION_FIELDS) {
++    sessionStorage.removeItem(keyFor(field, role));
++  }
++}
++
++/** Throws if there's no token for this role — mirrors the old inline checks. */
++export function requireAuthHeader(role: AuthRole): { Authorization: string } {
++  const token = getAccessToken(role);
++  if (!token) {
++    throw new Error("No access token found");
++  }
++  return { Authorization: `Bearer ${token}` };
++}
+diff -ruN a/app/lib/settingsApi.ts b/app/lib/settingsApi.ts
+--- a/app/lib/settingsApi.ts	2026-08-17 18:42:43.884961779 +0000
++++ b/app/lib/settingsApi.ts	2026-08-17 18:42:43.887196438 +0000
+@@ -1,3 +1,5 @@
++import { getAccessToken as getRoleAccessToken } from "@/app/lib/auth";
++
+ const API_URL = "http://127.0.0.1:8000";
+ 
+ type ApiError = {
+@@ -12,7 +14,10 @@
+ 
+ function getAccessToken() {
+   if (typeof window === "undefined") return "";
+-  return sessionStorage.getItem("access_token") || "";
++  // Every function in this file hits an /profile or /change-password
++  // endpoint reached from the admin settings screen, so it always reads
++  // the admin namespace.
++  return getRoleAccessToken("admin") || "";
+ }
+ 
+ function authHeaders() {
+diff -ruN a/app/login/page.tsx b/app/login/page.tsx
+--- a/app/login/page.tsx	2026-08-17 18:42:43.884874878 +0000
++++ b/app/login/page.tsx	2026-08-17 18:42:43.887377865 +0000
+@@ -4,6 +4,7 @@
+ import Link from "next/link";
+ import { useEffect, useState } from "react";
+ import { useRouter } from "next/navigation";
++import { isLoggedIn as hasSession, saveAuthSession } from "@/app/lib/auth";
+ 
+ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+ 
+@@ -15,16 +16,12 @@
+   const [loading, setLoading] = useState(false);
+ 
+   useEffect(() => {
+-    const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+-    const savedEmail = sessionStorage.getItem("email");
+-    const role = sessionStorage.getItem("userRole");
+-  
+-    if (isLoggedIn === "true" && savedEmail) {
+-      if (role === "ADMIN") {
+-        router.replace("/admin/dashboard");
+-      } else {
+-        router.replace("/");
+-      }
++    // Each role has its own namespaced session now, so check both instead
++    // of a single shared "isLoggedIn" flag.
++    if (hasSession("admin")) {
++      router.replace("/admin/dashboard");
++    } else if (hasSession("user")) {
++      router.replace("/");
+     }
+   }, [router]);
+ 
+@@ -62,19 +59,13 @@
+       }
+ 
+       if (response.ok && data.message === "Login Successful 🚀") {
+-        // Save auth tokens and user data
+-        sessionStorage.setItem("isLoggedIn", "true");
+-        sessionStorage.setItem("access_token", data.access_token);
+-        sessionStorage.setItem("refresh_token", data.refresh_token);
+-        sessionStorage.setItem("token_type", data.token_type);
+-        sessionStorage.setItem("expires_in", String(data.expires_in));
+-        sessionStorage.setItem("userEmail", data.user.email);
+-        sessionStorage.setItem("email", data.user.email);
+-        sessionStorage.setItem("userName", data.user.name);
+-        sessionStorage.setItem("userRole", data.user.role);
++        // Save auth tokens and user data under this role's own namespace
++        // only — logging in as a different role no longer overwrites an
++        // existing session for the other role.
++        const role = saveAuthSession(data);
+ 
+         toast.success(data.message);
+-        if (data.user.role === "ADMIN") {
++        if (role === "admin") {
+           router.replace("/admin/dashboard");
+         } else {
+           router.replace("/");
+diff -ruN a/app/orders/page.tsx b/app/orders/page.tsx
+--- a/app/orders/page.tsx	2026-08-17 18:42:43.884819502 +0000
++++ b/app/orders/page.tsx	2026-08-17 18:42:43.887494968 +0000
+@@ -18,6 +18,7 @@
+ 
+ import { getImageUrl } from "@/app/lib/getImageUrl";
+ import Navbar from "@/components/layout/Navbar";
++import { getAccessToken } from "@/app/lib/auth";
+ 
+ import { useCart } from "../../context/CartContext";
+ 
+@@ -89,7 +90,7 @@
+       return null;
+     }
+ 
+-    return sessionStorage.getItem("access_token");
++    return getAccessToken("user");
+   };
+ 
+   // ============================================================
+diff -ruN a/app/profile/page.tsx b/app/profile/page.tsx
+--- a/app/profile/page.tsx	2026-08-17 18:42:43.884761220 +0000
++++ b/app/profile/page.tsx	2026-08-17 18:42:43.887616991 +0000
+@@ -18,6 +18,7 @@
+ import { useRouter } from "next/navigation";
+ 
+ import Navbar from "@/components/layout/Navbar";
++import { getAccessToken, getSessionField, setSessionField, clearAuthSession } from "@/app/lib/auth";
+ 
+ export default function ProfilePage() {
+   const router = useRouter();
+@@ -115,7 +116,7 @@
+     let cancelled = false;
+ 
+     const loadProfile = async () => {
+-      const token = sessionStorage.getItem("access_token");
++      const token = getAccessToken("user");
+ 
+       if (!token) {
+         router.replace("/login");
+@@ -136,15 +137,7 @@
+         // ------------------------------------------------------
+ 
+         if (response.status === 401) {
+-          sessionStorage.removeItem("access_token");
+-          sessionStorage.removeItem("refresh_token");
+-          sessionStorage.removeItem("token_type");
+-          sessionStorage.removeItem("expires_in");
+-          sessionStorage.removeItem("isLoggedIn");
+-          sessionStorage.removeItem("userEmail");
+-          sessionStorage.removeItem("email");
+-          sessionStorage.removeItem("userName");
+-          sessionStorage.removeItem("userRole");
++          clearAuthSession("user");
+ 
+           toast.error("Session expired. Please login again.");
+ 
+@@ -273,22 +266,12 @@
+         // ------------------------------------------------------
+ 
+         if (data.email) {
+-          sessionStorage.setItem(
+-            "userEmail",
+-            data.email
+-          );
+-
+-          sessionStorage.setItem(
+-            "email",
+-            data.email
+-          );
++          setSessionField("userEmail", data.email, "user");
++          setSessionField("email", data.email, "user");
+         }
+ 
+         if (data.name) {
+-          sessionStorage.setItem(
+-            "userName",
+-            data.name
+-          );
++          setSessionField("userName", data.name, "user");
+         }
+ 
+       } catch (error) {
+@@ -410,8 +393,7 @@
+   // ============================================================
+ 
+   const handleSaveProfile = async () => {
+-    const token =
+-      sessionStorage.getItem("access_token");
++    const token = getAccessToken("user");
+ 
+     if (!token) {
+       toast.error("Please login again.");
+@@ -675,10 +657,7 @@
+           updatedData.name
+         );
+ 
+-        sessionStorage.setItem(
+-          "userName",
+-          updatedData.name
+-        );
++        setSessionField("userName", updatedData.name, "user");
+       }
+ 
+       if (
+@@ -688,15 +667,8 @@
+           updatedData.email
+         );
+ 
+-        sessionStorage.setItem(
+-          "userEmail",
+-          updatedData.email
+-        );
+-
+-        sessionStorage.setItem(
+-          "email",
+-          updatedData.email
+-        );
++        setSessionField("userEmail", updatedData.email, "user");
++        setSessionField("email", updatedData.email, "user");
+       }
+ 
+       if (
+@@ -790,41 +762,7 @@
+     // The image remains associated with the user's database record.
+     // ----------------------------------------------------------
+ 
+-    sessionStorage.removeItem(
+-      "isLoggedIn"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "access_token"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "refresh_token"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "token_type"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "expires_in"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "userEmail"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "email"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "userName"
+-    );
+-
+-    sessionStorage.removeItem(
+-      "userRole"
+-    );
++    clearAuthSession("user");
+ 
+     toast.success(
+       "Logged Out Successfully"
+diff -ruN a/app/track-order/page.tsx b/app/track-order/page.tsx
+--- a/app/track-order/page.tsx	2026-08-17 18:42:43.884707970 +0000
++++ b/app/track-order/page.tsx	2026-08-17 18:42:43.887753760 +0000
+@@ -18,6 +18,7 @@
+ import Navbar from "@/components/layout/Navbar";
+ import { useCart } from "../../context/CartContext";
+ import { getImageUrl } from "@/app/lib/getImageUrl";
++import { getAccessToken, getSessionField } from "@/app/lib/auth";
+ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+ 
+ type OrderItem = {
+@@ -97,7 +98,7 @@
+     try {
+       if (showRefresh) setIsRefreshing(true);
+ 
+-      const token = sessionStorage.getItem("access_token");
++      const token = getAccessToken("user");
+       if (!token) {
+         setFetchCompleted(true);
+         setLoading(false);
+@@ -151,7 +152,7 @@
+   // =====================================
+   useEffect(() => {
+     // ✅ FIX 7: Check if cached order belongs to the logged-in user
+-    const email = sessionStorage.getItem("userEmail");
++    const email = getSessionField("userEmail", "user");
+     const cached = localStorage.getItem("latestOrder");
+     if (cached && email) {
+       try {
+@@ -184,7 +185,7 @@
+     });
+ 
+     socket.on("order_update", (updatedOrder: Order) => {
+-      const userEmail = sessionStorage.getItem("userEmail");
++      const userEmail = getSessionField("userEmail", "user");
+       if (updatedOrder.email && updatedOrder.email !== userEmail) {
+         return;
+       }
+diff -ruN a/app/wallet/page.tsx b/app/wallet/page.tsx
+--- a/app/wallet/page.tsx	2026-08-17 18:42:43.884664432 +0000
++++ b/app/wallet/page.tsx	2026-08-17 18:42:43.887875698 +0000
+@@ -13,6 +13,7 @@
+ import { useEffect, useState } from "react";
+ 
+ import Navbar from "@/components/layout/Navbar";
++import { getAccessToken } from "@/app/lib/auth";
+ 
+ declare global {
+   interface Window {
+@@ -40,10 +41,7 @@
+   const [processing, setProcessing] = useState(false);
+ 
+   const getToken = () => {
+-    return (
+-      sessionStorage.getItem("access_token") ||
+-      sessionStorage.getItem("token")
+-    );
++    return getAccessToken("user");
+   };
+ 
+   const getAuthHeaders = () => {
+diff -ruN a/components/admin/category/AddCategoryModal.tsx b/components/admin/category/AddCategoryModal.tsx
+--- a/components/admin/category/AddCategoryModal.tsx	2026-08-17 18:42:43.884585918 +0000
++++ b/components/admin/category/AddCategoryModal.tsx	2026-08-17 18:42:43.888154490 +0000
+@@ -1,6 +1,7 @@
+ "use client";
+ 
+ import { useState } from "react";
++import { getAccessToken } from "@/app/lib/auth";
+ 
+ type AddCategoryModalProps = {
+   open: boolean;
+@@ -44,9 +45,7 @@
+ 
+       setLoading(true);
+ 
+-      const token =
+-        sessionStorage.getItem("access_token") ||
+-        sessionStorage.getItem("token");
++      const token = getAccessToken("admin");
+ 
+       if (!token) {
+         setError(
+diff -ruN a/components/admin/food/AddFoodModal.tsx b/components/admin/food/AddFoodModal.tsx
+--- a/components/admin/food/AddFoodModal.tsx	2026-08-17 18:42:43.884530029 +0000
++++ b/components/admin/food/AddFoodModal.tsx	2026-08-17 18:42:43.888288275 +0000
+@@ -1,5 +1,6 @@
+ import { useState } from "react";
+ import { addFood } from "@/app/lib/api";
++import { getAccessToken } from "@/app/lib/auth";
+ type Category = {
+   id: string;
+   name: string;
+@@ -44,7 +45,7 @@
+         try {
+           setLoading(true);
+       
+-          const token = sessionStorage.getItem("access_token");
++          const token = getAccessToken("admin");
+       
+           if (!token) {
+             alert("Please login again");
+@@ -114,7 +115,7 @@
+           setCategoryLoading(true);
+           setCategoryError("");
+       
+-          const token = sessionStorage.getItem("access_token");
++          const token = getAccessToken("admin");
+       
+           if (!token) {
+             setCategoryError("Please login again.");
+diff -ruN a/components/admin/food/DeleteFoodModal.tsx b/components/admin/food/DeleteFoodModal.tsx
+--- a/components/admin/food/DeleteFoodModal.tsx	2026-08-17 18:42:43.884497795 +0000
++++ b/components/admin/food/DeleteFoodModal.tsx	2026-08-17 18:42:43.888377490 +0000
+@@ -1,6 +1,7 @@
+ "use client";
+ 
+ import { deleteFood } from "@/app/lib/api";
++import { getAccessToken } from "@/app/lib/auth";
+ 
+ type Props = {
+   open: boolean;
+@@ -19,7 +20,7 @@
+ 
+   async function handleDelete() {
+     try {
+-      const token = sessionStorage.getItem("access_token");
++      const token = getAccessToken("admin");
+ 
+       if (!token) {
+         alert("Login again");
+diff -ruN a/components/admin/food/EditFoodModal.tsx b/components/admin/food/EditFoodModal.tsx
+--- a/components/admin/food/EditFoodModal.tsx	2026-08-17 18:42:43.884478318 +0000
++++ b/components/admin/food/EditFoodModal.tsx	2026-08-17 18:42:43.888442443 +0000
+@@ -2,6 +2,7 @@
+ 
+ import { useEffect, useState } from "react";
+ import { updateFood } from "@/app/lib/api";
++import { getAccessToken } from "@/app/lib/auth";
+ 
+ type Food = {
+   name: string;
+@@ -59,7 +60,7 @@
+     try {
+       setLoading(true);
+ 
+-      const token = sessionStorage.getItem("access_token");
++      const token = getAccessToken("admin");
+ 
+       if (!token) {
+         alert("Please login again");
+diff -ruN a/components/admin/notifications/notifications.ts b/components/admin/notifications/notifications.ts
+--- a/components/admin/notifications/notifications.ts	2026-08-17 18:42:43.884441837 +0000
++++ b/components/admin/notifications/notifications.ts	2026-08-17 18:42:43.888580515 +0000
+@@ -1,3 +1,5 @@
++import { getAccessToken } from "@/app/lib/auth";
++
+ export interface Notification {
+   id: string;
+   title: string;
+@@ -71,7 +73,7 @@
+ }
+ 
+ export async function getAdminNotifications(): Promise<Notification[]> {
+-  const token = sessionStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+ 
+   if (!token) {
+     throw new Error("Not authenticated");
+diff -ruN a/components/layout/Navbar.tsx b/components/layout/Navbar.tsx
+--- a/components/layout/Navbar.tsx	2026-08-17 18:42:43.884208541 +0000
++++ b/components/layout/Navbar.tsx	2026-08-17 18:42:43.888754129 +0000
+@@ -19,6 +19,7 @@
+ } from "lucide-react";
+ 
+ import { useCart } from "../../context/CartContext";
++import { clearAuthSession } from "@/app/lib/auth";
+ 
+ const navItems = [
+   {
+@@ -84,15 +85,10 @@
+   // ============================================================
+ 
+   const handleLogout = () => {
+-    sessionStorage.removeItem("isLoggedIn");
+-    sessionStorage.removeItem("access_token");
+-    sessionStorage.removeItem("refresh_token");
+-    sessionStorage.removeItem("token_type");
+-    sessionStorage.removeItem("expires_in");
+-    sessionStorage.removeItem("userEmail");
+-    sessionStorage.removeItem("email");
+-    sessionStorage.removeItem("userName");
+-    sessionStorage.removeItem("userRole");
++    // Navbar is only rendered on user-facing pages (orders, checkout,
++    // track-order, profile) — the admin panel has its own session, which
++    // this must never touch.
++    clearAuthSession("user");
+ 
+     router.replace("/login");
+   };

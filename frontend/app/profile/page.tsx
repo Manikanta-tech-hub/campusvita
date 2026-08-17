@@ -4,118 +4,269 @@ import toast from "react-hot-toast";
 
 import {
   Camera,
-  Save,
-  LogOut,
-  Moon,
-  Bell,
+  CheckCircle2,
   ShoppingBag,
-  Heart,
+  User,
   Wallet,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { useRouter } from "next/navigation";
 
 import Navbar from "@/components/layout/Navbar";
 
+const API_URL = "http://127.0.0.1:8000";
+
+/* ============================================================
+   TYPES
+============================================================ */
+
+type ProfileData = {
+  name: string;
+  email: string;
+  phone: string;
+  department: string;
+  year: string;
+  profile_image: string;
+  wallet: number;
+  total_orders: number;
+  total_spent: number;
+};
+
+/* ============================================================
+   EMPTY PROFILE
+============================================================ */
+
+const EMPTY_PROFILE: ProfileData = {
+  name: "",
+  email: "",
+  phone: "",
+  department: "",
+  year: "",
+  profile_image: "",
+  wallet: 0,
+  total_orders: 0,
+  total_spent: 0,
+};
+
+/* ============================================================
+   API ERROR HANDLER
+   Prevents:
+   [object Object],[object Object]
+============================================================ */
+
+function getApiErrorMessage(
+  errorData: unknown,
+  fallback: string
+): string {
+  if (!errorData) {
+    return fallback;
+  }
+
+  // Simple string
+  if (typeof errorData === "string") {
+    return errorData;
+  }
+
+  // Array response
+  if (Array.isArray(errorData)) {
+    const messages = errorData
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+
+        if (
+          typeof item === "object" &&
+          item !== null
+        ) {
+          const objectItem =
+            item as Record<string, unknown>;
+
+          if (
+            typeof objectItem.msg === "string"
+          ) {
+            return objectItem.msg;
+          }
+
+          if (
+            typeof objectItem.message === "string"
+          ) {
+            return objectItem.message;
+          }
+
+          if (
+            typeof objectItem.detail === "string"
+          ) {
+            return objectItem.detail;
+          }
+
+          try {
+            return JSON.stringify(item);
+          } catch {
+            return "";
+          }
+        }
+
+        return String(item);
+      })
+      .filter(Boolean);
+
+    if (messages.length > 0) {
+      return messages.join(", ");
+    }
+
+    return fallback;
+  }
+
+  // Object response
+  if (
+    typeof errorData === "object" &&
+    errorData !== null
+  ) {
+    const objectData =
+      errorData as Record<string, unknown>;
+
+    if (
+      typeof objectData.detail === "string"
+    ) {
+      return objectData.detail;
+    }
+
+    if (
+      Array.isArray(objectData.detail)
+    ) {
+      return getApiErrorMessage(
+        objectData.detail,
+        fallback
+      );
+    }
+
+    if (
+      typeof objectData.message === "string"
+    ) {
+      return objectData.message;
+    }
+
+    if (
+      typeof objectData.error === "string"
+    ) {
+      return objectData.error;
+    }
+
+    try {
+      return JSON.stringify(objectData);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
+/* ============================================================
+   PROFILE PAGE
+============================================================ */
+
 export default function ProfilePage() {
   const router = useRouter();
 
-  const API_URL = "http://127.0.0.1:8000";
+  /* ==========================================================
+     STATE
+  ========================================================== */
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [department, setDepartment] = useState("");
-  const [year, setYear] = useState("");
+  const [savingProfile, setSavingProfile] =
+    useState(false);
 
-  // ============================================================
-  // IMPORTANT
-  //
-  // profileImage = permanent image path/URL from backend/database
-  //
-  // imagePreview = temporary blob URL used ONLY before upload
-  // ============================================================
+  const [uploadingImage, setUploadingImage] =
+    useState(false);
 
-  const [profileImage, setProfileImage] = useState("");
-  const [imagePreview, setImagePreview] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [profile, setProfile] =
+    useState<ProfileData>(EMPTY_PROFILE);
 
-  const [notifications, setNotifications] = useState(true);
-  const [theme, setTheme] = useState("dark");
+  const [imagePreview, setImagePreview] =
+    useState("");
 
-  const [wallet, setWallet] = useState(0);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const [totalSpent, setTotalSpent] = useState(0);
-  const [favorites, setFavorites] = useState(0);
+  /*
+   * Keeps track of the latest saved profile.
+   * This prevents unnecessary duplicate PUT requests.
+   */
+  const lastSavedProfile = useRef({
+    name: "",
+    phone: "",
+    department: "",
+    year: "",
+  });
 
-  // ============================================================
-  // RESOLVE PROFILE IMAGE URL
-  // ============================================================
+  /* ============================================================
+     AUTH CLEANUP
+  ============================================================ */
 
-  const resolveImageUrl = (image: string) => {
-    if (!image) {
-      return "";
-    }
+  const clearAuth = useCallback(() => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("token_type");
+    localStorage.removeItem("expires_in");
 
-    // ----------------------------------------------------------
-    // Temporary blob URL
-    // This should only be used for local preview.
-    // It is NEVER stored in MongoDB.
-    // ----------------------------------------------------------
+    localStorage.removeItem("isLoggedIn");
 
-    if (image.startsWith("blob:")) {
-      return image;
-    }
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("email");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+  }, []);
 
-    // ----------------------------------------------------------
-    // Already a complete URL
-    // Example:
-    // https://res.cloudinary.com/...
-    // http://...
-    // ----------------------------------------------------------
+  /* ============================================================
+     RESOLVE IMAGE URL
+  ============================================================ */
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
+  const resolveImageUrl = useCallback(
+    (image: string) => {
+      if (!image) {
+        return "";
+      }
 
-    // ----------------------------------------------------------
-    // Backend relative path
-    //
-    // Example:
-    // /uploads/profile/abc123.jpg
-    //
-    // becomes:
-    // http://127.0.0.1:8000/uploads/profile/abc123.jpg
-    // ----------------------------------------------------------
+      if (image.startsWith("blob:")) {
+        return image;
+      }
 
-    if (image.startsWith("/")) {
-      return `${API_URL}${image}`;
-    }
+      if (
+        image.startsWith("http://") ||
+        image.startsWith("https://")
+      ) {
+        return image;
+      }
 
-    // ----------------------------------------------------------
-    // Path without leading slash
-    // ----------------------------------------------------------
+      if (image.startsWith("/")) {
+        return `${API_URL}${image}`;
+      }
 
-    return `${API_URL}/${image}`;
-  };
+      return `${API_URL}/${image}`;
+    },
+    []
+  );
 
-  // ============================================================
-  // LOAD PROFILE
-  // ============================================================
+  /* ============================================================
+     LOAD LIVE PROFILE
+  ============================================================ */
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadProfile = async () => {
-      const token = localStorage.getItem("access_token");
+    async function loadProfile() {
+      const token =
+        localStorage.getItem(
+          "access_token"
+        );
 
       if (!token) {
         router.replace("/login");
@@ -123,174 +274,140 @@ export default function ProfilePage() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/profile`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          cache: "no-store",
-        });
+        setLoading(true);
 
-        // ------------------------------------------------------
-        // AUTH ERROR
-        // ------------------------------------------------------
+        const response = await fetch(
+          `${API_URL}/profile`,
+          {
+            method: "GET",
+
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+
+            cache: "no-store",
+          }
+        );
+
+        /* ------------------------------------------------------
+           AUTH ERROR
+        ------------------------------------------------------ */
 
         if (response.status === 401) {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("token_type");
-          localStorage.removeItem("expires_in");
-          localStorage.removeItem("isLoggedIn");
-          localStorage.removeItem("userEmail");
-          localStorage.removeItem("email");
-          localStorage.removeItem("userName");
-          localStorage.removeItem("userRole");
+          clearAuth();
 
-          toast.error("Session expired. Please login again.");
+          toast.error(
+            "Session expired. Please login again."
+          );
 
           router.replace("/login");
           return;
         }
 
-        // ------------------------------------------------------
-        // OTHER API ERROR
-        // ------------------------------------------------------
+        /* ------------------------------------------------------
+           OTHER ERROR
+        ------------------------------------------------------ */
 
         if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({}));
+          const errorData =
+            await response
+              .json()
+              .catch(() => null);
 
           throw new Error(
-            errorData.detail ||
-              errorData.message ||
+            getApiErrorMessage(
+              errorData,
               "Failed to load profile"
+            )
           );
         }
 
-        const data = await response.json();
-
-        console.log("========== LIVE PROFILE ==========");
-        console.log(data);
-        console.log("PROFILE IMAGE FROM DATABASE:", data.profile_image);
-        console.log("==================================");
+        const data =
+          await response.json();
 
         if (cancelled) {
           return;
         }
 
-        // ------------------------------------------------------
-        // PROFILE INFORMATION
-        // ------------------------------------------------------
+        console.log(
+          "========== LIVE USER PROFILE =========="
+        );
 
-        setName(data.name ?? "");
-        setEmail(data.email ?? "");
-        setPhone(data.phone ?? "");
-        setDepartment(data.department ?? "");
-        setYear(data.year ?? "");
+        console.log(data);
 
-        // ------------------------------------------------------
-        // CRITICAL:
-        //
-        // This value MUST come from MongoDB through GET /profile.
-        //
-        // We do NOT use localStorage for the profile image.
-        // We do NOT use a blob URL here.
-        // ------------------------------------------------------
+        console.log(
+          "========================================"
+        );
 
-        const savedProfileImage =
-          typeof data.profile_image === "string"
-            ? data.profile_image.trim()
-            : "";
+        /* ------------------------------------------------------
+           PROFILE
+        ------------------------------------------------------ */
 
-        if (savedProfileImage) {
-          // Make sure a bad old blob URL isn't persisted.
-          if (!savedProfileImage.startsWith("blob:")) {
-            setProfileImage(savedProfileImage);
-          } else {
-            console.warn(
-              "Ignoring invalid persisted blob profile image."
-            );
-            setProfileImage("");
-          }
-        } else {
-          setProfileImage("");
-        }
+        const liveProfile: ProfileData = {
+          name: data.name ?? "",
+          email: data.email ?? "",
+          phone: data.phone ?? "",
+          department:
+            data.department ?? "",
+          year: data.year ?? "",
 
-        // No temporary preview after loading from backend.
+          profile_image:
+            typeof data.profile_image ===
+            "string"
+              ? data.profile_image.trim()
+              : "",
+
+          wallet: Number(
+            data.wallet ?? 0
+          ),
+
+          total_orders: Number(
+            data.total_orders ?? 0
+          ),
+
+          total_spent: Number(
+            data.total_spent ?? 0
+          ),
+        };
+
+        setProfile(liveProfile);
+
         setImagePreview("");
 
-        // ------------------------------------------------------
-        // SETTINGS
-        // ------------------------------------------------------
+        /* ------------------------------------------------------
+           REMEMBER LAST SAVED PROFILE
+        ------------------------------------------------------ */
 
-        setNotifications(
-          data.notifications ?? true
-        );
+        lastSavedProfile.current = {
+          name: liveProfile.name,
+          phone: liveProfile.phone,
+          department:
+            liveProfile.department,
+          year: liveProfile.year,
+        };
 
-        setTheme(
-          data.theme ?? "dark"
-        );
+        /* ------------------------------------------------------
+           KEEP LOGIN DATA IN SYNC
+        ------------------------------------------------------ */
 
-        // ------------------------------------------------------
-        // STATS
-        // ------------------------------------------------------
-
-        setWallet(
-          Number(data.wallet ?? 0)
-        );
-
-        setTotalOrders(
-          Number(data.total_orders ?? 0)
-        );
-
-        setTotalSpent(
-          Number(data.total_spent ?? 0)
-        );
-
-        // ------------------------------------------------------
-        // FAVORITES
-        // ------------------------------------------------------
-
-        if (
-          typeof data.favorites_count === "number"
-        ) {
-          setFavorites(
-            data.favorites_count
-          );
-        } else if (
-          Array.isArray(data.favorite_foods)
-        ) {
-          setFavorites(
-            data.favorite_foods.length
-          );
-        } else {
-          setFavorites(0);
-        }
-
-        // ------------------------------------------------------
-        // SYNCHRONIZE LOGIN INFORMATION
-        // ------------------------------------------------------
-
-        if (data.email) {
+        if (liveProfile.email) {
           localStorage.setItem(
             "userEmail",
-            data.email
+            liveProfile.email
           );
 
           localStorage.setItem(
             "email",
-            data.email
+            liveProfile.email
           );
         }
 
-        if (data.name) {
+        if (liveProfile.name) {
           localStorage.setItem(
             "userName",
-            data.name
+            liveProfile.name
           );
         }
-
       } catch (error) {
         if (cancelled) {
           return;
@@ -306,37 +423,295 @@ export default function ProfilePage() {
             ? error.message
             : "Failed to load profile"
         );
-
       } finally {
         if (!cancelled) {
           setLoading(false);
         }
       }
-    };
+    }
 
     loadProfile();
 
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, clearAuth]);
 
-  // ============================================================
-  // IMAGE SELECTION
-  // ============================================================
+  /* ============================================================
+     UPDATE PROFILE
+     AUTO-SAVES ON BLUR
+  ============================================================ */
 
-  const handleImageChange = (
+  const updateProfile = async () => {
+    const token =
+      localStorage.getItem(
+        "access_token"
+      );
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    const currentValues = {
+      name: profile.name.trim(),
+      phone: profile.phone.trim(),
+      department:
+        profile.department.trim(),
+      year: profile.year,
+    };
+
+    /* ----------------------------------------------------------
+       DON'T SEND DUPLICATE REQUEST
+    ---------------------------------------------------------- */
+
+    const lastSaved =
+      lastSavedProfile.current;
+
+    const hasChanges =
+      currentValues.name !==
+        lastSaved.name ||
+      currentValues.phone !==
+        lastSaved.phone ||
+      currentValues.department !==
+        lastSaved.department ||
+      currentValues.year !==
+        lastSaved.year;
+
+    if (!hasChanges) {
+      return;
+    }
+
+    /* ----------------------------------------------------------
+       BASIC VALIDATION
+    ---------------------------------------------------------- */
+
+    if (!currentValues.name) {
+      toast.error("Name is required.");
+      return;
+    }
+
+    if (currentValues.phone) {
+      if (
+        !/^\d{10}$/.test(
+          currentValues.phone
+        )
+      ) {
+        toast.error(
+          "Phone number must be exactly 10 digits."
+        );
+
+        return;
+      }
+
+      if (
+        !/^[6789]/.test(
+          currentValues.phone
+        )
+      ) {
+        toast.error(
+          "Please enter a valid Indian mobile number."
+        );
+
+        return;
+      }
+    }
+
+    try {
+      setSavingProfile(true);
+
+      const response = await fetch(
+        `${API_URL}/profile`,
+        {
+          method: "PUT",
+
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            name: currentValues.name,
+            phone: currentValues.phone,
+            department:
+              currentValues.department,
+            year: currentValues.year,
+            profile_image:
+              profile.profile_image,
+          }),
+        }
+      );
+
+      /* --------------------------------------------------------
+         AUTH ERROR
+      -------------------------------------------------------- */
+
+      if (response.status === 401) {
+        clearAuth();
+
+        toast.error(
+          "Session expired. Please login again."
+        );
+
+        router.replace("/login");
+        return;
+      }
+
+      /* --------------------------------------------------------
+         API ERROR
+      -------------------------------------------------------- */
+
+      if (!response.ok) {
+        const errorData =
+          await response
+            .json()
+            .catch(() => null);
+
+        throw new Error(
+          getApiErrorMessage(
+            errorData,
+            "Failed to update profile"
+          )
+        );
+      }
+
+      const updatedData =
+        await response.json();
+
+      console.log(
+        "========== PROFILE UPDATED =========="
+      );
+
+      console.log(updatedData);
+
+      console.log(
+        "====================================="
+      );
+
+      /* --------------------------------------------------------
+         UPDATE LOCAL STATE
+      -------------------------------------------------------- */
+
+      setProfile((current) => ({
+        ...current,
+
+        name:
+          updatedData.name ??
+          current.name,
+
+        email:
+          updatedData.email ??
+          current.email,
+
+        phone:
+          updatedData.phone ??
+          current.phone,
+
+        department:
+          updatedData.department ??
+          current.department,
+
+        year:
+          updatedData.year ??
+          current.year,
+
+        profile_image:
+          updatedData.profile_image ??
+          current.profile_image,
+      }));
+
+      /* --------------------------------------------------------
+         UPDATE LAST SAVED VALUES
+      -------------------------------------------------------- */
+
+      lastSavedProfile.current = {
+        name:
+          updatedData.name ??
+          currentValues.name,
+
+        phone:
+          updatedData.phone ??
+          currentValues.phone,
+
+        department:
+          updatedData.department ??
+          currentValues.department,
+
+        year:
+          updatedData.year ??
+          currentValues.year,
+      };
+
+      /* --------------------------------------------------------
+         SYNC LOCAL STORAGE
+      -------------------------------------------------------- */
+
+      const savedName =
+        updatedData.name ??
+        currentValues.name;
+
+      const savedEmail =
+        updatedData.email ??
+        profile.email;
+
+      if (savedName) {
+        localStorage.setItem(
+          "userName",
+          savedName
+        );
+      }
+
+      if (savedEmail) {
+        localStorage.setItem(
+          "userEmail",
+          savedEmail
+        );
+
+        localStorage.setItem(
+          "email",
+          savedEmail
+        );
+      }
+
+      toast.success(
+        "Profile updated successfully."
+      );
+    } catch (error) {
+      console.error(
+        "Profile update error:",
+        error
+      );
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update profile"
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  /* ============================================================
+     PROFILE IMAGE UPLOAD
+  ============================================================ */
+
+  const handleImageChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = event.target.files?.[0];
+    const file =
+      event.target.files?.[0];
+
+    event.target.value = "";
 
     if (!file) {
       return;
     }
 
-    // ----------------------------------------------------------
-    // VALIDATE IMAGE TYPE
-    // ----------------------------------------------------------
+    /* ----------------------------------------------------------
+       VALIDATE FILE TYPE
+    ---------------------------------------------------------- */
 
     const allowedTypes = [
       "image/jpeg",
@@ -344,239 +719,157 @@ export default function ProfilePage() {
       "image/webp",
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    if (
+      !allowedTypes.includes(
+        file.type
+      )
+    ) {
       toast.error(
-        "Only JPG, PNG and WEBP images are allowed"
+        "Only JPG, PNG and WEBP images are allowed."
       );
 
-      event.target.value = "";
       return;
     }
 
-    // ----------------------------------------------------------
-    // VALIDATE IMAGE SIZE
-    // ----------------------------------------------------------
+    /* ----------------------------------------------------------
+       VALIDATE FILE SIZE
+    ---------------------------------------------------------- */
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
       toast.error(
-        "Image must be smaller than 5 MB"
+        "Image must be smaller than 5 MB."
       );
 
-      event.target.value = "";
       return;
     }
 
-    // ----------------------------------------------------------
-    // CLEAN OLD PREVIEW URL
-    // ----------------------------------------------------------
+    /* ----------------------------------------------------------
+       AUTH
+    ---------------------------------------------------------- */
 
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    // ----------------------------------------------------------
-    // STORE FILE
-    // ----------------------------------------------------------
-
-    setImageFile(file);
-
-    // ----------------------------------------------------------
-    // CREATE TEMPORARY PREVIEW
-    //
-    // IMPORTANT:
-    //
-    // This URL is ONLY for displaying the selected image
-    // before it is uploaded.
-    //
-    // It is NOT saved to MongoDB.
-    // ----------------------------------------------------------
-
-    const previewUrl =
-      URL.createObjectURL(file);
-
-    setImagePreview(previewUrl);
-
-    console.log(
-      "Selected image for upload:",
-      file.name
-    );
-
-    // Allow selecting the same file again later.
-    event.target.value = "";
-  };
-
-  // ============================================================
-  // SAVE PROFILE
-  // ============================================================
-
-  const handleSaveProfile = async () => {
     const token =
-      localStorage.getItem("access_token");
+      localStorage.getItem(
+        "access_token"
+      );
 
     if (!token) {
-      toast.error("Please login again.");
       router.replace("/login");
       return;
     }
 
+    const temporaryPreview =
+      URL.createObjectURL(file);
+
+    setImagePreview(
+      temporaryPreview
+    );
+
     try {
-      setSaving(true);
+      setUploadingImage(true);
 
-      // --------------------------------------------------------
-      // Start with the EXISTING permanent database image.
-      //
-      // Do NOT use imagePreview here.
-      // --------------------------------------------------------
+      /* --------------------------------------------------------
+         UPLOAD IMAGE
+      -------------------------------------------------------- */
 
-      let savedImageUrl = profileImage;
+      const formData =
+        new FormData();
 
-      // ========================================================
-      // STEP 1 — UPLOAD NEW IMAGE
-      // ========================================================
+      formData.append(
+        "file",
+        file
+      );
 
-      if (imageFile) {
-        const formData = new FormData();
+      const uploadResponse =
+        await fetch(
+          `${API_URL}/profile/upload-image`,
+          {
+            method: "POST",
 
-        formData.append(
-          "file",
-          imageFile
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body: formData,
+          }
         );
 
-        console.log(
-          "Uploading profile image..."
+      const uploadData =
+        await uploadResponse
+          .json()
+          .catch(() => null);
+
+      /* --------------------------------------------------------
+         AUTH ERROR
+      -------------------------------------------------------- */
+
+      if (
+        uploadResponse.status ===
+        401
+      ) {
+        clearAuth();
+
+        toast.error(
+          "Session expired. Please login again."
         );
 
-        const uploadResponse =
-          await fetch(
-            `${API_URL}/profile/upload-image`,
-            {
-              method: "POST",
-
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-
-              // IMPORTANT:
-              // Do NOT manually set Content-Type.
-              // Browser sets multipart/form-data boundary.
-              body: formData,
-            }
-          );
-
-        const uploadData =
-          await uploadResponse
-            .json()
-            .catch(() => ({}));
-
-        console.log(
-          "========== IMAGE UPLOAD RESPONSE =========="
-        );
-        console.log(uploadData);
-        console.log(
-          "============================================"
-        );
-
-        // ------------------------------------------------------
-        // AUTH ERROR
-        // ------------------------------------------------------
-
-        if (uploadResponse.status === 401) {
-          toast.error(
-            "Session expired. Please login again."
-          );
-
-          router.replace("/login");
-          return;
-        }
-
-        // ------------------------------------------------------
-        // UPLOAD ERROR
-        // ------------------------------------------------------
-
-        if (!uploadResponse.ok) {
-          throw new Error(
-            uploadData.detail ||
-              uploadData.message ||
-              "Profile image upload failed"
-          );
-        }
-
-        // ------------------------------------------------------
-        // GET PERMANENT IMAGE PATH FROM BACKEND
-        //
-        // Your backend may return either:
-        //
-        // profile_image
-        //
-        // OR
-        //
-        // image_url
-        // ------------------------------------------------------
-
-        const uploadedImage =
-          uploadData.profile_image ||
-          uploadData.image_url ||
-          "";
-
-        if (
-          typeof uploadedImage !== "string" ||
-          !uploadedImage.trim()
-        ) {
-          throw new Error(
-            "Backend did not return the saved profile image path"
-          );
-        }
-
-        // ------------------------------------------------------
-        // NEVER ACCEPT BLOB URL FROM BACKEND
-        // ------------------------------------------------------
-
-        if (
-          uploadedImage.startsWith("blob:")
-        ) {
-          throw new Error(
-            "Backend returned an invalid temporary blob URL"
-          );
-        }
-
-        // ------------------------------------------------------
-        // THIS IS NOW THE PERMANENT IMAGE PATH
-        // ------------------------------------------------------
-
-        savedImageUrl =
-          uploadedImage.trim();
-
-        console.log(
-          "PERMANENT IMAGE PATH:",
-          savedImageUrl
-        );
-
-        // ------------------------------------------------------
-        // Immediately display permanent backend image.
-        // ------------------------------------------------------
-
-        setProfileImage(
-          savedImageUrl
-        );
-
-        // ------------------------------------------------------
-        // Remove temporary preview.
-        // ------------------------------------------------------
-
-        if (imagePreview) {
-          URL.revokeObjectURL(imagePreview);
-        }
-
-        setImagePreview("");
-        setImageFile(null);
+        router.replace("/login");
+        return;
       }
 
-      // ========================================================
-      // STEP 2 — UPDATE PROFILE
-      // ========================================================
+      /* --------------------------------------------------------
+         UPLOAD ERROR
+      -------------------------------------------------------- */
 
-      const response =
+      if (!uploadResponse.ok) {
+        throw new Error(
+          getApiErrorMessage(
+            uploadData,
+            "Profile image upload failed"
+          )
+        );
+      }
+
+      /* --------------------------------------------------------
+         GET PERMANENT IMAGE
+      -------------------------------------------------------- */
+
+      const uploadedImage =
+        uploadData?.profile_image ||
+        uploadData?.image_url ||
+        "";
+
+      if (
+        typeof uploadedImage !==
+          "string" ||
+        !uploadedImage.trim()
+      ) {
+        throw new Error(
+          "Backend did not return the saved profile image."
+        );
+      }
+
+      if (
+        uploadedImage.startsWith(
+          "blob:"
+        )
+      ) {
+        throw new Error(
+          "Backend returned an invalid temporary image URL."
+        );
+      }
+
+      const permanentImage =
+        uploadedImage.trim();
+
+      /* --------------------------------------------------------
+         UPDATE PROFILE IMAGE IN DATABASE
+      -------------------------------------------------------- */
+
+      const profileResponse =
         await fetch(
           `${API_URL}/profile`,
           {
@@ -591,24 +884,32 @@ export default function ProfilePage() {
             },
 
             body: JSON.stringify({
-              name: name.trim(),
-              phone: phone.trim(),
+              name: profile.name.trim(),
+
+              phone:
+                profile.phone.trim(),
+
               department:
-                department.trim(),
-              year,
+                profile.department.trim(),
+
+              year: profile.year,
+
               profile_image:
-                savedImageUrl,
-              notifications,
-              theme,
+                permanentImage,
             }),
           }
         );
 
-      // --------------------------------------------------------
-      // AUTH ERROR
-      // --------------------------------------------------------
+      /* --------------------------------------------------------
+         AUTH ERROR
+      -------------------------------------------------------- */
 
-      if (response.status === 401) {
+      if (
+        profileResponse.status ===
+        401
+      ) {
+        clearAuth();
+
         toast.error(
           "Session expired. Please login again."
         );
@@ -617,320 +918,153 @@ export default function ProfilePage() {
         return;
       }
 
-      // --------------------------------------------------------
-      // PROFILE UPDATE ERROR
-      // --------------------------------------------------------
+      /* --------------------------------------------------------
+         PROFILE SAVE ERROR
+      -------------------------------------------------------- */
 
-      if (!response.ok) {
+      if (!profileResponse.ok) {
         const errorData =
-          await response
+          await profileResponse
             .json()
-            .catch(() => ({}));
+            .catch(() => null);
 
         throw new Error(
-          errorData.detail ||
-            errorData.message ||
-            "Failed to update profile"
+          getApiErrorMessage(
+            errorData,
+            "Failed to save profile image"
+          )
         );
       }
 
-      const updatedData =
-        await response.json();
+      const savedProfile =
+        await profileResponse
+          .json()
+          .catch(() => null);
 
-      console.log(
-        "========== UPDATED PROFILE =========="
-      );
-      console.log(updatedData);
-      console.log(
-        "======================================"
-      );
+      /* --------------------------------------------------------
+         UPDATE LOCAL IMAGE
+      -------------------------------------------------------- */
 
-      // ========================================================
-      // IMPORTANT:
-      //
-      // Your current PUT /profile backend may only return:
-      //
-      // {
-      //   "message": "Profile Updated Successfully 🚀"
-      // }
-      //
-      // Therefore DON'T depend on updatedData.profile_image.
-      //
-      // We already have the permanent image path from the upload
-      // endpoint.
-      // ========================================================
+      setProfile((current) => ({
+        ...current,
 
-      setProfileImage(
-        savedImageUrl
-      );
+        profile_image:
+          savedProfile?.profile_image ??
+          permanentImage,
+      }));
 
-      // --------------------------------------------------------
-      // UPDATE LOCAL STATE
-      // --------------------------------------------------------
+      setImagePreview("");
 
-      if (
-        updatedData.name !== undefined
-      ) {
-        setName(
-          updatedData.name
-        );
-
-        localStorage.setItem(
-          "userName",
-          updatedData.name
-        );
-      }
-
-      if (
-        updatedData.email !== undefined
-      ) {
-        setEmail(
-          updatedData.email
-        );
-
-        localStorage.setItem(
-          "userEmail",
-          updatedData.email
-        );
-
-        localStorage.setItem(
-          "email",
-          updatedData.email
-        );
-      }
-
-      if (
-        updatedData.phone !== undefined
-      ) {
-        setPhone(
-          updatedData.phone ?? ""
-        );
-      }
-
-      if (
-        updatedData.department !== undefined
-      ) {
-        setDepartment(
-          updatedData.department ?? ""
-        );
-      }
-
-      if (
-        updatedData.year !== undefined
-      ) {
-        setYear(
-          updatedData.year ?? ""
-        );
-      }
-
-      if (
-        updatedData.notifications !== undefined
-      ) {
-        setNotifications(
-          updatedData.notifications
-        );
-      }
-
-      if (
-        updatedData.theme !== undefined
-      ) {
-        setTheme(
-          updatedData.theme
-        );
-      }
-
-      // --------------------------------------------------------
-      // Clear selected image file
-      // --------------------------------------------------------
-
-      setImageFile(null);
-
-      // --------------------------------------------------------
-      // Save theme preference
-      // --------------------------------------------------------
-
-      localStorage.setItem(
-        "theme",
-        theme
+      URL.revokeObjectURL(
+        temporaryPreview
       );
 
       toast.success(
-        updatedData.message ||
-          "Profile updated successfully"
+        "Profile image updated successfully."
+      );
+    } catch (error) {
+      URL.revokeObjectURL(
+        temporaryPreview
       );
 
-    } catch (error) {
+      setImagePreview("");
+
       console.error(
-        "Profile update error:",
+        "Profile image error:",
         error
       );
 
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to update profile"
+          : "Failed to update profile image"
       );
-
     } finally {
-      setSaving(false);
+      setUploadingImage(false);
     }
   };
 
-  // ============================================================
-  // LOGOUT
-  // ============================================================
+  /* ============================================================
+     DISPLAY IMAGE
+  ============================================================ */
 
-  const handleLogout = () => {
-    // ----------------------------------------------------------
-    // IMPORTANT:
-    //
-    // We intentionally DO NOT remove profileImage from MongoDB.
-    //
-    // Logout only removes authentication data from browser.
-    // The image remains associated with the user's database record.
-    // ----------------------------------------------------------
+  const displayImage = useMemo(() => {
+    if (imagePreview) {
+      return imagePreview;
+    }
 
-    localStorage.removeItem(
-      "isLoggedIn"
+    return resolveImageUrl(
+      profile.profile_image
     );
+  }, [
+    imagePreview,
+    profile.profile_image,
+    resolveImageUrl,
+  ]);
 
-    localStorage.removeItem(
-      "access_token"
-    );
-
-    localStorage.removeItem(
-      "refresh_token"
-    );
-
-    localStorage.removeItem(
-      "token_type"
-    );
-
-    localStorage.removeItem(
-      "expires_in"
-    );
-
-    localStorage.removeItem(
-      "userEmail"
-    );
-
-    localStorage.removeItem(
-      "email"
-    );
-
-    localStorage.removeItem(
-      "userName"
-    );
-
-    localStorage.removeItem(
-      "userRole"
-    );
-
-    toast.success(
-      "Logged Out Successfully"
-    );
-
-    router.replace("/login");
-  };
-
-  // ============================================================
-  // CLEANUP TEMPORARY PREVIEW
-  // ============================================================
-
-  useEffect(() => {
-    return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
-      }
-    };
-  }, [imagePreview]);
-
-  // ============================================================
-  // LOADING
-  // ============================================================
+  /* ============================================================
+     LOADING SCREEN
+  ============================================================ */
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-black flex items-center justify-center text-white">
-        <h1 className="text-3xl font-bold text-orange-500">
-          Loading Profile...
-        </h1>
+      <main className="flex min-h-screen items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-orange-500" />
+
+          <h1 className="text-xl font-semibold">
+            Loading Profile...
+          </h1>
+        </div>
       </main>
     );
   }
 
-  // ============================================================
-  // WHICH IMAGE SHOULD BE DISPLAYED?
-  //
-  // imagePreview = newly selected image
-  // profileImage = saved database image
-  //
-  // Preview takes priority only BEFORE Save.
-  // ============================================================
-
-  const displayImage =
-    imagePreview ||
-    resolveImageUrl(profileImage);
-
-  // ============================================================
-  // PAGE
-  // ============================================================
+  /* ============================================================
+     PAGE
+  ============================================================ */
 
   return (
     <>
       <Navbar />
 
       <main className="min-h-screen bg-black text-white">
+        {/* =====================================================
+            PROFILE HERO
+        ===================================================== */}
 
-        {/* ======================================================
-            PROFILE HEADER
-        ====================================================== */}
-
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-80 rounded-b-[50px] relative flex flex-col items-center justify-center">
+        <section className="relative flex min-h-[320px] flex-col items-center justify-center rounded-b-[45px] bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-10">
+          {/* PROFILE IMAGE */}
 
           <div className="relative">
-
             {displayImage ? (
-
               <img
                 src={displayImage}
                 alt="Profile"
-                className="w-40 h-40 rounded-full border-4 border-white object-cover"
+                className="h-36 w-36 rounded-full border-4 border-white object-cover shadow-2xl sm:h-40 sm:w-40"
                 onError={(event) => {
                   console.error(
                     "Failed to load profile image:",
                     displayImage
                   );
 
-                  // ------------------------------------------------
-                  // IMPORTANT:
-                  //
-                  // Do NOT delete the database value here.
-                  //
-                  // A browser image error should not modify MongoDB.
-                  // ------------------------------------------------
-
                   event.currentTarget.style.display =
                     "none";
                 }}
               />
-
             ) : (
-
-              <div className="w-40 h-40 rounded-full border-4 border-white bg-zinc-800 flex items-center justify-center text-5xl font-bold">
-
-                {name
-                  ? name
+              <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-white bg-zinc-800 text-5xl font-bold shadow-2xl sm:h-40 sm:w-40">
+                {profile.name
+                  ? profile.name
                       .charAt(0)
                       .toUpperCase()
                   : "U"}
-
               </div>
-
             )}
 
-            <label className="absolute bottom-0 right-0 bg-black p-3 rounded-full cursor-pointer hover:bg-zinc-800 transition">
+            {/* CAMERA */}
 
+            <label className="absolute bottom-0 right-0 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-black text-white shadow-lg transition hover:bg-zinc-800">
               <Camera size={20} />
 
               <input
@@ -940,299 +1074,314 @@ export default function ProfilePage() {
                 onChange={
                   handleImageChange
                 }
+                disabled={
+                  uploadingImage
+                }
               />
-
             </label>
-
           </div>
 
-          <h1 className="text-4xl font-bold mt-5">
-            {name || "User"}
+          {/* NAME */}
+
+          <h1 className="mt-5 text-3xl font-bold sm:text-4xl">
+            {profile.name || "User"}
           </h1>
 
-          <p className="text-white/80 mt-2 text-lg">
-            {email}
+          {/* EMAIL */}
+
+          <p className="mt-2 text-base text-white/80 sm:text-lg">
+            {profile.email}
           </p>
 
-        </div>
+          {/* IMAGE STATUS */}
 
-        <div className="max-w-6xl mx-auto p-6 md:p-10">
+          {uploadingImage ? (
+            <p className="mt-3 rounded-full bg-black/20 px-4 py-1.5 text-sm text-white">
+              Updating profile image...
+            </p>
+          ) : null}
+        </section>
 
-          {/* ====================================================
+        {/* =====================================================
+            CONTENT
+        ===================================================== */}
+
+        <div className="mx-auto w-full max-w-6xl px-5 py-8 md:px-8 md:py-10">
+          {/* ===================================================
               ACCOUNT INFORMATION
-          ==================================================== */}
+          =================================================== */}
 
-          <div className="bg-zinc-900 p-8 rounded-3xl border border-zinc-800">
+          <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl md:p-8">
+            {/* HEADER */}
 
-            <h2 className="text-3xl font-bold mb-8">
-              Account Information
-            </h2>
+            <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold sm:text-3xl">
+                  Account Information
+                </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <p className="mt-2 text-sm text-zinc-500">
+                  Your profile information is
+                  saved automatically.
+                </p>
+              </div>
 
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={name}
-                onChange={(e) =>
-                  setName(
-                    e.target.value
-                  )
-                }
-                className="bg-zinc-800 p-4 rounded-2xl outline-none border border-transparent focus:border-orange-500"
-              />
+              {/* SAVE STATUS */}
 
-              <input
-                type="text"
-                placeholder="Phone Number"
-                value={phone}
-                onChange={(e) =>
-                  setPhone(
-                    e.target.value
-                  )
-                }
-                className="bg-zinc-800 p-4 rounded-2xl outline-none border border-transparent focus:border-orange-500"
-              />
+              <div className="flex items-center gap-2 text-sm">
+                {savingProfile ? (
+                  <>
+                    <div className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />
 
-              <input
-                type="text"
-                placeholder="Department"
-                value={department}
-                onChange={(e) =>
-                  setDepartment(
-                    e.target.value
-                  )
-                }
-                className="bg-zinc-800 p-4 rounded-2xl outline-none border border-transparent focus:border-orange-500"
-              />
+                    <span className="text-orange-400">
+                      Saving...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2
+                      size={16}
+                      className="text-emerald-400"
+                    />
 
-              <select
-                value={year}
-                onChange={(e) =>
-                  setYear(
-                    e.target.value
-                  )
-                }
-                className="bg-zinc-800 p-4 rounded-2xl outline-none border border-transparent focus:border-orange-500"
-              >
-
-                <option value="">
-                  Select Year
-                </option>
-
-                <option value="1st Year">
-                  1st Year
-                </option>
-
-                <option value="2nd Year">
-                  2nd Year
-                </option>
-
-                <option value="3rd Year">
-                  3rd Year
-                </option>
-
-                <option value="4th Year">
-                  4th Year
-                </option>
-
-              </select>
-
+                    <span className="text-emerald-400">
+                      Saved
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
 
-          </div>
+            {/* FORM */}
 
-          {/* ====================================================
-              LIVE STATS
-          ==================================================== */}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              {/* NAME */}
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-400">
+                  Full Name
+                </span>
 
-            <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800">
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={profile.name}
+                  onChange={(event) =>
+                    setProfile(
+                      (current) => ({
+                        ...current,
+                        name: event.target.value,
+                      })
+                    )
+                  }
+                  onBlur={
+                    updateProfile
+                  }
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
+                />
+              </label>
 
-              <ShoppingBag
-                className="text-orange-500"
-                size={35}
-              />
+              {/* PHONE */}
 
-              <h3 className="text-4xl font-bold mt-5">
-                {totalOrders}
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-400">
+                  Phone Number
+                </span>
+
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="Phone Number"
+                  value={profile.phone}
+                  onChange={(event) =>
+                    setProfile(
+                      (current) => ({
+                        ...current,
+                        phone: event.target.value.replace(
+                          /\D/g,
+                          ""
+                        ),
+                      })
+                    )
+                  }
+                  onBlur={
+                    updateProfile
+                  }
+                  maxLength={10}
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
+                />
+              </label>
+
+              {/* DEPARTMENT */}
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-400">
+                  Department
+                </span>
+
+                <input
+                  type="text"
+                  placeholder="Department"
+                  value={
+                    profile.department
+                  }
+                  onChange={(event) =>
+                    setProfile(
+                      (current) => ({
+                        ...current,
+                        department:
+                          event.target.value,
+                      })
+                    )
+                  }
+                  onBlur={
+                    updateProfile
+                  }
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
+                />
+              </label>
+
+              {/* YEAR */}
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-zinc-400">
+                  Academic Year
+                </span>
+
+                <select
+                  value={profile.year}
+                  onChange={(event) =>
+                    setProfile(
+                      (current) => ({
+                        ...current,
+                        year: event.target.value,
+                      })
+                    )
+                  }
+                  onBlur={
+                    updateProfile
+                  }
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition focus:border-orange-500"
+                >
+                  <option value="">
+                    Select Year
+                  </option>
+
+                  <option value="1st Year">
+                    1st Year
+                  </option>
+
+                  <option value="2nd Year">
+                    2nd Year
+                  </option>
+
+                  <option value="3rd Year">
+                    3rd Year
+                  </option>
+
+                  <option value="4th Year">
+                    4th Year
+                  </option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          {/* ===================================================
+              LIVE ACCOUNT STATISTICS
+          =================================================== */}
+
+          <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+            {/* ORDERS */}
+
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl transition hover:border-zinc-700">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10">
+                <ShoppingBag
+                  className="text-orange-500"
+                  size={26}
+                />
+              </div>
+
+              <h3 className="mt-5 text-4xl font-bold">
+                {profile.total_orders}
               </h3>
 
-              <p className="text-gray-400 mt-2">
-                Orders
+              <p className="mt-2 text-gray-400">
+                Total Orders
               </p>
-
             </div>
 
-            <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800">
+            {/* WALLET */}
 
-              <Wallet
-                className="text-green-400"
-                size={35}
-              />
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl transition hover:border-zinc-700">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500/10">
+                <Wallet
+                  className="text-green-400"
+                  size={26}
+                />
+              </div>
 
-              <h3 className="text-4xl font-bold mt-5">
+              <h3 className="mt-5 text-4xl font-bold">
                 ₹
-                {wallet.toLocaleString(
+                {profile.wallet.toLocaleString(
                   "en-IN"
                 )}
               </h3>
 
-              <p className="text-gray-400 mt-2">
-                Wallet
+              <p className="mt-2 text-gray-400">
+                Wallet Balance
               </p>
-
             </div>
 
-            <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800">
+            {/* TOTAL SPENT */}
 
-              <Heart
-                className="text-red-400"
-                size={35}
-              />
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl transition hover:border-zinc-700">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10">
+                <Wallet
+                  className="text-blue-400"
+                  size={26}
+                />
+              </div>
 
-              <h3 className="text-4xl font-bold mt-5">
-                {favorites}
-              </h3>
-
-              <p className="text-gray-400 mt-2">
-                Favorites
-              </p>
-
-            </div>
-
-            <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800">
-
-              <Wallet
-                className="text-blue-400"
-                size={35}
-              />
-
-              <h3 className="text-4xl font-bold mt-5">
+              <h3 className="mt-5 text-4xl font-bold">
                 ₹
-                {totalSpent.toLocaleString(
+                {profile.total_spent.toLocaleString(
                   "en-IN"
                 )}
               </h3>
 
-              <p className="text-gray-400 mt-2">
+              <p className="mt-2 text-gray-400">
                 Total Spent
               </p>
-
             </div>
+          </section>
 
-          </div>
+          {/* ===================================================
+              PROFILE INFORMATION
+          =================================================== */}
 
-          {/* ====================================================
-              SETTINGS
-          ==================================================== */}
-
-          <div className="bg-zinc-900 p-8 rounded-3xl border border-zinc-800 mt-10">
-
-            <h2 className="text-3xl font-bold mb-8">
-              Settings
-            </h2>
-
-            <div className="flex flex-col gap-8">
-
-              <div className="flex justify-between items-center">
-
-                <div className="flex items-center gap-4">
-
-                  <Bell />
-
-                  <p className="text-xl">
-                    Notifications
-                  </p>
-
-                </div>
-
-                <input
-                  type="checkbox"
-                  checked={notifications}
-                  onChange={(e) =>
-                    setNotifications(
-                      e.target.checked
-                    )
-                  }
-                  className="w-6 h-6"
-                />
-
+          <section className="mt-8 rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl md:p-7">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
+                <User size={20} />
               </div>
 
-              <div className="flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-white">
+                  Profile information
+                </h3>
 
-                <div className="flex items-center gap-4">
-
-                  <Moon />
-
-                  <p className="text-xl">
-                    Dark Theme
-                  </p>
-
-                </div>
-
-                <input
-                  type="checkbox"
-                  checked={
-                    theme === "dark"
-                  }
-                  onChange={(e) =>
-                    setTheme(
-                      e.target.checked
-                        ? "dark"
-                        : "light"
-                    )
-                  }
-                  className="w-6 h-6"
-                />
-
+                <p className="mt-1 text-sm leading-6 text-zinc-500">
+                  Your account information and
+                  profile image are connected to
+                  your authenticated account.
+                  Changes are saved automatically
+                  through the existing backend.
+                </p>
               </div>
-
             </div>
-
-          </div>
-
-          {/* ====================================================
-              ACTION BUTTONS
-          ==================================================== */}
-
-          <div className="flex flex-col md:flex-row gap-6 mt-10">
-
-            <button
-              onClick={
-                handleSaveProfile
-              }
-              disabled={saving}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 transition-all py-5 rounded-3xl text-2xl font-bold flex items-center justify-center gap-3 disabled:opacity-50"
-            >
-
-              <Save />
-
-              {saving
-                ? "Saving..."
-                : "Save Changes"}
-
-            </button>
-
-            <button
-              onClick={
-                handleLogout
-              }
-              className="flex-1 bg-red-500 hover:bg-red-600 transition-all py-5 rounded-3xl text-2xl font-bold flex items-center justify-center gap-3"
-            >
-
-              <LogOut />
-
-              Logout
-
-            </button>
-
-          </div>
-
+          </section>
         </div>
-
       </main>
     </>
   );
