@@ -29,7 +29,7 @@ def create_user_document(
 
         "profile_image": "",
 
-        "wallet_balance": 0,
+        "wallet": 0,
 
         "wallet_history": [],
 

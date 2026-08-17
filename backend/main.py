@@ -14,7 +14,7 @@ import hashlib
 import bcrypt
 import jwt
 
-
+from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
@@ -25,6 +25,8 @@ import cloudinary.uploader
 import razorpay
 import csv
 import io
+import uuid
+import shutil
 from fastapi.responses import StreamingResponse
 from typing import Dict, Any
 from bson import ObjectId
@@ -172,6 +174,7 @@ sio = socketio.AsyncServer(
     cors_allowed_origins=ALLOWED_ORIGINS
 )
 
+
 # =====================================
 # FASTAPI APP
 # =====================================
@@ -183,6 +186,29 @@ async def lifespan(app: FastAPI):
 
 
 fastapi_app = FastAPI(lifespan=lifespan)
+
+# ============================================================
+# PROFILE IMAGE STORAGE
+# ============================================================
+
+# Always resolve the upload directory relative to main.py.
+# This prevents files from being saved into a different
+# "uploads" directory depending on where Uvicorn is started.
+
+BASE_DIR = Path(__file__).resolve().parent
+
+PROFILE_UPLOAD_DIR = (
+    BASE_DIR / "uploads" / "profile"
+)
+
+PROFILE_UPLOAD_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+logger.info(
+    f"📁 Profile image directory: {PROFILE_UPLOAD_DIR}"
+)
 
 # =====================================
 # CORS
@@ -261,37 +287,118 @@ def verify_token(token: str):
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
-    token = credentials.credentials
+    try:
+        token = credentials.credentials
 
-    print("========== DEBUG ==========")
-    print("TOKEN:", token)
+        print("========== AUTH DEBUG ==========")
+        print("TOKEN RECEIVED:", bool(token))
 
-    payload = verify_token(token)
+        # ============================================================
+        # 1. VERIFY ACCESS TOKEN
+        # ============================================================
 
-    print("PAYLOAD:", payload)
+        payload = verify_token(token)
 
-    if payload.get("type") != "access":
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token type",
+        print("TOKEN PAYLOAD:", payload)
+
+        if payload.get("type") != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
+            )
+
+        # ============================================================
+        # 2. GET EMAIL FROM TOKEN
+        # ============================================================
+
+        email = normalize_email(
+            payload.get("email", "")
         )
 
-    print("EMAIL:", payload.get("email"))
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: email missing",
+            )
 
-    user = users_collection.find_one({"email": payload.get("email")})
+        print("TOKEN EMAIL:", email)
 
-    print("USER:", user)
+        # ============================================================
+        # 3. FIND CURRENT USER IN DATABASE
+        # ============================================================
 
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="User not found",
+        user = users_collection.find_one(
+            {"email": email}
         )
 
-    print("===========================")
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
 
-    return payload
+        print("DATABASE USER:", user.get("email"))
+        print("DATABASE ROLE:", user.get("role"))
 
+        # ============================================================
+        # 4. CHECK ACCOUNT STATUS
+        # ============================================================
+
+        if not user.get("is_active", True):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is deactivated",
+            )
+
+        # ============================================================
+        # 5. RETURN CURRENT DATABASE USER
+        # ============================================================
+
+        current_user = {
+            "id": str(user.get("_id")),
+            "email": user.get("email"),
+            "name": user.get("name", ""),
+            "role": user.get(
+                "role",
+                UserRole.USER
+            ),
+            "phone": user.get("phone", ""),
+            "department": user.get(
+                "department",
+                ""
+            ),
+            "year": user.get(
+                "year",
+                ""
+            ),
+            "profile_image": user.get(
+                "profile_image",
+                ""
+            ),
+            "is_active": user.get(
+                "is_active",
+                True
+            ),
+        }
+
+        print("CURRENT USER:", current_user)
+        print("CURRENT ROLE:", current_user["role"])
+        print("================================")
+
+        return current_user
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(
+            f"Authentication error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+        )
 
 def get_current_user_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
@@ -305,17 +412,27 @@ def get_current_user_optional(
 
 
 def require_role(required_role: str):
-    def role_checker(current_user: Dict[str, Any] = Depends(get_current_user)):
-
+    def role_checker(
+        current_user: Dict[str, Any] = Depends(
+            get_current_user
+        )
+    ):
         print("========== ROLE DEBUG ==========")
-        print("Required:", required_role)
-        print("Current :", current_user.get("role"))
-        print("Current User:", current_user)
+        print("Required role:", required_role)
+        print("Current role:", current_user.get("role"))
+        print("Current user:", current_user)
 
-        if current_user.get("role").lower() != required_role.lower():
+        current_role = str(
+            current_user.get("role", "")
+        ).upper()
+
+        if current_role != required_role.upper():
             raise HTTPException(
-                status_code=403,
-                detail=f"Access denied. {required_role} role required."
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"Access denied. "
+                    f"{required_role} role required."
+                ),
             )
 
         return current_user
@@ -1125,16 +1242,22 @@ def change_password(data: ChangePasswordData, current_user: Dict[str, Any] = Dep
         )
 
 
-# =====================================
-# USER ROUTES (Protected)
-# =====================================
+# ============================================================
+# GET CURRENT USER PROFILE
+# ============================================================
 
 @fastapi_app.get("/profile")
-def get_profile(current_user: Dict[str, Any] = Depends(get_current_user)):
+def get_profile(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     try:
         user = users_collection.find_one(
-            {"email": current_user["email"]},
-            {"_id": 0, "password": 0, "refresh_token_hash": 0}
+            {
+                "email": current_user["email"]
+            },
+            {
+                "password": 0
+            }
         )
 
         if not user:
@@ -1143,30 +1266,92 @@ def get_profile(current_user: Dict[str, Any] = Depends(get_current_user)):
                 detail="User not found"
             )
 
-        return user
+        return {
+            "id": str(user.get("_id")),
+            "email": user.get("email", ""),
+            "name": user.get("name", ""),
+            "phone": user.get("phone", ""),
+            "department": user.get("department", ""),
+            "year": user.get("year", ""),
+
+            # IMPORTANT
+            "profile_image": user.get(
+                "profile_image",
+                ""
+            ),
+
+            "notifications": user.get(
+                "notifications",
+                True
+            ),
+
+            "theme": user.get(
+                "theme",
+                "dark"
+            ),
+
+            "wallet": user.get(
+                "wallet",
+                0
+            ),
+
+            "total_orders": user.get(
+                "total_orders",
+                0
+            ),
+
+            "total_spent": user.get(
+                "total_spent",
+                0
+            ),
+        }
 
     except HTTPException:
         raise
+
     except Exception as e:
-        logger.error(f"Get profile error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
+
+        logger.error(
+            f"Get profile error: {e}"
         )
 
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to load profile"
+        )
+
+# ============================================================
+# UPDATE CURRENT USER PROFILE
+# ============================================================
 
 @fastapi_app.put("/profile")
-def update_profile(profile: ProfileData, current_user: Dict[str, Any] = Depends(get_current_user)):
+def update_profile(
+    profile: ProfileData,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     try:
+
+        # --------------------------------------------------------
+        # IMPORTANT:
+        # Update ONLY the authenticated user's record.
+        # --------------------------------------------------------
+
         result = users_collection.update_one(
-            {"email": current_user["email"]},
+            {
+                "email": current_user["email"]
+            },
             {
                 "$set": {
                     "name": profile.name,
                     "phone": profile.phone,
                     "department": profile.department,
                     "year": profile.year,
+
+                    # IMPORTANT:
+                    # This must contain the permanent backend
+                    # image path, never a blob URL.
                     "profile_image": profile.profile_image,
+
                     "notifications": profile.notifications,
                     "theme": profile.theme,
                 }
@@ -1174,24 +1359,247 @@ def update_profile(profile: ProfileData, current_user: Dict[str, Any] = Depends(
         )
 
         if result.matched_count == 0:
+
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
 
-        logger.info(f"✅ Profile updated: {current_user['email']}")
+        # --------------------------------------------------------
+        # Read the saved profile back from MongoDB
+        # --------------------------------------------------------
 
-        return {"message": "Profile Updated Successfully 🚀"}
+        updated_user = users_collection.find_one(
+            {
+                "email": current_user["email"]
+            },
+            {
+                "_id": 0,
+                "password": 0,
+                "refresh_token_hash": 0,
+            }
+        )
+
+        if not updated_user:
+
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        saved_profile_image = (
+            updated_user.get(
+                "profile_image",
+                ""
+            ) or ""
+        )
+
+        logger.info(
+            f"✅ Profile updated: "
+            f"{current_user['email']}"
+        )
+
+        logger.info(
+            f"🖼️ Saved profile image: "
+            f"{saved_profile_image}"
+        )
+
+        return {
+            "success": True,
+
+            "message":
+                "Profile Updated Successfully 🚀",
+
+            "name":
+                updated_user.get(
+                    "name",
+                    ""
+                ),
+
+            "email":
+                updated_user.get(
+                    "email",
+                    ""
+                ),
+
+            "phone":
+                updated_user.get(
+                    "phone",
+                    ""
+                ),
+
+            "department":
+                updated_user.get(
+                    "department",
+                    ""
+                ),
+
+            "year":
+                updated_user.get(
+                    "year",
+                    ""
+                ),
+
+            "profile_image":
+                saved_profile_image,
+
+            "notifications":
+                updated_user.get(
+                    "notifications",
+                    True
+                ),
+
+            "theme":
+                updated_user.get(
+                    "theme",
+                    "dark"
+                ),
+        }
 
     except HTTPException:
         raise
+
     except Exception as e:
-        logger.error(f"Update profile error: {e}")
+
+        logger.error(
+            f"Update profile error: {e}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
 
+# ============================================================
+# UPLOAD PROFILE IMAGE
+# ============================================================
+
+@fastapi_app.post("/profile/upload-image")
+async def upload_profile_image(
+    file: UploadFile = File(...),
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    try:
+        # ------------------------------------------------------
+        # Validate file type
+        # ------------------------------------------------------
+
+        allowed_types = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp",
+        }
+
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only JPG, PNG and WEBP images are allowed",
+            )
+
+        # ------------------------------------------------------
+        # Read file
+        # ------------------------------------------------------
+
+        file_content = await file.read()
+
+        if not file_content:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded image is empty",
+            )
+
+        # ------------------------------------------------------
+        # Validate size
+        # ------------------------------------------------------
+
+        MAX_FILE_SIZE = 5 * 1024 * 1024
+
+        if len(file_content) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Profile image must be smaller than 5 MB",
+            )
+
+        # ------------------------------------------------------
+        # Create unique filename
+        # ------------------------------------------------------
+
+        extension = allowed_types[file.content_type]
+
+        filename = f"{uuid.uuid4().hex}{extension}"
+
+        file_path = PROFILE_UPLOAD_DIR / filename
+
+        # ------------------------------------------------------
+        # Save image permanently
+        # ------------------------------------------------------
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content)
+
+        # ------------------------------------------------------
+        # IMPORTANT:
+        #
+        # This is the permanent URL stored in MongoDB.
+        # ------------------------------------------------------
+
+        image_url = f"/uploads/profile/{filename}"
+
+        # ------------------------------------------------------
+        # Update authenticated user's record
+        # ------------------------------------------------------
+
+        result = users_collection.update_one(
+            {
+                "email": current_user["email"]
+            },
+            {
+                "$set": {
+                    "profile_image": image_url
+                }
+            }
+        )
+
+        if result.matched_count == 0:
+
+            # Remove file if user doesn't exist
+            if file_path.exists():
+                file_path.unlink()
+
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        logger.info(
+            f"✅ Profile image saved permanently: "
+            f"{current_user['email']} -> {image_url}"
+        )
+
+        # ------------------------------------------------------
+        # Return permanent URL
+        # ------------------------------------------------------
+
+        return {
+            "success": True,
+            "message": "Profile image uploaded successfully",
+            "profile_image": image_url,
+            "image_url": image_url,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        logger.error(
+            f"Profile image upload error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload profile image",
+        )
 
 @fastapi_app.get("/wallet/balance")
 def get_wallet_balance(current_user: Dict[str, Any] = Depends(get_current_user)):
@@ -1223,16 +1631,61 @@ def get_wallet_balance(current_user: Dict[str, Any] = Depends(get_current_user))
 
 @fastapi_app.post("/wallet/create-topup-order")
 @limiter.limit("10/minute")
-def create_wallet_topup_order(request: Request, data: WalletTopupData, current_user: Dict[str, Any] = Depends(get_current_user)):
+def create_wallet_topup_order(
+    request: Request,
+    data: WalletTopupData,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     try:
-        amount = round(data.amount, 2)
+        logger.info(
+            f"💰 Wallet top-up request from {current_user['email']}: "
+            f"amount={data.amount}"
+        )
+
+        # ============================================================
+        # 1. VALIDATE AMOUNT
+        # ============================================================
+
+        amount = round(float(data.amount), 2)
+
+        if amount <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Wallet amount must be greater than ₹0"
+            )
+
+        # Optional safety limit
+        if amount > 50000:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Maximum wallet top-up amount is ₹50,000"
+            )
+
         amount_paise = int(round(amount * 100))
+
+        logger.info(
+            f"💰 Creating Razorpay wallet order: "
+            f"₹{amount} = {amount_paise} paise"
+        )
+
+        # ============================================================
+        # 2. CREATE RAZORPAY ORDER
+        # ============================================================
 
         razorpay_order = razorpay_client.order.create({
             "amount": amount_paise,
             "currency": "INR",
             "payment_capture": 1
         })
+
+        logger.info(
+            f"✅ Razorpay wallet order created: "
+            f"{razorpay_order['id']}"
+        )
+
+        # ============================================================
+        # 3. CREATE SIGNED INTENT
+        # ============================================================
 
         order_intent = create_signed_intent(
             "wallet_topup",
@@ -1243,7 +1696,9 @@ def create_wallet_topup_order(request: Request, data: WalletTopupData, current_u
             },
         )
 
-        logger.info(f"💰 Wallet top-up order created: {razorpay_order['id']} for {current_user['email']}")
+        # ============================================================
+        # 4. RETURN DATA TO FRONTEND
+        # ============================================================
 
         return {
             "success": True,
@@ -1254,11 +1709,17 @@ def create_wallet_topup_order(request: Request, data: WalletTopupData, current_u
             "order_intent": order_intent,
         }
 
+    except HTTPException:
+        raise
+
     except Exception as e:
-        logger.error(f"Create wallet topup order error: {e}")
+        logger.exception(
+            f"❌ Create wallet topup order error: {repr(e)}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
+            detail="Failed to create wallet top-up order"
         )
 
 
@@ -1364,6 +1825,318 @@ def verify_wallet_topup(data: VerifyWalletTopupData, current_user: Dict[str, Any
             detail="Internal Server Error"
         )
 
+@fastapi_app.post("/wallet/pay-order")
+async def pay_order_with_wallet(
+    data: CreateFoodOrderData,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    try:
+        # ============================================================
+        # 1. CALCULATE REAL FOOD PRICES FROM DATABASE
+        # ============================================================
+
+        order_items, subtotal = _price_items_from_db(data.items)
+
+        subtotal = round(float(subtotal), 2)
+
+        delivery_fee = 20.00
+
+        total = round(subtotal + delivery_fee, 2)
+
+        if total <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid order amount"
+            )
+
+        # ============================================================
+        # 2. FIND USER
+        # ============================================================
+
+        user = users_collection.find_one(
+            {"email": current_user["email"]}
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        wallet_balance = float(
+            user.get("wallet", 0)
+        )
+
+        # ============================================================
+        # 3. CHECK WALLET BALANCE
+        # ============================================================
+
+        if wallet_balance < total:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Insufficient wallet balance. "
+                    f"Available: ₹{wallet_balance:.2f}, "
+                    f"Required: ₹{total:.2f}"
+                )
+            )
+
+        # ============================================================
+        # 4. CREATE ORDER
+        # ============================================================
+
+        now = datetime.now()
+
+        pickup_code = random.randint(
+            1000,
+            9999
+        )
+
+        token = get_next_token()
+
+        order = {
+            "items": order_items,
+
+            "total": total,
+
+            "email": current_user["email"],
+
+            "name": data.name,
+
+            "phone": data.phone,
+
+            "location": data.location,
+
+            "payment_method": "WALLET",
+
+            "payment_status": PaymentStatus.PAID,
+
+            "payment_id": None,
+
+            "razorpay_order_id": None,
+
+            "razorpay_signature": None,
+
+            "payment_date": now.strftime(
+                "%d %b %Y, %I:%M %p"
+            ),
+
+            "payment_amount": total,
+
+            "status": OrderStatus.PREPARING,
+
+            "created_at": now,
+
+            "date": now.strftime(
+                "%d %b %Y, %I:%M %p"
+            ),
+
+            "estimated_time": "15-20 mins",
+
+            "pickup_code": pickup_code,
+
+            "token": token,
+
+            "user_email": current_user["email"],
+        }
+
+        # ============================================================
+        # 5. DEDUCT WALLET BALANCE
+        # ============================================================
+
+        wallet_update = users_collection.update_one(
+            {
+                "email": current_user["email"],
+
+                # Important:
+                # Only update if the balance is still enough.
+                "wallet": {
+                    "$gte": total
+                }
+            },
+            {
+                "$inc": {
+                    "wallet": -total,
+                    "total_orders": 1,
+                    "total_spent": total
+                },
+
+                "$push": {
+                    "wallet_history": {
+                        "type": "debit",
+
+                        "amount": total,
+
+                        "reason": "Food order payment",
+
+                        "date": now.strftime(
+                            "%d %b %Y, %I:%M %p"
+                        ),
+
+                        "order_token": token,
+                    }
+                }
+            }
+        )
+
+        if wallet_update.modified_count != 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Insufficient wallet balance"
+            )
+
+        # ============================================================
+        # 6. INSERT ORDER
+        # ============================================================
+
+        try:
+
+            result = orders_collection.insert_one(
+                order
+            )
+
+        except Exception as e:
+
+            # If order insertion fails, refund the wallet
+            users_collection.update_one(
+                {
+                    "email": current_user["email"]
+                },
+                {
+                    "$inc": {
+                        "wallet": total,
+                        "total_orders": -1,
+                        "total_spent": -total
+                    },
+
+                    "$pull": {
+                        "wallet_history": {
+                            "order_token": token
+                        }
+                    }
+                }
+            )
+
+            raise e
+
+        # ============================================================
+        # 7. GET SAVED ORDER
+        # ============================================================
+
+        saved_order = orders_collection.find_one(
+            {
+                "_id": result.inserted_id
+            },
+            {
+                "_id": 0
+            }
+        )
+
+        # ============================================================
+        # 8. CREATE PAYMENT RECORD
+        # ============================================================
+
+        payment = {
+            "payment_id": f"WALLET-{token}",
+
+            "order_id": str(
+                result.inserted_id
+            ),
+
+            "razorpay_order_id": None,
+
+            "email": current_user["email"],
+
+            "user_email": current_user["email"],
+
+            "amount": total,
+
+            "currency": "INR",
+
+            "status": PaymentStatus.PAID,
+
+            "payment_method": "WALLET",
+
+            "purpose": "food_order",
+
+            "payment_date": datetime.now(
+                timezone.utc
+            ),
+
+            "refund_status": None,
+
+            "refund_amount": 0.0,
+
+            "refund_date": None,
+
+            "refund_payment_id": None,
+        }
+
+        payments_collection.insert_one(
+            payment
+        )
+
+        # ============================================================
+        # 9. SEND ORDER UPDATE
+        # ============================================================
+
+        try:
+            await safe_emit_order_update(
+                saved_order
+            )
+        except Exception as e:
+            logger.warning(
+                f"Order update emit failed: {e}"
+            )
+
+        # ============================================================
+        # 10. START ORDER FLOW
+        # ============================================================
+
+        threading.Thread(
+            target=update_order_flow,
+            args=(result.inserted_id,),
+            daemon=True
+        ).start()
+
+        logger.info(
+            f"✅ Wallet order created for "
+            f"{current_user['email']}: ₹{total}"
+        )
+
+        # ============================================================
+        # 11. RESPONSE
+        # ============================================================
+
+        return {
+            "success": True,
+
+            "message": "Order placed using wallet successfully",
+
+            "order": saved_order,
+
+            "payment_id": payment[
+                "payment_id"
+            ],
+
+            "amount_paid": total,
+
+            "wallet_balance": wallet_balance - total,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        logger.error(
+            f"Wallet order error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error"
+        )
 
 # =====================================
 # ORDER ROUTES
@@ -3878,6 +4651,652 @@ def admin_dashboard(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
+# ============================================================
+# ADMIN CUSTOMER MANAGEMENT
+# ============================================================
+
+@fastapi_app.get("/admin/customers")
+def get_admin_customers(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    search: str = "",
+    status_filter: str = "ALL",
+    sort: str = "LATEST",
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    try:
+        # ========================================================
+        # 1. GET ONLY CUSTOMER ACCOUNTS
+        # ========================================================
+
+        customer_query: Dict[str, Any] = {
+            "role": UserRole.USER
+        }
+
+        # ========================================================
+        # 2. SEARCH
+        # ========================================================
+
+        search_value = search.strip()
+
+        if search_value:
+            customer_query["$or"] = [
+                {
+                    "name": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+                {
+                    "email": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+                {
+                    "phone": {
+                        "$regex": search_value,
+                        "$options": "i",
+                    }
+                },
+            ]
+
+        # ========================================================
+        # 3. GET USERS
+        # ========================================================
+
+        users = list(
+            users_collection.find(
+                customer_query,
+                {
+                    "_id": 1,
+                    "name": 1,
+                    "email": 1,
+                    "phone": 1,
+                    "profile_image": 1,
+                    "department": 1,
+                    "year": 1,
+                    "role": 1,
+                    "created_at": 1,
+                },
+            )
+        )
+
+        customers = []
+
+        # ========================================================
+        # 4. BUILD CUSTOMER DATA
+        # ========================================================
+
+        for user in users:
+
+            raw_email = user.get("email", "")
+
+            email = normalize_email(raw_email)
+
+            if not email:
+                continue
+
+            # ----------------------------------------------------
+            # ORDERS BELONGING TO CUSTOMER
+            # ----------------------------------------------------
+
+            order_query = {
+                "$or": [
+                    {
+                        "user_email": email
+                    },
+                    {
+                        "email": email
+                    },
+                ]
+            }
+
+            customer_orders = list(
+                orders_collection.find(
+                    order_query,
+                    {
+                        "_id": 0,
+                        "order_id": 1,
+                        "token": 1,
+                        "total": 1,
+                        "payment_amount": 1,
+                        "status": 1,
+                        "date": 1,
+                        "created_at": 1,
+                    },
+                )
+                .sort(
+                    [
+                        ("created_at", -1),
+                        ("date", -1),
+                    ]
+                )
+                .limit(5)
+            )
+
+            # ----------------------------------------------------
+            # TOTAL ORDERS
+            # ----------------------------------------------------
+
+            total_orders = orders_collection.count_documents(
+                order_query
+            )
+
+            # ----------------------------------------------------
+            # COMPLETED ORDERS
+            # ----------------------------------------------------
+
+            completed_orders = orders_collection.count_documents(
+                {
+                    "$and": [
+                        order_query,
+                        {
+                            "status": {
+                                "$regex": "^completed$",
+                                "$options": "i",
+                            }
+                        },
+                    ]
+                }
+            )
+
+            # ----------------------------------------------------
+            # PENDING ORDERS
+            # ----------------------------------------------------
+
+            pending_orders = orders_collection.count_documents(
+                {
+                    "$and": [
+                        order_query,
+                        {
+                            "status": {
+                                "$regex": "^pending$",
+                                "$options": "i",
+                            }
+                        },
+                    ]
+                }
+            )
+
+            # ----------------------------------------------------
+            # TOTAL SPENT
+            # ----------------------------------------------------
+
+            spending_pipeline = [
+                {
+                    "$match": order_query
+                },
+                {
+                    "$group": {
+                        "_id": None,
+                        "total": {
+                            "$sum": {
+                                "$convert": {
+                                    "input": {
+                                        "$ifNull": [
+                                            "$payment_amount",
+                                            "$total",
+                                        ]
+                                    },
+                                    "to": "double",
+                                    "onError": 0,
+                                    "onNull": 0,
+                                }
+                            }
+                        },
+                    },
+                },
+            ]
+
+            spending_result = list(
+                orders_collection.aggregate(
+                    spending_pipeline
+                )
+            )
+
+            total_spent = (
+                spending_result[0]["total"]
+                if spending_result
+                else 0
+            )
+
+            # ----------------------------------------------------
+            # PAYMENTS
+            # ----------------------------------------------------
+
+            payment_query = {
+                "$or": [
+                    {
+                        "user_email": email
+                    },
+                    {
+                        "email": email
+                    },
+                ]
+            }
+
+            total_payments = payments_collection.count_documents(
+                payment_query
+            )
+
+            # ----------------------------------------------------
+            # CUSTOMER STATUS
+            # ----------------------------------------------------
+            #
+            # Your current users collection does not have a
+            # reliable active/inactive field.
+            #
+            # Therefore we do not invent a database value.
+            #
+            # Customers with at least one order are displayed
+            # as Active. Customers without orders are displayed
+            # as Inactive.
+            # ----------------------------------------------------
+
+            customer_status = (
+                "Active"
+                if total_orders > 0
+                else "Inactive"
+            )
+
+            # ----------------------------------------------------
+            # RECENT ORDERS
+            # ----------------------------------------------------
+
+            recent_orders = []
+
+            for order in customer_orders:
+
+                order_total = (
+                    order.get("payment_amount")
+                    if order.get("payment_amount") is not None
+                    else order.get("total", 0)
+                )
+
+                try:
+                    order_total = float(order_total or 0)
+                except Exception:
+                    order_total = 0
+
+                recent_orders.append(
+                    {
+                        "order_id": (
+                            order.get("order_id")
+                            or order.get("token")
+                            or ""
+                        ),
+                        "token": order.get(
+                            "token",
+                            ""
+                        ),
+                        "amount": order_total,
+                        "status": order.get(
+                            "status",
+                            ""
+                        ),
+                        "date": (
+                            order.get("date")
+                            or order.get("created_at")
+                            or ""
+                        ),
+                    }
+                )
+
+            # ----------------------------------------------------
+            # CUSTOMER OBJECT
+            # ----------------------------------------------------
+
+            customers.append(
+                {
+                    "id": str(
+                        user.get("_id")
+                    ),
+
+                    "name": user.get(
+                        "name",
+                        ""
+                    ),
+
+                    "email": email,
+
+                    "phone": user.get(
+                        "phone",
+                        ""
+                    ),
+
+                    "profile_image": user.get(
+                        "profile_image",
+                        ""
+                    ),
+
+                    "department": user.get(
+                        "department",
+                        ""
+                    ),
+
+                    "year": user.get(
+                        "year",
+                        ""
+                    ),
+
+                    "total_orders": total_orders,
+
+                    "completed_orders": (
+                        completed_orders
+                    ),
+
+                    "pending_orders": (
+                        pending_orders
+                    ),
+
+                    "total_spent": round(
+                        float(
+                            total_spent or 0
+                        ),
+                        2,
+                    ),
+
+                    "total_payments": (
+                        total_payments
+                    ),
+
+                    "status": customer_status,
+
+                    "joined_at": user.get(
+                        "created_at"
+                    ),
+
+                    "recent_orders": recent_orders,
+                }
+            )
+
+        # ========================================================
+        # 5. STATUS FILTER
+        # ========================================================
+
+        if status_filter.upper() in [
+            "ACTIVE",
+            "INACTIVE",
+        ]:
+
+            customers = [
+                customer
+                for customer in customers
+                if customer["status"].upper()
+                == status_filter.upper()
+            ]
+
+        # ========================================================
+        # 6. SORT
+        # ========================================================
+
+        sort_value = sort.upper()
+
+        if sort_value == "NAME_ASC":
+
+            customers.sort(
+                key=lambda customer:
+                customer.get(
+                    "name",
+                    ""
+                ).lower()
+            )
+
+        elif sort_value == "NAME_DESC":
+
+            customers.sort(
+                key=lambda customer:
+                customer.get(
+                    "name",
+                    ""
+                ).lower(),
+                reverse=True,
+            )
+
+        elif sort_value == "SPENDING_HIGH":
+
+            customers.sort(
+                key=lambda customer:
+                customer.get(
+                    "total_spent",
+                    0
+                ),
+                reverse=True,
+            )
+
+        elif sort_value == "SPENDING_LOW":
+
+            customers.sort(
+                key=lambda customer:
+                customer.get(
+                    "total_spent",
+                    0
+                )
+            )
+
+        elif sort_value == "ORDERS_HIGH":
+
+            customers.sort(
+                key=lambda customer:
+                customer.get(
+                    "total_orders",
+                    0
+                ),
+                reverse=True,
+            )
+
+        else:
+
+            customers.sort(
+                key=lambda customer:
+                str(
+                    customer.get(
+                        "joined_at"
+                    )
+                    or ""
+                ),
+                reverse=True,
+            )
+
+        # ========================================================
+        # 7. STATISTICS
+        # ========================================================
+
+        # Get all real customer accounts for statistics.
+        all_customer_count = users_collection.count_documents(
+            {
+                "role": UserRole.USER
+            }
+        )
+
+        # Customers who have at least one order.
+        customers_with_orders = sum(
+            1
+            for customer in customers
+            if customer["total_orders"] > 0
+        )
+
+        # Active customers are currently defined as customers
+        # who have at least one order.
+        active_customers = sum(
+            1
+            for customer in customers
+            if customer["status"] == "Active"
+        )
+
+        total_orders = sum(
+            customer["total_orders"]
+            for customer in customers
+        )
+
+        total_spent = sum(
+            customer["total_spent"]
+            for customer in customers
+        )
+
+        total_payments = sum(
+            customer["total_payments"]
+            for customer in customers
+        )
+
+        # ========================================================
+        # 8. NEW CUSTOMERS
+        # ========================================================
+
+        new_customers = 0
+
+        now = datetime.now()
+
+        for customer in customers:
+
+            joined_at = customer.get(
+                "joined_at"
+            )
+
+            if not joined_at:
+                continue
+
+            try:
+
+                if isinstance(
+                    joined_at,
+                    datetime
+                ):
+
+                    if (
+                        joined_at.year
+                        == now.year
+                        and joined_at.month
+                        == now.month
+                    ):
+                        new_customers += 1
+
+                elif isinstance(
+                    joined_at,
+                    str
+                ):
+
+                    parsed_date = None
+
+                    for date_format in [
+                        "%Y-%m-%d %H:%M:%S",
+                        "%Y-%m-%d",
+                        "%d %b %Y, %I:%M %p",
+                    ]:
+
+                        try:
+                            parsed_date = (
+                                datetime.strptime(
+                                    joined_at,
+                                    date_format
+                                )
+                            )
+                            break
+
+                        except Exception:
+                            continue
+
+                    if (
+                        parsed_date
+                        and parsed_date.year
+                        == now.year
+                        and parsed_date.month
+                        == now.month
+                    ):
+                        new_customers += 1
+
+            except Exception:
+                continue
+
+        # ========================================================
+        # 9. PAGINATION
+        # ========================================================
+
+        total = len(customers)
+
+        pages = (
+            (total + limit - 1) // limit
+            if total
+            else 0
+        )
+
+        skip = (
+            (page - 1) * limit
+        )
+
+        paginated_customers = customers[
+            skip:skip + limit
+        ]
+
+        # ========================================================
+        # 10. RESPONSE
+        # ========================================================
+
+        return {
+            "success": True,
+
+            "customers":
+                paginated_customers,
+
+            "page":
+                page,
+
+            "limit":
+                limit,
+
+            "total":
+                total,
+
+            "pages":
+                pages,
+
+            "statistics": {
+                "total_customers":
+                    all_customer_count,
+
+                "active_customers":
+                    active_customers,
+
+                "new_customers":
+                    new_customers,
+
+                "customers_with_orders":
+                    customers_with_orders,
+
+                "total_orders":
+                    total_orders,
+
+                "total_spent":
+                    round(
+                        total_spent,
+                        2
+                    ),
+
+                "total_payments":
+                    total_payments,
+            },
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        logger.error(
+            f"Admin customers error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+            detail=
+                "Failed to load customers",
+        )
+
 @fastapi_app.get("/admin/users")
 def get_admin_users(
     page: int = Query(1, ge=1),
@@ -4049,12 +5468,29 @@ def send_test_notification(current_user: Dict[str, Any] = Depends(require_role(U
 if not os.path.exists("uploads"):
     os.makedirs("uploads")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# ============================================================
+# STATIC FILES
+# ============================================================
+
+UPLOADS_DIR = BASE_DIR / "uploads"
+
+UPLOADS_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
 
 fastapi_app.mount(
+
     "/uploads",
-    StaticFiles(directory=os.path.join(BASE_DIR, "uploads")),
+
+    StaticFiles(directory=str(BASE_DIR / "uploads")),
+
     name="uploads",
+
+)
+
+logger.info(
+    f"📂 Static uploads directory: {UPLOADS_DIR}"
 )
 
 @fastapi_app.websocket("/ws/admin/orders")

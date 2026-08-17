@@ -285,3 +285,55 @@ export async function getRecentOrders(
 
   return res.json();
 }
+// ============================================================
+// CUSTOMER MANAGEMENT
+// ============================================================
+
+export async function getCustomers(
+  page = 1,
+  limit = 10,
+  search = "",
+  status = "ALL",
+  sort = "LATEST"
+) {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    throw new Error("No access token found");
+  }
+
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    search,
+    status_filter: status,
+    sort,
+  });
+
+  const res = await fetch(
+    `${API_URL}/admin/customers?${params.toString()}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const errorText = await res.text();
+
+    console.error(
+      "Customers API error:",
+      res.status,
+      errorText
+    );
+
+    throw new Error(
+      `Failed to fetch customers: ${res.status}`
+    );
+  }
+
+  return res.json();
+}
