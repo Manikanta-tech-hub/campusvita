@@ -7,7 +7,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   ShoppingCart,
-  Heart,
   ClipboardList,
   User,
   Wallet,
@@ -25,11 +24,6 @@ const navItems = [
     label: "Home",
     href: "/",
     icon: Home,
-  },
-  {
-    label: "Favorites",
-    href: "/favorites",
-    icon: Heart,
   },
   {
     label: "Orders",
@@ -269,7 +263,7 @@ export default function Navbar() {
           ======================================================== */}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800 shadow-lg md:hidden z-50">
-        <div className="grid grid-cols-5 h-16">
+        <div className="grid grid-cols-4 h-16">
 
           {navItems.map((item) => {
             const Icon = item.icon;
