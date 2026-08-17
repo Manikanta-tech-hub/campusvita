@@ -1,0 +1,50 @@
+# ==============================
+# Environment / Secrets
+# ==============================
+.env
+.env.*
+!.env.example
+
+# Firebase / Google service account credentials
+firebase-adminsdk*.json
+**/firebase-adminsdk*.json
+
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# ==============================
+# macOS
+# ==============================
+.DS_Store
+
+# ==============================
+# Next.js
+# ==============================
+.next/
+out/
+
+# ==============================
+# Node
+# ==============================
+node_modules/
+
+# ==============================
+# Logs
+# ==============================
+*.log
+
+# ==============================
+# Local backup files
+# ==============================
+*.before-customers
+*-backup
+*.backup
