@@ -99,7 +99,14 @@ RAZORPAY_KEY_SECRET = get_env_or_raise("RAZORPAY_KEY_SECRET")
 CLOUDINARY_CLOUD_NAME = get_env_or_raise("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = get_env_or_raise("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = get_env_or_raise("CLOUDINARY_API_SECRET")
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"
+    ).split(",")
+    if origin.strip()
+]
 JWT_SECRET = get_env_or_raise("JWT_SECRET")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
@@ -274,12 +281,10 @@ def create_refresh_token(data: Dict[str, Any]) -> str:
 def verify_token(token: str):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        print("✅ PAYLOAD:", payload)
         return payload
 
     except Exception as e:
-        print("❌ VERIFY TOKEN ERROR:", type(e))
-        print("❌ MESSAGE:", e)
+        logger.warning(f"Token verification failed: {e}")
         raise HTTPException(
             status_code=401,
             detail=str(e),
@@ -290,16 +295,11 @@ def get_current_user(
     try:
         token = credentials.credentials
 
-        print("========== AUTH DEBUG ==========")
-        print("TOKEN RECEIVED:", bool(token))
-
         # ============================================================
         # 1. VERIFY ACCESS TOKEN
         # ============================================================
 
         payload = verify_token(token)
-
-        print("TOKEN PAYLOAD:", payload)
 
         if payload.get("type") != "access":
             raise HTTPException(
@@ -321,8 +321,6 @@ def get_current_user(
                 detail="Invalid token: email missing",
             )
 
-        print("TOKEN EMAIL:", email)
-
         # ============================================================
         # 3. FIND CURRENT USER IN DATABASE
         # ============================================================
@@ -336,9 +334,6 @@ def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
             )
-
-        print("DATABASE USER:", user.get("email"))
-        print("DATABASE ROLE:", user.get("role"))
 
         # ============================================================
         # 4. CHECK ACCOUNT STATUS
@@ -381,10 +376,6 @@ def get_current_user(
             ),
         }
 
-        print("CURRENT USER:", current_user)
-        print("CURRENT ROLE:", current_user["role"])
-        print("================================")
-
         return current_user
 
     except HTTPException:
@@ -417,11 +408,6 @@ def require_role(required_role: str):
             get_current_user
         )
     ):
-        print("========== ROLE DEBUG ==========")
-        print("Required role:", required_role)
-        print("Current role:", current_user.get("role"))
-        print("Current user:", current_user)
-
         current_role = str(
             current_user.get("role", "")
         ).upper()
