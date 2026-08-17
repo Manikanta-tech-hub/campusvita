@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import {
   LayoutDashboard,
@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   CreditCard,
   Users,
+  LogOut,
 } from "lucide-react";
 
 import SidebarItem from "./SidebarItem";
@@ -60,16 +61,6 @@ const navigation = [
     ],
   },
   {
-    title: "Business",
-    items: [
-      {
-        label: "Analytics",
-        href: "/admin/analytics",
-        icon: BarChart3,
-      },
-    ],
-  },
-  {
     title: "System",
     items: [
       {
@@ -83,6 +74,27 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    const authKeys = [
+      "isLoggedIn",
+      "access_token",
+      "refresh_token",
+      "token_type",
+      "expires_in",
+      "userEmail",
+      "email",
+      "userName",
+      "userRole",
+    ];
+
+    authKeys.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+
+    router.replace("/login");
+  };
 
   return (
     <motion.aside
@@ -92,7 +104,6 @@ export default function Sidebar() {
       className="w-72 border-r border-zinc-800 bg-[#111113] flex flex-col"
     >
       {/* Logo */}
-
       <div className="border-b border-zinc-800 px-6 py-7">
         <h1 className="text-3xl font-bold text-orange-500">
           CampusVita
@@ -104,7 +115,6 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-
       <div className="flex-1 overflow-y-auto py-4">
         {navigation.map((section) => (
           <div key={section.title}>
@@ -126,8 +136,7 @@ export default function Sidebar() {
       </div>
 
       {/* Footer */}
-
-      <div className="border-t border-zinc-800 p-5">
+      <div className="border-t border-zinc-800 p-5 space-y-3">
         <div className="flex items-center gap-3 rounded-2xl bg-zinc-900 p-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500">
             <ShieldCheck
@@ -146,6 +155,19 @@ export default function Sidebar() {
             </p>
           </div>
         </div>
+
+        {/* Logout */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-left text-zinc-300 transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
+        >
+          <LogOut size={20} />
+
+          <span className="font-medium">
+            Logout
+          </span>
+        </button>
       </div>
     </motion.aside>
   );
