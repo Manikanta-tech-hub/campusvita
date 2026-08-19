@@ -4,14 +4,13 @@ import toast from "react-hot-toast";
 import { useCallback, useEffect, useState } from "react";
 
 import {
-  MoreVertical,
   Trash2,
   Share2,
   X,
   Star,
   PackageCheck,
-  Clock3,
   RefreshCw,
+  ChevronDown,
 } from "lucide-react";
 
 import { io } from "socket.io-client";
@@ -49,7 +48,9 @@ type Order = {
 // API
 // ============================================================
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
 
 // ============================================================
 // PAGE
@@ -64,7 +65,12 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Used only for the order options modal.
   const [selectedOrder, setSelectedOrder] =
+    useState<number | null>(null);
+
+  // Used only for expanding/collapsing order details.
+  const [expandedOrder, setExpandedOrder] =
     useState<number | null>(null);
 
   const [showRatingModal, setShowRatingModal] =
@@ -94,17 +100,6 @@ export default function OrdersPage() {
 
   // ============================================================
   // FETCH ORDERS
-  //
-  // IMPORTANT:
-  // Backend endpoint is:
-  //
-  // GET /orders
-  //
-  // NOT:
-  //
-  // GET /orders/{email}
-  //
-  // The backend gets the email from the JWT token.
   // ============================================================
 
   const fetchOrders = useCallback(
@@ -126,18 +121,16 @@ export default function OrdersPage() {
           `${API_URL}/orders`,
           {
             method: "GET",
-
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
-
             cache: "no-store",
           }
         );
 
         // ======================================================
-        // HANDLE AUTH ERRORS
+        // AUTH ERROR
         // ======================================================
 
         if (response.status === 401) {
@@ -150,7 +143,7 @@ export default function OrdersPage() {
         }
 
         // ======================================================
-        // HANDLE OTHER API ERRORS
+        // OTHER API ERRORS
         // ======================================================
 
         if (!response.ok) {
@@ -338,7 +331,6 @@ export default function OrdersPage() {
         `${API_URL}/delete-order/${orderId}`,
         {
           method: "DELETE",
-
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -346,7 +338,8 @@ export default function OrdersPage() {
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (response.status === 401) {
         toast.error(
@@ -372,6 +365,7 @@ export default function OrdersPage() {
       );
 
       setSelectedOrder(null);
+      setExpandedOrder(null);
 
       await fetchOrders();
     } catch (error) {
@@ -471,21 +465,16 @@ Total: ₹${order.total}
         `${API_URL}/rate-order`,
         {
           method: "POST",
-
           headers: {
             "Content-Type":
               "application/json",
-
             Authorization: `Bearer ${token}`,
           },
-
           body: JSON.stringify({
             food_name:
               selectedFoodName,
-
             rating:
               selectedRating,
-
             feedback,
           }),
         }
@@ -526,28 +515,96 @@ Total: ₹${order.total}
   };
 
   // ============================================================
-  // STATUS COLOR
+  // STATUS STYLE
   // ============================================================
 
-  const getStatusColor = (
+  const getStatusStyle = (
     status: string
   ) => {
-    switch (status) {
-      case "Preparing":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500";
+    const normalizedStatus =
+      (status || "")
+        .trim()
+        .toLowerCase();
 
-      case "Cooking":
-        return "bg-orange-500/20 text-orange-400 border-orange-500";
-
-      case "Ready For Pickup":
-        return "bg-blue-500/20 text-blue-400 border-blue-500";
-
-      case "Completed":
-        return "bg-green-500/20 text-green-400 border-green-500";
-
-      default:
-        return "bg-zinc-700 text-white border-zinc-700";
+    if (
+      normalizedStatus ===
+        "completed" ||
+      normalizedStatus ===
+        "delivered"
+    ) {
+      return {
+        dot: "bg-green-500",
+        text: "text-green-400",
+        label: "Delivered",
+      };
     }
+
+    if (
+      normalizedStatus ===
+        "cancelled" ||
+      normalizedStatus ===
+        "canceled"
+    ) {
+      return {
+        dot: "bg-red-500",
+        text: "text-red-400",
+        label: "Cancelled",
+      };
+    }
+
+    if (
+      normalizedStatus ===
+        "preparing" ||
+      normalizedStatus ===
+        "cooking"
+    ) {
+      return {
+        dot: "bg-orange-500",
+        text: "text-orange-400",
+        label:
+          status || "Preparing",
+      };
+    }
+
+    if (
+      normalizedStatus ===
+      "ready for pickup"
+    ) {
+      return {
+        dot: "bg-blue-500",
+        text: "text-blue-400",
+        label:
+          status || "Ready",
+      };
+    }
+
+    return {
+      dot: "bg-gray-400",
+      text: "text-gray-300",
+      label:
+        status || "Unknown",
+    };
+  };
+
+  // ============================================================
+  // THUMBNAIL HELPERS
+  // ============================================================
+
+  const getVisibleItems = (
+    items: OrderItem[]
+  ) => {
+    return (items || [])
+      .filter(Boolean)
+      .slice(0, 3);
+  };
+
+  const getRemainingItemCount = (
+    items: OrderItem[]
+  ) => {
+    return Math.max(
+      (items || []).length - 3,
+      0
+    );
   };
 
   // ============================================================
@@ -559,6 +616,33 @@ Total: ₹${order.total}
   };
 
   // ============================================================
+  // OPEN RATING
+  // ============================================================
+
+  const openRating = (
+    order: Order
+  ) => {
+    const firstItem =
+      order.items?.[0];
+
+    if (!firstItem) {
+      toast.error(
+        "No food item available to rate"
+      );
+
+      return;
+    }
+
+    setSelectedFoodName(
+      firstItem.name
+    );
+
+    setSelectedRating(0);
+    setFeedback("");
+    setShowRatingModal(true);
+  };
+
+  // ============================================================
   // UI
   // ============================================================
 
@@ -566,42 +650,48 @@ Total: ₹${order.total}
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-black text-white p-6 md:p-10">
-        <div className="max-w-6xl mx-auto">
+      <main className="min-h-screen bg-black px-4 pb-28 pt-5 text-white sm:px-6 sm:pt-8 md:px-10 md:pb-10">
+
+        <div className="mx-auto w-full max-w-4xl">
 
           {/* ================================================== */}
           {/* HEADER */}
           {/* ================================================== */}
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="flex items-center justify-between gap-4">
 
-            <div>
-              <h1 className="text-5xl font-bold text-orange-500">
-                Order History
-              </h1>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <PackageCheck
+                  size={22}
+                  className="shrink-0 text-orange-500"
+                />
 
-              <p className="text-gray-400 mt-3 text-lg">
-                Track all your orders 🚀
+                <h1 className="truncate text-2xl font-bold sm:text-3xl">
+                  Order History
+                </h1>
+              </div>
+
+              <p className="mt-1 text-sm text-zinc-500">
+                Your recent CampusVita orders
               </p>
             </div>
 
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex items-center justify-center gap-3 bg-zinc-900 border border-zinc-800 hover:border-orange-500 px-6 py-4 rounded-2xl transition-all disabled:opacity-50"
+              aria-label="Refresh orders"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 transition-all hover:border-orange-500 hover:text-orange-500 disabled:opacity-50"
             >
               <RefreshCw
-                size={20}
+                size={18}
                 className={
                   refreshing
                     ? "animate-spin"
                     : ""
                 }
               />
-
-              {refreshing
-                ? "Refreshing..."
-                : "Refresh Orders"}
             </button>
 
           </div>
@@ -611,14 +701,14 @@ Total: ₹${order.total}
           {/* ================================================== */}
 
           {loading ? (
-            <div className="mt-20 bg-zinc-900 border border-zinc-800 rounded-3xl p-12 text-center">
+            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
 
               <RefreshCw
-                size={42}
-                className="mx-auto text-orange-500 animate-spin"
+                size={32}
+                className="mx-auto animate-spin text-orange-500"
               />
 
-              <p className="text-xl text-gray-400 mt-6">
+              <p className="mt-4 text-sm text-zinc-400">
                 Loading your orders...
               </p>
 
@@ -629,26 +719,27 @@ Total: ₹${order.total}
             /* EMPTY STATE */
             /* ================================================= */
 
-            <div className="bg-zinc-900 p-10 md:p-16 rounded-3xl mt-10 text-center border border-zinc-800">
+            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center sm:p-12">
 
               <PackageCheck
-                size={70}
-                className="mx-auto text-gray-500"
+                size={52}
+                className="mx-auto text-zinc-600"
               />
 
-              <h2 className="text-3xl font-bold mt-8">
-                No Orders Yet 🍔
+              <h2 className="mt-5 text-xl font-bold">
+                No Orders Yet
               </h2>
 
-              <p className="text-gray-400 mt-4 text-lg">
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
                 Your completed and current
                 orders will appear here.
               </p>
 
               <button
+                type="button"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="mt-8 bg-orange-500 hover:bg-orange-600 px-8 py-4 rounded-2xl font-bold transition-all disabled:opacity-50"
+                className="mt-6 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold transition-all hover:bg-orange-600 disabled:opacity-50"
               >
                 {refreshing
                   ? "Refreshing..."
@@ -659,217 +750,417 @@ Total: ₹${order.total}
           ) : (
 
             /* ================================================= */
-            /* ORDERS */
+            /* COMPACT ORDER LIST */
             /* ================================================= */
 
-            <div className="mt-10 flex flex-col gap-8">
+            <div className="mt-5 flex flex-col gap-3 sm:mt-7 sm:gap-4">
 
               {orders.map(
-                (order, index) => (
+                (order, index) => {
+                  const statusStyle =
+                    getStatusStyle(
+                      order.status
+                    );
 
-                  <div
-                    key={
-                      order.order_id ||
-                      `${order.token}-${index}`
-                    }
-                    className="bg-zinc-900 rounded-3xl border border-zinc-800 p-6 md:p-8"
-                  >
+                  const visibleItems =
+                    getVisibleItems(
+                      order.items
+                    );
 
-                    {/* ======================================== */}
-                    {/* HEADER */}
-                    {/* ======================================== */}
+                  const remainingItems =
+                    getRemainingItemCount(
+                      order.items
+                    );
 
-                    <div className="flex flex-col lg:flex-row justify-between gap-6">
+                  const isExpanded =
+                    expandedOrder ===
+                    index;
 
-                      <div>
+                  const isCompleted =
+                    [
+                      "completed",
+                      "delivered",
+                    ].includes(
+                      (
+                        order.status ||
+                        ""
+                      )
+                        .trim()
+                        .toLowerCase()
+                    );
 
-                        <div className="flex items-center gap-3">
+                  return (
+                    <article
+                      key={
+                        order.order_id ||
+                        `${order.token}-${index}`
+                      }
+                      className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm transition-all duration-200 hover:border-zinc-700"
+                    >
 
-                          <PackageCheck
-                            className="text-orange-500"
-                            size={28}
-                          />
+                      {/* ====================================== */}
+                      {/* COMPACT SUMMARY */}
+                      {/* ====================================== */}
 
-                          <h2 className="text-3xl md:text-4xl font-bold">
-                            Token #{order.token}
-                          </h2>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedOrder(
+                            isExpanded
+                              ? null
+                              : index
+                          )
+                        }
+                        className="w-full text-left active:scale-[0.995]"
+                      >
 
-                        </div>
+                        <div className="p-4 sm:p-5">
 
-                        <div className="mt-4 flex flex-col gap-2 text-gray-400">
+                          {/* TOP */}
+                          <div className="flex items-start justify-between gap-4">
 
-                          <p className="flex items-center gap-2">
+                            <div className="min-w-0">
 
-                            <Clock3 size={18} />
+                              <div className="flex items-center gap-2">
 
-                            {order.date ||
-                              "Date unavailable"}
+                                <span
+                                  className={`h-2 w-2 shrink-0 rounded-full ${statusStyle.dot}`}
+                                />
 
-                          </p>
-
-                          <p>
-                            Pickup Code:{" "}
-                            <span className="text-green-400 font-bold">
-                              {order.pickup_code ||
-                                "N/A"}
-                            </span>
-                          </p>
-
-                          <p>
-                            ETA:{" "}
-                            {order.estimated_time ||
-                              "15-20 mins"}
-                          </p>
-
-                          {order.payment_method && (
-                            <p>
-                              Payment:{" "}
-                              <span className="text-white">
-                                {order.payment_method}
-                              </span>
-                            </p>
-                          )}
-
-                        </div>
-
-                      </div>
-
-                      <div className="flex items-center gap-4">
-
-                        <div
-                          className={`px-5 py-3 rounded-2xl border font-bold ${getStatusColor(
-                            order.status
-                          )}`}
-                        >
-                          {order.status}
-                        </div>
-
-                        <button
-                          onClick={() =>
-                            setSelectedOrder(
-                              index
-                            )
-                          }
-                          className="p-3 rounded-xl hover:bg-zinc-800 transition-all"
-                          aria-label="Order options"
-                        >
-                          <MoreVertical />
-                        </button>
-
-                      </div>
-
-                    </div>
-
-                    {/* ======================================== */}
-                    {/* ITEMS */}
-                    {/* ======================================== */}
-
-                    <div className="mt-8 flex flex-col gap-5">
-
-                      {order.items?.map(
-                        (item, itemIndex) => (
-
-                          <div
-                            key={`${item.name}-${itemIndex}`}
-                            className="bg-zinc-800 rounded-3xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
-                          >
-
-                            <div className="flex items-center gap-5">
-
-                              <img
-                                src={getImageUrl(
-                                  item.image || ""
-                                )}
-                                alt={item.name}
-                                className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-2xl"
-                              />
-
-                              <div>
-
-                                <h3 className="text-xl md:text-2xl font-bold">
-                                  {item.name}
-                                </h3>
-
-                                <p className="text-gray-400 mt-1">
-                                  Quantity:{" "}
-                                  {item.quantity}
-                                </p>
-
-                                <p className="text-gray-500 mt-1">
-                                  ₹{item.price} each
-                                </p>
+                                <span
+                                  className={`text-sm font-semibold ${statusStyle.text}`}
+                                >
+                                  {
+                                    statusStyle.label
+                                  }
+                                </span>
 
                               </div>
 
+                              <p className="mt-1.5 truncate text-xs text-zinc-500">
+                                {order.date ||
+                                  "Date unavailable"}
+                              </p>
+
+                              <p className="mt-1 text-xs font-medium text-zinc-400">
+                                {order.token
+                                  ? `Token #${order.token}`
+                                  : `Order #${order.order_id}`}
+                              </p>
+
                             </div>
 
-                            <h3 className="text-2xl font-bold text-orange-500">
-                              ₹
-                              {(
-                                Number(
-                                  item.price
-                                ) *
-                                Number(
-                                  item.quantity
-                                )
-                              ).toFixed(2)}
-                            </h3>
+                            <div className="shrink-0 text-right">
+
+                              <p className="text-lg font-bold text-white sm:text-xl">
+                                ₹
+                                {Number(
+                                  order.total ||
+                                    0
+                                ).toFixed(2)}
+                              </p>
+
+                              <p className="mt-1 text-[11px] text-zinc-500">
+                                {
+                                  order
+                                    .items
+                                    .length
+                                }{" "}
+                                {order.items
+                                  .length ===
+                                1
+                                  ? "item"
+                                  : "items"}
+                              </p>
+
+                            </div>
 
                           </div>
 
-                        )
+                          {/* THUMBNAILS */}
+                          {visibleItems.length >
+                            0 && (
+                            <div className="mt-4 flex items-center gap-2">
+
+                              {visibleItems.map(
+                                (
+                                  item,
+                                  itemIndex
+                                ) => (
+                                  <div
+                                    key={`${order.order_id}-${item.name}-${itemIndex}`}
+                                    className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 sm:h-14 sm:w-14"
+                                  >
+                                    {item.image ? (
+                                      <img
+                                        src={getImageUrl(
+                                          item.image
+                                        )}
+                                        alt=""
+                                        loading="lazy"
+                                        className="h-full w-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="flex h-full w-full items-center justify-center text-base">
+                                        🍽️
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              )}
+
+                              {remainingItems >
+                                0 && (
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-xs font-bold text-zinc-300 sm:h-14 sm:w-14">
+                                  +
+                                  {
+                                    remainingItems
+                                  }
+                                </div>
+                              )}
+
+                            </div>
+                          )}
+
+                          {/* BOTTOM */}
+                          <div className="mt-4 flex items-center justify-between">
+
+                            <span className="text-xs text-zinc-500">
+                              {isExpanded
+                                ? "Hide details"
+                                : "View order details"}
+                            </span>
+
+                            <ChevronDown
+                              size={17}
+                              className={`text-orange-500 transition-transform duration-200 ${
+                                isExpanded
+                                  ? "rotate-180"
+                                  : ""
+                              }`}
+                            />
+
+                          </div>
+
+                        </div>
+
+                      </button>
+
+                      {/* ====================================== */}
+                      {/* EXPANDED DETAILS */}
+                      {/* ====================================== */}
+
+                      {isExpanded && (
+                        <div className="border-t border-zinc-800 bg-zinc-900/40 px-4 pb-4 pt-4 sm:px-5">
+
+                          {/* ITEMS */}
+                          <div>
+
+                            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                              Ordered Items
+                            </p>
+
+                            <div className="flex flex-col gap-3">
+
+                              {order.items.map(
+                                (
+                                  item,
+                                  itemIndex
+                                ) => (
+                                  <div
+                                    key={`${item.name}-${itemIndex}`}
+                                    className="flex items-center gap-3"
+                                  >
+
+                                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+
+                                      {item.image ? (
+                                        <img
+                                          src={getImageUrl(
+                                            item.image
+                                          )}
+                                          alt={
+                                            item.name
+                                          }
+                                          loading="lazy"
+                                          className="h-full w-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="flex h-full w-full items-center justify-center">
+                                          🍽️
+                                        </div>
+                                      )}
+
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+
+                                      <p className="truncate text-sm font-medium text-white">
+                                        {
+                                          item.name
+                                        }
+                                      </p>
+
+                                      <p className="mt-0.5 text-xs text-zinc-500">
+                                        Qty{" "}
+                                        {
+                                          item.quantity
+                                        }
+                                        {" • "}
+                                        ₹
+                                        {
+                                          item.price
+                                        }{" "}
+                                        each
+                                      </p>
+
+                                    </div>
+
+                                    <p className="shrink-0 text-sm font-semibold text-zinc-200">
+                                      ₹
+                                      {(
+                                        Number(
+                                          item.price
+                                        ) *
+                                        Number(
+                                          item.quantity
+                                        )
+                                      ).toFixed(
+                                        2
+                                      )}
+                                    </p>
+
+                                  </div>
+                                )
+                              )}
+
+                            </div>
+
+                          </div>
+
+                          {/* INFORMATION */}
+                          <div className="mt-5 grid grid-cols-2 gap-2">
+
+                            <div className="rounded-xl bg-zinc-900 p-3">
+                              <p className="text-[11px] text-zinc-500">
+                                Token
+                              </p>
+
+                              <p className="mt-1 text-sm font-semibold text-white">
+                                #
+                                {
+                                  order.token
+                                }
+                              </p>
+                            </div>
+
+                            <div className="rounded-xl bg-zinc-900 p-3">
+                              <p className="text-[11px] text-zinc-500">
+                                Pickup Code
+                              </p>
+
+                              <p className="mt-1 text-sm font-semibold text-white">
+                                {
+                                  order.pickup_code ??
+                                  "N/A"
+                                }
+                              </p>
+                            </div>
+
+                            {order.payment_method && (
+                              <div className="rounded-xl bg-zinc-900 p-3">
+                                <p className="text-[11px] text-zinc-500">
+                                  Payment
+                                </p>
+
+                                <p className="mt-1 truncate text-sm font-semibold text-white">
+                                  {
+                                    order.payment_method
+                                  }
+                                </p>
+                              </div>
+                            )}
+
+                            <div className="rounded-xl bg-zinc-900 p-3">
+                              <p className="text-[11px] text-zinc-500">
+                                Status
+                              </p>
+
+                              <p
+                                className={`mt-1 truncate text-sm font-semibold ${statusStyle.text}`}
+                              >
+                                {
+                                  statusStyle.label
+                                }
+                              </p>
+                            </div>
+
+                          </div>
+
+                          {/* ACTIONS */}
+                          <div className="mt-5 grid grid-cols-2 gap-2">
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleReorder(
+                                  order.items
+                                )
+                              }
+                              className="rounded-xl bg-orange-500 px-3 py-3 text-sm font-bold text-white transition-all hover:bg-orange-600 active:scale-[0.98]"
+                            >
+                              Reorder
+                            </button>
+
+                            {isCompleted && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openRating(
+                                    order
+                                  )
+                                }
+                                className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm font-bold text-white transition-all hover:border-orange-500 hover:text-orange-500 active:scale-[0.98]"
+                              >
+                                Rate Order
+                              </button>
+                            )}
+
+                            {!isCompleted && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleShareOrder(
+                                    order
+                                  )
+                                }
+                                className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm font-bold text-white transition-all hover:border-orange-500 hover:text-orange-500 active:scale-[0.98]"
+                              >
+                                Share
+                              </button>
+                            )}
+
+                          </div>
+
+                          {/* MORE OPTIONS */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedOrder(
+                                index
+                              )
+                            }
+                            className="mt-3 w-full rounded-xl border border-zinc-800 py-2.5 text-xs font-semibold text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+                          >
+                            More Order Options
+                          </button>
+
+                        </div>
                       )}
 
-                    </div>
-
-                    {/* ======================================== */}
-                    {/* FOOTER */}
-                    {/* ======================================== */}
-
-                    <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-5">
-
-                      <h2 className="text-3xl md:text-4xl font-bold text-orange-500">
-                        ₹
-                        {Number(
-                          order.total || 0
-                        ).toFixed(2)}
-                      </h2>
-
-                      <div className="flex gap-4 flex-wrap justify-center">
-
-                        <button
-                          onClick={() =>
-                            handleReorder(
-                              order.items
-                            )
-                          }
-                          className="bg-green-500 hover:bg-green-600 px-6 py-3 rounded-2xl transition-all font-semibold"
-                        >
-                          Reorder
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setShowRatingModal(
-                              true
-                            );
-
-                            setSelectedFoodName(
-                              order.items?.[0]
-                                ?.name || ""
-                            );
-                          }}
-                          className="bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded-2xl transition-all font-semibold"
-                        >
-                          Rate Order
-                        </button>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-                )
+                    </article>
+                  );
+                }
               )}
 
             </div>
@@ -884,31 +1175,32 @@ Total: ₹${order.total}
 
       {selectedOrder !== null &&
         orders[selectedOrder] && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
 
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+            <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl sm:rounded-3xl sm:p-8">
 
-            <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800">
+              <div className="flex items-center justify-between">
 
-              <div className="flex justify-between items-center">
-
-                <h2 className="text-3xl font-bold">
+                <h2 className="text-xl font-bold sm:text-2xl">
                   Order Options
                 </h2>
 
                 <button
+                  type="button"
                   onClick={() =>
                     setSelectedOrder(null)
                   }
-                  className="p-2 hover:bg-zinc-800 rounded-xl"
+                  className="rounded-xl p-2 transition-colors hover:bg-zinc-800"
                 >
-                  <X />
+                  <X size={20} />
                 </button>
 
               </div>
 
-              <div className="mt-8 flex flex-col gap-6">
+              <div className="mt-6 flex flex-col gap-3">
 
                 <button
+                  type="button"
                   onClick={() =>
                     handleDeleteOrder(
                       orders[
@@ -916,13 +1208,14 @@ Total: ₹${order.total}
                       ].order_id
                     )
                   }
-                  className="flex items-center gap-4 text-red-400 text-xl hover:text-red-300 transition-all"
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-red-400 transition-colors hover:bg-red-500/10"
                 >
-                  <Trash2 />
+                  <Trash2 size={20} />
                   Delete Order
                 </button>
 
                 <button
+                  type="button"
                   onClick={() =>
                     handleShareOrder(
                       orders[
@@ -930,9 +1223,9 @@ Total: ₹${order.total}
                       ]
                     )
                   }
-                  className="flex items-center gap-4 text-green-400 text-xl hover:text-green-300 transition-all"
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-green-400 transition-colors hover:bg-green-500/10"
                 >
-                  <Share2 />
+                  <Share2 size={20} />
                   Share Order
                 </button>
 
@@ -948,41 +1241,42 @@ Total: ₹${order.total}
       {/* ====================================================== */}
 
       {showRatingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
 
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+          <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl sm:rounded-3xl sm:p-8">
 
-          <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800">
+            <div className="flex items-center justify-between">
 
-            <div className="flex justify-between items-center">
-
-              <h2 className="text-3xl font-bold">
+              <h2 className="text-xl font-bold sm:text-2xl">
                 Rate Order
               </h2>
 
               <button
+                type="button"
                 onClick={() => {
-                  setShowRatingModal(false);
+                  setShowRatingModal(
+                    false
+                  );
+
                   setSelectedRating(0);
                   setFeedback("");
                 }}
-                className="p-2 hover:bg-zinc-800 rounded-xl"
+                className="rounded-xl p-2 transition-colors hover:bg-zinc-800"
               >
-                <X />
+                <X size={20} />
               </button>
 
             </div>
 
-            {/* ============================================== */}
             {/* STARS */}
-            {/* ============================================== */}
 
-            <div className="flex justify-center gap-3 mt-8">
+            <div className="mt-7 flex justify-center gap-2">
 
               {[1, 2, 3, 4, 5].map(
                 (star) => (
-
                   <button
                     key={star}
+                    type="button"
                     onClick={() =>
                       setSelectedRating(
                         star
@@ -991,9 +1285,8 @@ Total: ₹${order.total}
                     className="transition-transform hover:scale-110"
                     aria-label={`Rate ${star} stars`}
                   >
-
                     <Star
-                      size={40}
+                      size={34}
                       className={
                         star <=
                         selectedRating
@@ -1001,33 +1294,30 @@ Total: ₹${order.total}
                           : "text-gray-500"
                       }
                     />
-
                   </button>
-
                 )
               )}
 
             </div>
 
-            {/* ============================================== */}
             {/* FEEDBACK */}
-            {/* ============================================== */}
 
             <textarea
-              placeholder="Write Feedback..."
+              placeholder="Write feedback..."
               value={feedback}
               onChange={(e) =>
                 setFeedback(
                   e.target.value
                 )
               }
-              className="w-full mt-8 p-4 rounded-2xl bg-zinc-800 outline-none border border-zinc-700 focus:border-orange-500 resize-none"
+              className="mt-7 w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800 p-4 text-sm outline-none transition-colors focus:border-orange-500"
               rows={4}
             />
 
             <button
+              type="button"
               onClick={handleRateOrder}
-              className="w-full bg-orange-500 py-4 rounded-2xl mt-6 hover:bg-orange-600 transition-all font-bold"
+              className="mt-4 w-full rounded-xl bg-orange-500 py-3.5 text-sm font-bold transition-all hover:bg-orange-600 active:scale-[0.98]"
             >
               Submit Rating
             </button>
