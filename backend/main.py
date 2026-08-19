@@ -814,7 +814,6 @@ class CreateFoodOrderData(BaseModel):
     items: List[OrderItemRequest] = Field(min_length=1)
     name: str
     phone: str
-    location: str
 
 
 class VerifyPaymentData(BaseModel):
@@ -844,12 +843,19 @@ class ProfileData(BaseModel):
     department: str
     year: str
     profile_image: str
+
     notifications: bool
     theme: str
+
     favorite_foods: list = []
+
     total_orders: int = 0
     total_spent: float = 0
     wallet: float = 0
+
+    # New persistent pickup/delivery location.
+    # Optional so existing profile requests do not break.
+    location: Optional[str] = None
 
 
 class WalletTopupData(BaseModel):
@@ -1259,7 +1265,7 @@ def get_profile(
             "phone": user.get("phone", ""),
             "department": user.get("department", ""),
             "year": user.get("year", ""),
-
+            
             # IMPORTANT
             "profile_image": user.get(
                 "profile_image",
@@ -1891,8 +1897,6 @@ async def pay_order_with_wallet(
 
             "phone": data.phone,
 
-            "location": data.location,
-
             "payment_method": "WALLET",
 
             "payment_status": PaymentStatus.PAID,
@@ -2208,6 +2212,76 @@ def _price_items_from_db(items: List[OrderItemRequest]) -> tuple[list, float]:
 
     return priced_items, round(total, 2)
 
+# ============================================================
+# AUTHORITATIVE FOOD ORDER BILL
+# ============================================================
+
+FOOD_DELIVERY_FEE = float(
+    os.getenv("FOOD_DELIVERY_FEE", "20")
+)
+
+FOOD_TAX_RATE = float(
+    os.getenv("FOOD_TAX_RATE", "0")
+)
+
+
+def calculate_food_order_bill(
+    items: List[OrderItemRequest],
+):
+    """
+    Server-authoritative order calculation.
+
+    NEVER trust price/total values sent by the frontend.
+    Food prices come directly from MongoDB.
+    """
+
+    order_items, subtotal = _price_items_from_db(
+        items
+    )
+
+    subtotal = round(
+        float(subtotal),
+        2
+    )
+
+    delivery_fee = (
+        FOOD_DELIVERY_FEE
+        if subtotal > 0
+        else 0
+    )
+
+    tax_amount = round(
+        subtotal *
+        (FOOD_TAX_RATE / 100),
+        2
+    )
+
+    # Keep 0 until a real coupon/discount
+    # system exists in the backend.
+    discount = 0.0
+
+    total = round(
+        subtotal
+        + delivery_fee
+        + tax_amount
+        - discount,
+        2,
+    )
+
+    if total <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid order amount",
+        )
+
+    return {
+        "items": order_items,
+        "subtotal": subtotal,
+        "delivery_fee": delivery_fee,
+        "tax_amount": tax_amount,
+        "discount": discount,
+        "total": total,
+    }
 
 @fastapi_app.post("/place-order")
 async def place_order(
@@ -3470,197 +3544,617 @@ async def upload_image(file: UploadFile = File(...), current_user: Optional[Dict
             detail="Internal Server Error"
         )
 
+class CartSummaryItem(BaseModel):
 
-# =====================================
-# FOOD ORDER PAYMENT ROUTES (Razorpay-verified)
-# Flow: create-razorpay-order prices the cart from the DB and issues a
-# signed intent -> user pays -> verify-payment checks the signature AND
-# that the intent matches this exact payment before creating the order.
-# =====================================
+    name: str = Field(..., min_length=1)
+
+    quantity: int = Field(..., ge=1)
+
+class CartSummaryRequest(BaseModel):
+
+    items: list[CartSummaryItem] = Field(..., min_length=1)
+
+@fastapi_app.post("/cart/summary")
+def get_cart_summary(
+    data: CartSummaryRequest,
+):
+    try:
+        if not data.items:
+            raise HTTPException(
+                status_code=400,
+                detail="Cart is empty",
+            )
+
+        # ---------------------------------------------------------
+        # CONVERT CART SUMMARY ITEMS INTO THE SAME
+        # ORDER ITEM MODEL USED BY THE AUTHORITATIVE BILL SYSTEM
+        # ---------------------------------------------------------
+
+        order_items = [
+            OrderItemRequest(
+                name=item.name,
+                quantity=item.quantity,
+            )
+            for item in data.items
+        ]
+
+        print(
+            "🛒 Cart summary items:",
+            [
+                {
+                    "name": item.name,
+                    "quantity": item.quantity,
+                }
+                for item in order_items
+            ],
+        )
+
+        # ---------------------------------------------------------
+        # SERVER-AUTHORITATIVE BILL
+        # Prices are loaded from MongoDB.
+        # Frontend prices are NOT trusted.
+        # ---------------------------------------------------------
+
+        bill = calculate_food_order_bill(
+            order_items
+        )
+
+        print(
+            "💰 Cart summary bill:",
+            bill,
+        )
+
+        return {
+            "success": True,
+            **bill,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print(
+            "❌ Cart summary error:",
+            repr(e),
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate cart summary: {str(e)}",
+        )
+
+# ============================================================
+# FOOD ORDER PAYMENT ROUTES
+# Razorpay verified payment flow
+#
+# Flow:
+# Cart
+#   ↓
+# Backend calculates authoritative bill
+#   ↓
+# Create Razorpay order
+#   ↓
+# Create signed order intent
+#   ↓
+# Frontend opens Razorpay
+#   ↓
+# Payment completed
+#   ↓
+# Backend verifies Razorpay signature + intent
+#   ↓
+# Create CampusVita order
+# ============================================================
 
 @fastapi_app.post("/create-razorpay-order")
 @limiter.limit("10/minute")
-def create_payment_order(request: Request, data: CreateFoodOrderData, current_user: Dict[str, Any] = Depends(get_current_user)):
+def create_payment_order(
+    request: Request,
+    data: CreateFoodOrderData,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
     try:
-        order_items, total = _price_items_from_db(data.items)
+        # ========================================================
+        # 1. AUTHENTICATED USER
+        # ========================================================
+
+        user_email = current_user.get("email")
+
+        if not user_email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authenticated user email not found",
+            )
+
+        # ========================================================
+        # 2. BASIC INPUT VALIDATION
+        # ========================================================
+
+        if not data.items:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cart is empty",
+            )
+
+        if not data.name or not data.name.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Name is required",
+            )
+
+        if not data.phone or not str(data.phone).strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number is required",
+            )
+
+        # ========================================================
+        # 3. CALCULATE BILL FROM BACKEND
+        #
+        # IMPORTANT:
+        # calculate_food_order_bill() must be the authoritative
+        # source for product prices, quantities, taxes,
+        # delivery fee and final total.
+        #
+        # DO NOT trust price/total values sent by frontend.
+        # ========================================================
+
+        bill = calculate_food_order_bill(data.items)
+
+        if not bill:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to calculate order bill",
+            )
+
+        order_items = bill.get("items", [])
+        total = bill.get("total", 0)
+
+        if not order_items:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No valid items found in cart",
+            )
+
+        # ========================================================
+        # 4. VALIDATE FINAL TOTAL
+        # ========================================================
+
+        try:
+            total = float(total)
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid order total",
+            )
+
+        if total <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Order total must be greater than zero",
+            )
+
+        # Razorpay accepts amount in paise.
         amount_paise = int(round(total * 100))
 
-        razorpay_order = razorpay_client.order.create({
-            "amount": amount_paise,
-            "currency": "INR",
-            "payment_capture": 1
-        })
+        if amount_paise <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid payment amount",
+            )
+
+        # ========================================================
+        # 5. CREATE RAZORPAY ORDER
+        # ========================================================
+
+        razorpay_order = razorpay_client.order.create(
+            {
+                "amount": amount_paise,
+                "currency": "INR",
+                "payment_capture": 1,
+            }
+        )
+
+        razorpay_order_id = razorpay_order.get("id")
+
+        if not razorpay_order_id:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Razorpay order creation failed",
+            )
+
+        # ========================================================
+        # 6. CREATE SIGNED PAYMENT INTENT
+        #
+        # This binds:
+        # - authenticated user
+        # - exact backend-priced items
+        # - exact total
+        # - customer information
+        # - Razorpay order ID
+        #
+        # verify-payment should validate this intent before
+        # creating the real CampusVita order.
+        # ========================================================
 
         order_intent = create_signed_intent(
             "food_order",
             {
-                "email": current_user["email"],
+                "email": user_email,
+
+                # Backend-authoritative items
                 "items": order_items,
+
+                # Backend-authoritative final amount
                 "total": total,
-                "name": data.name,
-                "phone": data.phone,
-                "location": data.location,
-                "razorpay_order_id": razorpay_order["id"],
+
+                # Customer information
+                "name": data.name.strip(),
+                "phone": str(data.phone).strip(),
+
+                # Bind intent to this exact Razorpay order
+                "razorpay_order_id": razorpay_order_id,
             },
         )
 
-        logger.info(f"💰 Razorpay order created: {razorpay_order['id']} for {current_user['email']}")
+        # ========================================================
+        # 7. LOG PAYMENT CREATION
+        # ========================================================
+
+        logger.info(
+            "💰 Razorpay food order created | "
+            f"razorpay_order_id={razorpay_order_id} | "
+            f"user={user_email} | "
+            f"amount={total}"
+        )
+
+        # ========================================================
+        # 8. RETURN ONLY REQUIRED PAYMENT INFORMATION
+        # ========================================================
 
         return {
             "success": True,
-            "order_id": razorpay_order["id"],
-            "amount": razorpay_order["amount"],
-            "currency": razorpay_order["currency"],
+
+            # Razorpay information
+            "order_id": razorpay_order_id,
+            "amount": amount_paise,
+            "currency": "INR",
             "key": RAZORPAY_KEY_ID,
+
+            # Backend-calculated amount
             "total": total,
+
+            # Signed intent required by verify-payment
             "order_intent": order_intent,
         }
 
+    # ============================================================
+    # EXPECTED FASTAPI ERRORS
+    # ============================================================
+
     except HTTPException:
         raise
+
+    # ============================================================
+    # RAZORPAY / SERVER ERRORS
+    # ============================================================
+
     except Exception as e:
-        logger.error(f"Create payment order error: {e}")
+        logger.exception(
+            f"❌ Create Razorpay food order error: {e}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
+            detail="Unable to create payment order",
         )
 
 
 @fastapi_app.post("/verify-payment")
-async def verify_payment(data: VerifyPaymentData, current_user: Dict[str, Any] = Depends(get_current_user)):
+async def verify_payment(
+    data: VerifyPaymentData,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
     try:
-        intent = decode_signed_intent(data.order_intent, "food_order")
+        # ========================================================
+        # 1. DECODE SIGNED ORDER INTENT
+        # ========================================================
 
-        if intent.get("razorpay_order_id") != data.razorpay_order_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Order reference does not match this payment"
-            )
-
-        if intent.get("email") != current_user["email"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="This order reference belongs to a different account"
-            )
-
-        if payments_collection.find_one({"payment_id": data.razorpay_payment_id}):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Payment already processed"
-            )
-
-        razorpay_client.utility.verify_payment_signature({
-            "razorpay_order_id": data.razorpay_order_id,
-            "razorpay_payment_id": data.razorpay_payment_id,
-            "razorpay_signature": data.razorpay_signature,
-        })
-
-        order = {
-            "items": intent["items"],
-            "total": intent["total"],
-            "email": intent["email"],
-            "name": intent["name"],
-            "phone": intent["phone"],
-            "location": intent["location"],
-            "payment_method": "ONLINE",
-            "payment_status": PaymentStatus.PAID,
-            "payment_id": data.razorpay_payment_id,
-            "razorpay_order_id": data.razorpay_order_id,
-            "razorpay_signature": data.razorpay_signature,  # kept for auditing
-            "payment_date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
-            "payment_amount": intent["total"],
-            "status": OrderStatus.PREPARING,
-            "created_at": datetime.now(),
-            "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
-            "estimated_time": "15-20 mins",
-            "pickup_code": random.randint(1000, 9999),
-            "token": get_next_token(),
-            "user_email": current_user["email"],
-        }
-
-        result = orders_collection.insert_one(order)
-
-        saved_order = orders_collection.find_one(
-            {"_id": result.inserted_id},
-            {"_id": 0}
+        intent = decode_signed_intent(
+            data.order_intent,
+            "food_order",
         )
 
-        users_collection.update_one(
-            {"email": intent["email"]},
+        # ========================================================
+        # 2. VERIFY RAZORPAY ORDER ID
+        # ========================================================
+
+        if (
+            intent.get("razorpay_order_id")
+            != data.razorpay_order_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Order reference does not match this payment",
+            )
+
+        # ========================================================
+        # 3. VERIFY USER
+        # ========================================================
+
+        if (
+            intent.get("email")
+            != current_user.get("email")
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This order reference belongs to a different account",
+            )
+
+        # ========================================================
+        # 4. PREVENT DUPLICATE PAYMENT
+        # ========================================================
+
+        if payments_collection.find_one(
             {
-                "$inc": {
-                    "total_orders": 1,
-                    "total_spent": intent["total"]
-                }
+                "payment_id":
+                data.razorpay_payment_id
+            }
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment already processed",
+            )
+
+        # ========================================================
+        # 5. VERIFY RAZORPAY SIGNATURE
+        # ========================================================
+
+        razorpay_client.utility.verify_payment_signature(
+            {
+                "razorpay_order_id":
+                    data.razorpay_order_id,
+
+                "razorpay_payment_id":
+                    data.razorpay_payment_id,
+
+                "razorpay_signature":
+                    data.razorpay_signature,
             }
         )
 
+        # ========================================================
+        # 6. CREATE CAMPUSVITA ORDER
+        #
+        # NO LOCATION FIELD
+        # ========================================================
+
+        order = {
+            "items": intent["items"],
+
+            "total": float(
+                intent["total"]
+            ),
+
+            "email": intent["email"],
+
+            "name": intent["name"],
+
+            "phone": intent["phone"],
+
+            "payment_method": "ONLINE",
+
+            "payment_status":
+                PaymentStatus.PAID,
+
+            "payment_id":
+                data.razorpay_payment_id,
+
+            "razorpay_order_id":
+                data.razorpay_order_id,
+
+            "razorpay_signature":
+                data.razorpay_signature,
+
+            "payment_date":
+                datetime.now().strftime(
+                    "%d %b %Y, %I:%M %p"
+                ),
+
+            "payment_amount":
+                float(intent["total"]),
+
+            "status":
+                OrderStatus.PREPARING,
+
+            "created_at":
+                datetime.now(),
+
+            "date":
+                datetime.now().strftime(
+                    "%d %b %Y, %I:%M %p"
+                ),
+
+            "estimated_time":
+                "15-20 mins",
+
+            "pickup_code":
+                random.randint(
+                    1000,
+                    9999,
+                ),
+
+            "token":
+                get_next_token(),
+
+            "user_email":
+                current_user["email"],
+        }
+
+        # ========================================================
+        # 7. SAVE ORDER
+        # ========================================================
+
+        result = orders_collection.insert_one(
+            order
+        )
+
+        saved_order = orders_collection.find_one(
+            {
+                "_id":
+                result.inserted_id
+            },
+            {
+                "_id": 0
+            },
+        )
+
+        # ========================================================
+        # 8. UPDATE USER STATISTICS
+        # ========================================================
+
+        users_collection.update_one(
+            {
+                "email":
+                intent["email"]
+            },
+            {
+                "$inc": {
+                    "total_orders": 1,
+                    "total_spent":
+                        float(
+                            intent["total"]
+                        ),
+                }
+            },
+        )
+
+        # ========================================================
+        # 9. CREATE PAYMENT RECORD
+        # ========================================================
+
         payment = {
-    "payment_id": data.razorpay_payment_id,
+            "payment_id":
+                data.razorpay_payment_id,
 
-    # Real CampusVita MongoDB order ID
-    "order_id": str(result.inserted_id),
+            # Real CampusVita MongoDB order ID
+            "order_id":
+                str(result.inserted_id),
 
-    # Real Razorpay order ID
-    "razorpay_order_id": data.razorpay_order_id,
+            # Real Razorpay order ID
+            "razorpay_order_id":
+                data.razorpay_order_id,
 
-    "email": intent["email"],
-    "user_email": current_user["email"],
+            "email":
+                intent["email"],
 
-    "amount": float(intent["total"]),
-    "currency": "INR",
+            "user_email":
+                current_user["email"],
 
-    "status": PaymentStatus.PAID,
-    "payment_method": "ONLINE",
-    "purpose": "food_order",
+            "amount":
+                float(intent["total"]),
 
-    "payment_date": datetime.now(timezone.utc),
+            "currency":
+                "INR",
 
-    "refund_status": None,
-    "refund_amount": 0.0,
-    "refund_date": None,
-    "refund_payment_id": None,
+            "status":
+                PaymentStatus.PAID,
 
-    # Keep for backend auditing only
-    "razorpay_signature": data.razorpay_signature,
-}
+            "payment_method":
+                "ONLINE",
+
+            "purpose":
+                "food_order",
+
+            "payment_date":
+                datetime.now(timezone.utc),
+
+            "refund_status":
+                None,
+
+            "refund_amount":
+                0.0,
+
+            "refund_date":
+                None,
+
+            "refund_payment_id":
+                None,
+
+            # Backend auditing
+            "razorpay_signature":
+                data.razorpay_signature,
+        }
+
+        # ========================================================
+        # 10. SAVE PAYMENT
+        # ========================================================
 
         try:
-            payments_collection.insert_one(payment)
-        except DuplicateKeyError:
-            # A concurrent duplicate submission already recorded this
-            # payment_id — surface a clean 400 instead of a 500.
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Payment already processed"
+            payments_collection.insert_one(
+                payment
             )
 
-        await safe_emit_order_update(saved_order)
+        except DuplicateKeyError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment already processed",
+            )
+
+        # ========================================================
+        # 11. NOTIFY ADMIN / ORDER SYSTEM
+        # ========================================================
+
+        await safe_emit_order_update(
+            saved_order
+        )
+
+        # ========================================================
+        # 12. START ORDER FLOW
+        # ========================================================
 
         threading.Thread(
             target=update_order_flow,
             args=(result.inserted_id,),
-            daemon=True
+            daemon=True,
         ).start()
 
-        logger.info(f"✅ Payment verified: {data.razorpay_payment_id}")
+        logger.info(
+            "✅ Payment verified: "
+            f"{data.razorpay_payment_id}"
+        )
+
+        # ========================================================
+        # 13. RESPONSE
+        # ========================================================
 
         return {
             "success": True,
-            "message": "Payment Verified Successfully",
-            "payment_id": data.razorpay_payment_id,
-            "order": saved_order,
+
+            "message":
+                "Payment Verified Successfully",
+
+            "payment_id":
+                data.razorpay_payment_id,
+
+            "order":
+                saved_order,
         }
 
     except HTTPException:
         raise
+
     except Exception as e:
-        logger.error(f"Verify payment error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
+        logger.exception(
+            f"❌ Verify payment error: {e}"
         )
 
+        raise HTTPException(
+            status_code=
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+
+            detail=
+                "Internal Server Error",
+        )
 # =====================================
 # ADMIN ROUTES (Protected)
 # =====================================

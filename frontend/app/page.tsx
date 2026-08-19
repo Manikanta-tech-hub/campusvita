@@ -28,10 +28,12 @@ export default function Home() {
   const [foods, setFoods] =
     useState<Food[]>([]);
 
-  const {
-    cartItems,
-    addToCart,
-  } = useCart();
+    const {
+      cartItems,
+      addToCart,
+      increaseQuantity,
+      decreaseQuantity,
+    } = useCart();
 
   const [
     selectedCategory,
@@ -222,11 +224,11 @@ export default function Home() {
 
       <Navbar/>
 
-      <div className="flex-1 p-10 max-w-7xl mx-auto">
+      <div className="mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-5 sm:px-6 sm:py-8 lg:px-10">
 
         {/* HERO */}
 
-        <h1 className="text-5xl font-bold text-orange-500">
+        <h1 className="text-3xl font-bold text-orange-500 sm:text-4xl lg:text-5xl">
           CampusVita
         </h1>
 
@@ -236,7 +238,7 @@ export default function Home() {
 
         {/* SEARCH */}
 
-        <div className="mt-8">
+        <div className="flex gap-4 overflow-x-auto pb-2 mt-6">
 
           <input
             type="text"
@@ -259,7 +261,7 @@ focus:border-orange-500 transition-colors"
 
         {/* CATEGORY FILTER */}
 
-        <div className="flex gap-4 overflow-x-auto pb-2 mt-6">
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-2 sm:mt-6 sm:gap-4">
 
           {categories.map(
             (category) => (
@@ -271,7 +273,7 @@ focus:border-orange-500 transition-colors"
                     category
                   )
                 }
-                className={`px-6 py-3 rounded-2xl whitespace-nowrap transition-all ${
+                className={`px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-all ${
                   selectedCategory ===
                   category
 
@@ -328,25 +330,28 @@ p-3 rounded-xl outline-none"
 
         {/* FOOD GRID */}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-10">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+  {filteredFoods.map((food, index) => {
+    const cartItem = cartItems.find(
+      (item) => item.name === food.name
+    );
 
-          {filteredFoods.map(
-            (food, index) => (
+    const quantity = cartItem?.quantity ?? 0;
 
-              <FoodCard
-                key={index}
-                name={food.name}
-                price={food.price}
-                image={food.image}
-                onAddToCart={() =>
-                  addToCart(food)
-                }
-              />
-
-            )
-          )}
-
-        </div>
+    return (
+      <FoodCard
+        key={`${food.name}-${index}`}
+        name={food.name}
+        price={food.price}
+        image={food.image}
+        quantity={quantity}
+        onAddToCart={() => addToCart(food)}
+        onIncrease={() => increaseQuantity(food.name)}
+        onDecrease={() => decreaseQuantity(food.name)}
+      />
+    );
+  })}
+</div>
 
         {/* EMPTY STATE */}
 

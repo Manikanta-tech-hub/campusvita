@@ -866,7 +866,6 @@ async def verify_payment(data: VerifyPaymentData):
 
             "name": data.name,
             "phone": data.phone,
-            "location": data.location,
 
             "payment_method": "ONLINE",
             "payment_status": "Paid",
