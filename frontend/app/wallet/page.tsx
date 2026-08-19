@@ -9,8 +9,10 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Gift,
+  ChevronRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import Navbar from "@/components/layout/Navbar";
 
@@ -26,6 +28,7 @@ type WalletHistory = {
   reason: string;
   date: string;
   payment_id?: string;
+  order_token?: string;
 };
 
 const API_URL =
@@ -33,11 +36,13 @@ const API_URL =
   "http://127.0.0.1:8000";
 
 export default function WalletPage() {
+  const router = useRouter();
   const [walletBalance, setWalletBalance] = useState(0);
   const [amount, setAmount] = useState("");
   const [history, setHistory] = useState<WalletHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   const getToken = () => {
     return (
@@ -54,9 +59,9 @@ export default function WalletPage() {
     };
   };
 
-  // =====================================
-  // LOAD WALLET
-  // =====================================
+  // ============================================================
+  // LOAD REAL WALLET DATA
+  // ============================================================
 
   const fetchWallet = async () => {
     try {
@@ -74,7 +79,9 @@ export default function WalletPage() {
       );
 
       setHistory(
-        response.data.history || []
+        Array.isArray(response.data.history)
+          ? response.data.history
+          : []
       );
     } catch (error: any) {
       console.error(
@@ -100,14 +107,14 @@ export default function WalletPage() {
     fetchWallet();
   }, []);
 
-  // =====================================
+  // ============================================================
   // ADD MONEY
-  // =====================================
+  // ============================================================
 
   const handleAddMoney = async () => {
     const numericAmount = Number(amount);
 
-    if (!amount) {
+    if (!amount.trim()) {
       toast.error("Enter amount");
       return;
     }
@@ -116,18 +123,12 @@ export default function WalletPage() {
       !Number.isFinite(numericAmount) ||
       numericAmount <= 0
     ) {
-      toast.error(
-        "Enter a valid amount"
-      );
+      toast.error("Enter a valid amount");
       return;
     }
 
     try {
       setProcessing(true);
-
-      // =====================================
-      // 1. CREATE RAZORPAY ORDER
-      // =====================================
 
       const response = await axios.post(
         `${API_URL}/wallet/create-topup-order`,
@@ -147,25 +148,21 @@ export default function WalletPage() {
             "Failed to create wallet payment"
         );
 
+        setProcessing(false);
         return;
       }
 
-      // =====================================
-      // 2. RAZORPAY CHECKOUT
-      // =====================================
-
-      if (!window.Razorpay) {
+      if (!razorpayLoaded || !window.Razorpay) {
         toast.error(
-          "Razorpay is still loading. Please try again."
+          "Razorpay is still loading. Please wait a moment."
         );
+        setProcessing(false);
         return;
       }
 
       const options = {
         key: orderData.key,
-
         amount: orderData.amount,
-
         currency: orderData.currency,
 
         name: "CampusVita",
@@ -224,9 +221,9 @@ export default function WalletPage() {
     }
   };
 
-  // =====================================
-  // VERIFY WALLET TOPUP
-  // =====================================
+  // ============================================================
+  // VERIFY TOP-UP
+  // ============================================================
 
   const verifyWalletTopup = async (
     paymentResponse: any,
@@ -261,7 +258,6 @@ export default function WalletPage() {
 
         setAmount("");
 
-        // Reload actual MongoDB wallet
         await fetchWallet();
       } else {
         toast.error(
@@ -284,195 +280,393 @@ export default function WalletPage() {
     }
   };
 
-  // =====================================
+  // ============================================================
   // LOADING
-  // =====================================
+  // ============================================================
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-black flex items-center justify-center text-white">
-        Loading Wallet...
-      </main>
+      <>
+        <Navbar />
+
+        <main className="min-h-screen bg-black text-white px-4 pt-6 pb-24 md:px-6">
+          <div className="mx-auto w-full max-w-md">
+
+            <div className="h-7 w-32 animate-pulse rounded-lg bg-zinc-800" />
+
+            <div className="mt-5 h-32 animate-pulse rounded-3xl bg-zinc-900" />
+
+            <div className="mt-5 h-40 animate-pulse rounded-3xl bg-zinc-900" />
+
+            <div className="mt-5 h-48 animate-pulse rounded-3xl bg-zinc-900" />
+
+          </div>
+        </main>
+      </>
     );
   }
 
-  // =====================================
-  // UI
-  // =====================================
+  // ============================================================
+  // REAL TRANSACTIONS
+  // ============================================================
+
+  const recentTransactions = history.slice(0, 4);
 
   return (
     <>
       <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="afterInteractive"
-      />
+  src="https://checkout.razorpay.com/v1/checkout.js"
+  strategy="afterInteractive"
+  onLoad={() => {
+    console.log("✅ Razorpay SDK loaded");
+    setRazorpayLoaded(true);
+  }}
+  onError={() => {
+    console.error("❌ Razorpay SDK failed to load");
+    setRazorpayLoaded(false);
+    toast.error("Unable to load Razorpay");
+  }}
+/>
 
       <Navbar />
 
-      <main className="min-h-screen bg-black text-white p-6 md:p-10">
-        <div className="max-w-6xl mx-auto">
+      <main className="min-h-screen bg-black text-white px-4 pt-5 pb-24 md:px-6 md:pt-8">
 
-          <h1 className="text-5xl font-bold text-orange-500">
-            My Wallet
-          </h1>
+        <div className="mx-auto w-full max-w-md">
 
-          {/* WALLET CARD */}
+          {/* ====================================================
+              HEADER
+              ==================================================== */}
 
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-3xl p-10 mt-10">
+          <div className="mb-5">
 
-            <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold tracking-tight">
+              My Wallet
+            </h1>
 
-              <Wallet size={45} />
+            <p className="mt-1 text-sm text-zinc-400">
+              Manage your CampusVita balance
+            </p>
 
-              <div>
+          </div>
 
-                <p className="text-xl">
-                  Wallet Balance
+          {/* ====================================================
+              BALANCE CARD
+              ==================================================== */}
+
+          <section className="relative overflow-hidden rounded-3xl border border-orange-400/20 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-5 shadow-xl shadow-orange-950/30">
+
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+
+            <div className="relative">
+
+              <div className="flex items-center justify-between">
+
+                <div className="flex items-center gap-2">
+
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+                    <Wallet
+                      size={19}
+                      strokeWidth={2.3}
+                    />
+                  </div>
+
+                  <span className="text-sm font-medium text-orange-50">
+                    Wallet Balance
+                  </span>
+
+                </div>
+
+              </div>
+
+              <div className="mt-4">
+
+                <p className="text-3xl font-bold tracking-tight">
+                  ₹{walletBalance.toFixed(2)}
                 </p>
 
-                <h2 className="text-5xl font-bold mt-2">
-                  ₹{walletBalance.toFixed(2)}
-                </h2>
+                <p className="mt-1 text-xs text-orange-100">
+                  Available balance
+                </p>
 
               </div>
 
             </div>
 
-          </div>
+          </section>
 
-          {/* ADD MONEY */}
+          {/* ====================================================
+              ADD MONEY
+              ==================================================== */}
 
-          <div className="bg-zinc-900 rounded-3xl p-8 mt-10 border border-zinc-800">
+          <section className="mt-5 rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
 
-            <h2 className="text-3xl font-bold">
-              Add Money
-            </h2>
+            <div className="flex items-center justify-between">
 
-            <div className="flex flex-col md:flex-row gap-4 mt-6">
+              <div>
 
-              <input
-                type="number"
-                min="1"
-                placeholder="Enter Amount"
-                value={amount}
-                onChange={(e) =>
-                  setAmount(e.target.value)
-                }
-                className="flex-1 bg-zinc-800 p-4 rounded-2xl outline-none border border-zinc-700 focus:border-orange-500"
-              />
+                <h2 className="text-lg font-semibold">
+                  Add Money
+                </h2>
 
-              <button
-                onClick={handleAddMoney}
-                disabled={processing}
-                className="bg-orange-500 hover:bg-orange-600 transition-all px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 disabled:opacity-50"
-              >
-                <Plus />
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Add funds securely using Razorpay
+                </p>
 
-                {processing
-                  ? "Processing..."
-                  : "Add Money"}
-              </button>
+              </div>
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+                <Plus size={19} />
+              </div>
 
             </div>
 
-          </div>
+            {/* Amount */}
 
-          {/* HISTORY */}
+            <div className="mt-4">
 
-          <div className="bg-zinc-900 rounded-3xl p-8 mt-10 border border-zinc-800">
+              <div className="flex items-center rounded-2xl border border-zinc-700 bg-zinc-800 px-4 transition focus-within:border-orange-500">
 
-            <h2 className="text-3xl font-bold">
-              Wallet History
-            </h2>
+                <span className="mr-2 text-lg font-semibold text-zinc-400">
+                  ₹
+                </span>
 
-            <div className="flex flex-col gap-5 mt-8">
+                <input
+                  type="number"
+                  min="1"
+                  inputMode="decimal"
+                  placeholder="Enter amount"
+                  value={amount}
+                  onChange={(e) =>
+                    setAmount(e.target.value)
+                  }
+                  className="h-12 w-full bg-transparent text-base text-white outline-none placeholder:text-zinc-500"
+                />
 
-              {history.length === 0 ? (
+              </div>
 
-                <p className="text-gray-400">
-                  No Transactions Yet
+            </div>
+
+            {/* Quick amounts */}
+
+            <div className="mt-3 grid grid-cols-4 gap-2">
+
+              {[100, 500, 1000, 2000].map(
+                (quickAmount) => (
+                  <button
+                    key={quickAmount}
+                    type="button"
+                    onClick={() =>
+                      setAmount(
+                        String(quickAmount)
+                      )
+                    }
+                    disabled={processing}
+                    className={`rounded-xl border px-2 py-2.5 text-xs font-semibold transition active:scale-95 ${
+                      Number(amount) ===
+                      quickAmount
+                        ? "border-orange-500 bg-orange-500/15 text-orange-400"
+                        : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-orange-500/60 hover:text-orange-400"
+                    }`}
+                  >
+                    + ₹{quickAmount}
+                  </button>
+                )
+              )}
+
+            </div>
+
+            {/* Add button */}
+
+            <button
+              type="button"
+              onClick={handleAddMoney}
+              disabled={processing}
+              className="mt-3 flex h-12 w-full items-center justify-center rounded-2xl bg-orange-500 text-sm font-bold text-white shadow-lg shadow-orange-950/20 transition hover:bg-orange-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {processing
+                ? "Processing..."
+                : "Add Money"}
+            </button>
+
+          </section>
+
+          {/* ====================================================
+              RECENT TRANSACTIONS
+              ==================================================== */}
+
+          <section className="mt-5">
+
+            <div className="mb-3 flex items-center justify-between">
+
+              <div>
+
+                <h2 className="text-lg font-semibold">
+                  Recent Transactions
+                </h2>
+
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Your latest wallet activity
                 </p>
+
+              </div>
+
+              {history.length > 0 && (
+                <span className="text-xs text-zinc-500">
+                  {history.length}{" "}
+                  {history.length === 1
+                    ? "transaction"
+                    : "transactions"}
+                </span>
+              )}
+
+            </div>
+
+            <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
+
+              {recentTransactions.length === 0 ? (
+
+                <div className="px-5 py-8 text-center">
+
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-800 text-zinc-500">
+                    <Wallet size={21} />
+                  </div>
+
+                  <p className="mt-3 text-sm font-medium text-zinc-300">
+                    No transactions yet
+                  </p>
+
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Your wallet activity will appear here.
+                  </p>
+
+                </div>
 
               ) : (
 
-                history.map(
-                  (item, index) => {
+                <div>
 
-                    const isCredit =
-                      item.type ===
-                        "credit" ||
-                      item.type ===
-                        "refund";
+                  {recentTransactions.map(
+                    (item, index) => {
 
-                    return (
-                      <div
-                        key={
-                          item.payment_id ||
-                          index
-                        }
-                        className="bg-zinc-800 p-5 rounded-2xl flex justify-between items-center gap-4"
-                      >
+                      const isCredit =
+                        item.type === "credit" ||
+                        item.type === "refund";
 
-                        <div className="flex items-center gap-4">
+                      return (
+                        <div
+                          key={
+                            item.payment_id ||
+                            item.order_token ||
+                            `${item.date}-${item.amount}-${index}`
+                          }
+                          className={`flex items-center justify-between gap-3 px-4 py-4 ${
+                            index !==
+                            recentTransactions.length - 1
+                              ? "border-b border-zinc-800"
+                              : ""
+                          }`}
+                        >
 
-                          {item.type ===
-                          "credit" ? (
+                          <div className="flex min-w-0 items-center gap-3">
 
-                            <ArrowDownLeft className="text-green-400" />
+                            <div
+                              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                                isCredit
+                                  ? "bg-green-500/10 text-green-400"
+                                  : "bg-red-500/10 text-red-400"
+                              }`}
+                            >
+                              {item.type ===
+                              "refund" ? (
+                                <Gift size={18} />
+                              ) : isCredit ? (
+                                <ArrowDownLeft
+                                  size={18}
+                                />
+                              ) : (
+                                <ArrowUpRight
+                                  size={18}
+                                />
+                              )}
+                            </div>
 
-                          ) : item.type ===
-                            "refund" ? (
+                            <div className="min-w-0">
 
-                            <Gift className="text-blue-400" />
+                              <p className="truncate text-sm font-semibold text-white">
+                                {item.reason ||
+                                  "Wallet transaction"}
+                              </p>
 
-                          ) : (
+                              <p className="mt-1 truncate text-[11px] text-zinc-500">
+                                {item.date}
+                              </p>
 
-                            <ArrowUpRight className="text-red-400" />
-
-                          )}
-
-                          <div>
-
-                            <h3 className="font-bold text-lg">
-                              {item.reason}
-                            </h3>
-
-                            <p className="text-gray-400 text-sm">
-                              {item.date}
-                            </p>
+                            </div>
 
                           </div>
 
+                          <p
+                            className={`shrink-0 text-sm font-bold ${
+                              isCredit
+                                ? "text-green-400"
+                                : "text-red-400"
+                            }`}
+                          >
+                            {isCredit
+                              ? "+"
+                              : "-"}
+                            ₹
+                            {Number(
+                              item.amount
+                            ).toFixed(2)}
+                          </p>
+
                         </div>
+                      );
+                    }
+                  )}
 
-                        <h2
-                          className={`text-xl md:text-2xl font-bold ${
-                            isCredit
-                              ? "text-green-400"
-                              : "text-red-400"
-                          }`}
-                        >
-                          {isCredit
-                            ? "+"
-                            : "-"}
-                          ₹
-                          {Number(
-                            item.amount
-                          ).toFixed(2)}
-                        </h2>
-
-                      </div>
-                    );
-                  }
-                )
+                </div>
 
               )}
 
             </div>
 
-          </div>
+            {/* View all */}
+
+            {history.length > 0 && (
+              <button
+              type="button"
+              onClick={() =>
+                router.push("/wallet/transactions")
+              }
+              className="mt-3 flex w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-4 text-left transition hover:border-orange-500/40 hover:bg-zinc-800 active:scale-[0.99]"
+            >
+                <div>
+
+                  <p className="text-sm font-semibold">
+                    View wallet transactions
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    See your complete wallet history
+                  </p>
+
+                </div>
+
+                <ChevronRight
+                  size={19}
+                  className="text-zinc-500"
+                />
+
+              </button>
+            )}
+
+          </section>
 
         </div>
+
       </main>
     </>
   );
