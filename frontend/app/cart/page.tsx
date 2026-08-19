@@ -35,10 +35,7 @@ declare global {
   }
 }
 
-type PaymentMethod =
-  | "ONLINE"
-  | "WALLET"
-  | "COD";
+type PaymentMethod = "ONLINE" | "WALLET";
 
 type Profile = {
   name: string;
@@ -72,6 +69,12 @@ export default function CartPage() {
 
   const router = useRouter();
 
+  /*
+   * ------------------------------------------------------------
+   * STATE
+   * ------------------------------------------------------------
+   */
+
   const [profile, setProfile] =
     useState<Profile | null>(null);
 
@@ -94,7 +97,7 @@ export default function CartPage() {
     useState(false);
 
   /*
-   * Prevent double taps / duplicate payment initialization.
+   * Prevent duplicate order/payment requests.
    */
   const actionLock = useRef(false);
 
@@ -140,8 +143,14 @@ export default function CartPage() {
         }
 
         if (!response.ok) {
+          const errorData =
+            await response
+              .json()
+              .catch(() => null);
+
           throw new Error(
-            "Failed to load profile"
+            errorData?.detail ||
+              "Failed to load profile"
           );
         }
 
@@ -181,9 +190,13 @@ export default function CartPage() {
           error
         );
 
-        toast.error(
-          "Unable to load profile details"
-        );
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Unable to load profile details"
+          );
+        }
       } finally {
         if (!cancelled) {
           setProfileLoading(false);
@@ -202,6 +215,16 @@ export default function CartPage() {
    * ------------------------------------------------------------
    * LOAD SERVER-AUTHORITATIVE BILL
    * ------------------------------------------------------------
+   *
+   * Every time the cart changes, the backend recalculates:
+   *
+   * subtotal
+   * + fees
+   * + taxes
+   * - discounts
+   * = final total
+   *
+   * The frontend does NOT decide the final payable amount.
    */
 
   useEffect(() => {
@@ -210,6 +233,7 @@ export default function CartPage() {
     async function loadBill() {
       if (cartItems.length === 0) {
         setBill(null);
+        setBillLoading(false);
         return;
       }
 
@@ -230,21 +254,28 @@ export default function CartPage() {
           `${API_URL}/cart/summary`,
           {
             method: "POST",
+
             headers: {
               "Content-Type":
                 "application/json",
+
               Authorization:
                 `Bearer ${token}`,
             },
+
             body: JSON.stringify({
               items: cartItems.map(
                 (item) => ({
                   name: item.name,
+
                   quantity:
-                    Number(item.quantity),
+                    Number(
+                      item.quantity
+                    ),
                 })
               ),
             }),
+
             cache: "no-store",
           }
         );
@@ -299,13 +330,13 @@ export default function CartPage() {
         );
 
         if (!cancelled) {
+          setBill(null);
+
           toast.error(
             error instanceof Error
               ? error.message
               : "Failed to calculate total"
           );
-
-          setBill(null);
         }
       } finally {
         if (!cancelled) {
@@ -320,6 +351,26 @@ export default function CartPage() {
       cancelled = true;
     };
   }, [cartItems, router]);
+
+  /*
+   * ------------------------------------------------------------
+   * PAYMENT HELPERS
+   * ------------------------------------------------------------
+   */
+
+  const walletBalance =
+    Number(profile?.wallet ?? 0);
+
+  const total =
+    Number(bill?.total ?? 0);
+
+  const walletCanPay =
+    walletBalance >= total;
+
+  const paymentLabel =
+    paymentMethod === "WALLET"
+      ? "CampusVita Wallet"
+      : "Online Payment";
 
   /*
    * ------------------------------------------------------------
@@ -391,6 +442,12 @@ export default function CartPage() {
    * ------------------------------------------------------------
    * VERIFY RAZORPAY PAYMENT
    * ------------------------------------------------------------
+   *
+   * IMPORTANT:
+   * The frontend never marks the order as paid.
+   *
+   * Your FastAPI /verify-payment endpoint verifies the
+   * Razorpay signature and creates the real order/payment.
    */
 
   const verifyPayment =
@@ -418,9 +475,11 @@ export default function CartPage() {
             `${API_URL}/verify-payment`,
             {
               method: "POST",
+
               headers: {
                 "Content-Type":
                   "application/json",
+
                 Authorization:
                   `Bearer ${token}`,
               },
@@ -459,8 +518,8 @@ export default function CartPage() {
         }
 
         /*
-         * ONLY backend-confirmed payment
-         * reaches this point.
+         * ONLY after backend verification:
+         * save order/payment information.
          */
 
         localStorage.setItem(
@@ -477,6 +536,8 @@ export default function CartPage() {
               data.payment_id,
 
             orderId:
+              data.order?._id ||
+              data.order?.order_id ||
               paymentResponse.razorpay_order_id,
 
             amount:
@@ -488,7 +549,14 @@ export default function CartPage() {
           })
         );
 
+        /*
+         * Clear cart ONLY after successful
+         * backend payment verification.
+         */
+
         clearCart();
+
+        setPaymentSheetOpen(false);
 
         toast.success(
           "Payment verified successfully"
@@ -499,9 +567,7 @@ export default function CartPage() {
         );
       } catch (error) {
         /*
-         * IMPORTANT:
-         * Do NOT clear the cart on
-         * verification failure.
+         * DO NOT clear cart here.
          */
 
         console.error(
@@ -543,7 +609,17 @@ export default function CartPage() {
         return;
       }
 
-      if (!acquireLock()) return;
+      if (bill.total <= 0) {
+        toast.error(
+          "Invalid order amount"
+        );
+
+        return;
+      }
+
+      if (!acquireLock()) {
+        return;
+      }
 
       try {
         const token =
@@ -553,13 +629,19 @@ export default function CartPage() {
 
         if (!token) {
           router.replace("/login");
+
           releaseLock();
+
           return;
         }
 
         /*
-         * Server recalculates prices.
-         * Client price is NOT trusted.
+         * IMPORTANT:
+         *
+         * We intentionally do NOT send the frontend
+         * calculated total to the backend.
+         *
+         * The backend recalculates the real amount.
          */
 
         const response =
@@ -622,6 +704,10 @@ export default function CartPage() {
             "Payment gateway is unavailable. Please try again."
           );
         }
+
+        /*
+         * Razorpay amount comes from backend.
+         */
 
         const options = {
           key: data.key,
@@ -723,13 +809,19 @@ export default function CartPage() {
    * ------------------------------------------------------------
    * WALLET PAYMENT
    * ------------------------------------------------------------
+   *
+   * The frontend checks the current profile balance only
+   * for UX.
+   *
+   * The backend MUST remain authoritative and validate the
+   * wallet balance again before deducting money.
    */
 
   const handleWalletPayment =
     async () => {
       if (!profile) {
         toast.error(
-          "Loading profile details..."
+          "Loading wallet details..."
         );
 
         return;
@@ -744,17 +836,23 @@ export default function CartPage() {
       }
 
       if (
-        profile.wallet <
+        walletBalance <
         bill.total
       ) {
         toast.error(
-          "Insufficient CampusVita wallet balance"
+          `Insufficient wallet balance. Need ₹${bill.total.toFixed(
+            0
+          )} but only ₹${walletBalance.toFixed(
+            0
+          )} is available.`
         );
 
         return;
       }
 
-      if (!acquireLock()) return;
+      if (!acquireLock()) {
+        return;
+      }
 
       try {
         const token =
@@ -769,6 +867,15 @@ export default function CartPage() {
 
           return;
         }
+
+        /*
+         * IMPORTANT:
+         *
+         * We do NOT send wallet balance from frontend.
+         *
+         * Backend must calculate the final amount,
+         * validate balance and perform the transaction.
+         */
 
         const response =
           await fetch(
@@ -822,6 +929,10 @@ export default function CartPage() {
           );
         }
 
+        /*
+         * Backend confirmed wallet payment.
+         */
+
         localStorage.setItem(
           "latestOrder",
           JSON.stringify(
@@ -849,7 +960,14 @@ export default function CartPage() {
           })
         );
 
+        /*
+         * Clear cart ONLY after successful
+         * backend wallet payment.
+         */
+
         clearCart();
+
+        setPaymentSheetOpen(false);
 
         toast.success(
           "Order placed using CampusVita Wallet"
@@ -876,165 +994,55 @@ export default function CartPage() {
 
   /*
    * ------------------------------------------------------------
-   * COD
-   * ------------------------------------------------------------
-   */
-
-  const handleCOD =
-    async () => {
-      if (!profile) {
-        toast.error(
-          "Loading profile details..."
-        );
-
-        return;
-      }
-
-      if (!bill) {
-        toast.error(
-          "Calculating final amount..."
-        );
-
-        return;
-      }
-
-      if (!acquireLock()) return;
-
-      try {
-        const token =
-          localStorage.getItem(
-            "access_token"
-          );
-
-        if (!token) {
-          router.replace("/login");
-
-          releaseLock();
-
-          return;
-        }
-
-        const response =
-          await fetch(
-            `${API_URL}/place-order`,
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                Authorization:
-                  `Bearer ${token}`,
-              },
-
-              body: JSON.stringify({
-                items: cartItems.map(
-                  (item) => ({
-                    name: item.name,
-
-                    quantity:
-                      Number(
-                        item.quantity
-                      ),
-                  })
-                ),
-              }),
-            }
-          );
-
-        const data =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data?.detail ||
-              "Failed to place order"
-          );
-        }
-
-        if (!data.success) {
-          throw new Error(
-            data?.message ||
-              "Failed to place order"
-          );
-        }
-
-        localStorage.setItem(
-          "latestOrder",
-          JSON.stringify(
-            data.order
-          )
-        );
-
-        clearCart();
-
-        toast.success(
-          "Order placed successfully"
-        );
-
-        router.push(
-          "/payment-success"
-        );
-      } catch (error) {
-        console.error(
-          "COD error:",
-          error
-        );
-
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Unable to place order"
-        );
-      } finally {
-        releaseLock();
-      }
-    };
-
-  /*
-   * ------------------------------------------------------------
    * PLACE ORDER
    * ------------------------------------------------------------
    */
 
   const handlePlaceOrder =
     async () => {
-      if (
-        paymentMethod ===
-        "ONLINE"
-      ) {
-        await handleOnlinePayment();
+      if (!bill) {
+        toast.error(
+          "Please wait for the final amount"
+        );
 
         return;
       }
 
-      if (
-        paymentMethod ===
-        "WALLET"
-      ) {
+      if (paymentMethod === "WALLET") {
         await handleWalletPayment();
 
         return;
       }
 
-      await handleCOD();
+      await handleOnlinePayment();
     };
 
   /*
    * ------------------------------------------------------------
-   * PAYMENT METHOD LABEL
+   * PAYMENT METHOD SELECTOR
    * ------------------------------------------------------------
    */
 
-  const paymentLabel =
-    paymentMethod ===
-    "ONLINE"
-      ? "Online Payment"
-      : paymentMethod ===
-        "WALLET"
-      ? "CampusVita Wallet"
-      : "Cash on Delivery";
+  const selectPaymentMethod = (
+    method: PaymentMethod
+  ) => {
+    if (
+      method === "WALLET" &&
+      !walletCanPay
+    ) {
+      toast.error(
+        `Insufficient wallet balance. Need ₹${total.toFixed(
+          0
+        )} • Available ₹${walletBalance.toFixed(
+          0
+        )}`
+      );
+
+      return;
+    }
+
+    setPaymentMethod(method);
+  };
 
   /*
    * ------------------------------------------------------------
@@ -1073,11 +1081,9 @@ export default function CartPage() {
               <button
                 type="button"
                 onClick={() =>
-                  router.push(
-                    "/menu"
-                  )
+                  router.push("/menu")
                 }
-                className="mt-6 flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold"
+                className="mt-6 flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white transition active:scale-95"
               >
                 Browse Food
 
@@ -1092,8 +1098,11 @@ export default function CartPage() {
     );
   }
 
-  const total =
-    bill?.total ?? 0;
+  /*
+   * ------------------------------------------------------------
+   * MAIN CART
+   * ------------------------------------------------------------
+   */
 
   return (
     <>
@@ -1104,10 +1113,25 @@ export default function CartPage() {
 
       <Navbar />
 
-      <main className="min-h-screen bg-black px-3 pb-[145px] pt-4 text-white sm:px-5 md:px-8 md:pb-40 md:pt-8">
+      <main
+        className="
+          min-h-screen
+          bg-black
+          px-3
+          pt-4
+          pb-[190px]
+          text-white
+          sm:px-5
+          md:px-8
+          md:pb-[165px]
+          md:pt-8
+        "
+      >
         <div className="mx-auto max-w-6xl">
 
-          {/* HEADER */}
+          {/* ====================================================
+              HEADER
+          ==================================================== */}
 
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -1117,8 +1141,7 @@ export default function CartPage() {
 
               <p className="mt-1 text-xs text-zinc-500">
                 {cartItems.length}{" "}
-                {cartItems.length ===
-                1
+                {cartItems.length === 1
                   ? "item"
                   : "items"}
               </p>
@@ -1134,11 +1157,13 @@ export default function CartPage() {
 
           <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
 
-            {/* LEFT */}
+            {/* ==================================================
+                LEFT / CART
+            ================================================== */}
 
             <section>
 
-              {/* PREPARATION */}
+              {/* PREPARATION CARD */}
 
               <div className="mb-3 flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/10">
@@ -1162,7 +1187,6 @@ export default function CartPage() {
               {/* CART ITEMS */}
 
               <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
-
                 {cartItems.map(
                   (
                     item,
@@ -1179,15 +1203,19 @@ export default function CartPage() {
                     return (
                       <div
                         key={`${item.name}-${index}`}
-                        className={`px-3 py-3.5 ${
-                          index !==
-                          cartItems.length -
-                            1
-                            ? "border-b border-zinc-800"
-                            : ""
-                        }`}
+                        className={`
+                          px-3
+                          py-3.5
+                          sm:px-4
+                          ${
+                            index !==
+                            cartItems.length -
+                              1
+                              ? "border-b border-zinc-800"
+                              : ""
+                          }
+                        `}
                       >
-
                         <div className="flex items-center gap-3">
 
                           {/* IMAGE */}
@@ -1211,10 +1239,9 @@ export default function CartPage() {
                             )}
                           </div>
 
-                          {/* INFO */}
+                          {/* INFORMATION */}
 
                           <div className="min-w-0 flex-1">
-
                             <h2 className="line-clamp-2 text-sm font-semibold leading-5">
                               {item.name}
                             </h2>
@@ -1235,13 +1262,11 @@ export default function CartPage() {
                                 0
                               )}
                             </p>
-
                           </div>
 
                           {/* QUANTITY */}
 
                           <div className="flex shrink-0 items-center rounded-lg border border-zinc-700 bg-zinc-900">
-
                             <button
                               type="button"
                               aria-label={`Decrease ${item.name}`}
@@ -1250,7 +1275,7 @@ export default function CartPage() {
                                   item.name
                                 )
                               }
-                              className="flex h-8 w-8 items-center justify-center text-zinc-300 active:scale-95"
+                              className="flex h-8 w-8 items-center justify-center text-zinc-300 transition active:scale-90"
                             >
                               <Minus
                                 size={14}
@@ -1271,16 +1296,16 @@ export default function CartPage() {
                                   item.name
                                 )
                               }
-                              className="flex h-8 w-8 items-center justify-center rounded-md bg-orange-500 text-white active:scale-95"
+                              className="flex h-8 w-8 items-center justify-center rounded-md bg-orange-500 text-white transition active:scale-90"
                             >
                               <Plus
                                 size={14}
                               />
                             </button>
-
                           </div>
-
                         </div>
+
+                        {/* REMOVE */}
 
                         <div className="mt-2 flex justify-end">
                           <button
@@ -1294,7 +1319,7 @@ export default function CartPage() {
                                 `${item.name} removed`
                               );
                             }}
-                            className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-red-400"
+                            className="flex items-center gap-1 rounded-md px-1 py-1 text-[11px] text-zinc-500 transition hover:text-red-400"
                           >
                             <Trash2
                               size={12}
@@ -1303,43 +1328,62 @@ export default function CartPage() {
                             Remove
                           </button>
                         </div>
-
                       </div>
                     );
                   }
                 )}
-
               </div>
 
-              {/* ADD MORE */}
+              {/* ADD MORE ITEMS */}
 
               <button
-  type="button"
-  onClick={() => router.push("/")}
-  className="mt-3 flex w-full items-center justify-between rounded-xl border border-dashed border-zinc-700 bg-zinc-950 px-4 py-3.5 text-left transition-all duration-200 hover:border-orange-500 hover:bg-zinc-900 active:scale-[0.99]"
->
-  <div className="min-w-0">
-    <p className="text-sm font-semibold text-white">
-      Add more items
-    </p>
+                type="button"
+                onClick={() =>
+                  router.push("/")
+                }
+                className="
+                  mt-3
+                  flex
+                  w-full
+                  items-center
+                  justify-between
+                  rounded-xl
+                  border
+                  border-dashed
+                  border-zinc-700
+                  bg-zinc-950
+                  px-4
+                  py-3.5
+                  text-left
+                  transition-all
+                  duration-200
+                  hover:border-orange-500
+                  hover:bg-zinc-900
+                  active:scale-[0.99]
+                "
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white">
+                    Add more items
+                  </p>
 
-    <p className="mt-0.5 text-xs text-zinc-500">
-      Explore more food from CampusVita
-    </p>
-  </div>
+                  <p className="mt-0.5 text-xs text-zinc-500">
+                    Explore more food from CampusVita
+                  </p>
+                </div>
 
-  <ChevronRight
-    size={18}
-    className="shrink-0 text-orange-500"
-  />
-</button>
-
+                <ChevronRight
+                  size={18}
+                  className="shrink-0 text-orange-500"
+                />
+              </button>
             </section>
 
-            {/* BILL */}
+            {/* ==================================================
+                BILL SUMMARY
+            ================================================== */}
 
             <aside className="h-fit">
-
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
 
                 <div className="mb-4 flex items-center justify-between">
@@ -1349,7 +1393,9 @@ export default function CartPage() {
 
                   <span className="text-xs text-zinc-500">
                     {cartItems.length}{" "}
-                    items
+                    {cartItems.length === 1
+                      ? "item"
+                      : "items"}
                   </span>
                 </div>
 
@@ -1421,7 +1467,6 @@ export default function CartPage() {
                           </span>
                         </div>
                       )}
-
                     </div>
 
                     <div className="my-4 border-t border-dashed border-zinc-800" />
@@ -1455,20 +1500,42 @@ export default function CartPage() {
                     Unable to calculate total
                   </p>
                 )}
-
               </div>
-
             </aside>
           </div>
         </div>
       </main>
 
       {/* ========================================================
-          STICKY ORDER BAR
+          STICKY CHECKOUT BAR
       ======================================================== */}
 
-      <div className="fixed inset-x-0 bottom-16 z-[60] border-t border-zinc-800 bg-black/95 px-3 py-2.5 backdrop-blur-xl sm:px-5 sm:py-3 md:bottom-0">
-        <div className="mx-auto flex max-w-6xl items-center gap-3">
+      <div
+        className="
+          fixed
+          inset-x-0
+          bottom-16
+          z-[60]
+          border-t
+          border-zinc-800
+          bg-black/95
+          px-3
+          pt-2.5
+          backdrop-blur-xl
+          sm:px-5
+          sm:pt-3
+          md:bottom-0
+        "
+        style={{
+          paddingBottom:
+            "calc(0.65rem + env(safe-area-inset-bottom))",
+        }}
+      >
+        <div className="mx-auto flex max-w-6xl items-center gap-2.5 sm:gap-3">
+
+          {/* ====================================================
+              CHANGE PAYMENT METHOD
+          ==================================================== */}
 
           <button
             type="button"
@@ -1477,21 +1544,75 @@ export default function CartPage() {
                 true
               )
             }
-            className="min-w-0 flex-1 text-left"
+            disabled={
+              loading ||
+              billLoading ||
+              !bill
+            }
+            className="
+              min-w-0
+              flex-1
+              rounded-xl
+              px-1
+              py-1
+              text-left
+              transition
+              active:scale-[0.98]
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
           >
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-              Total Amount
+            <p className="truncate text-[9px] font-semibold tracking-wide text-zinc-500 sm:text-[10px]">
+              CHANGE METHOD
+              <span className="ml-1 text-orange-500">
+                →
+              </span>
             </p>
 
-            <p className="text-xl font-bold text-white">
-              ₹
-              {bill
-                ? bill.total.toFixed(
-                    0
-                  )
-                : "—"}
-            </p>
+            <div className="mt-1 flex min-w-0 items-center gap-1.5">
+              {paymentMethod ===
+              "WALLET" ? (
+                <Wallet
+                  size={15}
+                  className="shrink-0 text-orange-500"
+                />
+              ) : (
+                <CreditCard
+                  size={15}
+                  className="shrink-0 text-orange-500"
+                />
+              )}
+
+              <span className="truncate text-xs font-semibold text-white sm:text-sm">
+                {paymentLabel}
+              </span>
+            </div>
+
+            {paymentMethod ===
+              "WALLET" && (
+              <p
+                className={`mt-0.5 truncate text-[9px] sm:text-[10px] ${
+                  walletCanPay
+                    ? "text-zinc-500"
+                    : "text-red-400"
+                }`}
+              >
+                {walletCanPay
+                  ? `Balance ₹${walletBalance.toFixed(
+                      0
+                    )}`
+                  : `Need ₹${total.toFixed(
+                      0
+                    )} • Available ₹${walletBalance.toFixed(
+                      0
+                    )}`}
+              </p>
+            )}
           </button>
+
+          {/* ====================================================
+              PLACE ORDER
+          ==================================================== */}
 
           <button
             type="button"
@@ -1502,30 +1623,64 @@ export default function CartPage() {
               loading ||
               billLoading ||
               !bill ||
-              profileLoading
+              profileLoading ||
+              (paymentMethod ===
+                "WALLET" &&
+                !walletCanPay)
             }
-            className="flex min-h-12 flex-[1.35] items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 text-sm font-bold text-white shadow-lg shadow-orange-500/10 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="
+              flex
+              min-h-12
+              flex-[1.35]
+              items-center
+              justify-center
+              gap-1.5
+              rounded-xl
+              bg-orange-500
+              px-3
+              text-xs
+              font-bold
+              text-white
+              shadow-lg
+              shadow-orange-500/10
+              transition-all
+              active:scale-[0.98]
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              sm:gap-2
+              sm:px-4
+              sm:text-sm
+            "
           >
             {loading ? (
               <>
                 <Loader2
-                  size={17}
+                  size={16}
                   className="animate-spin"
                 />
 
-                Processing...
+                <span>
+                  Processing...
+                </span>
               </>
             ) : (
               <>
-                Place Order
+                <span>
+                  Place Order
+                </span>
+
+                <span className="whitespace-nowrap">
+                  ₹
+                  {total.toFixed(0)}
+                </span>
 
                 <ArrowRight
                   size={17}
+                  className="shrink-0"
                 />
               </>
             )}
           </button>
-
         </div>
       </div>
 
@@ -1535,7 +1690,13 @@ export default function CartPage() {
 
       {paymentSheetOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm"
+          className="
+            fixed
+            inset-0
+            z-[100]
+            bg-black/70
+            backdrop-blur-sm
+          "
           onClick={() =>
             setPaymentSheetOpen(
               false
@@ -1543,22 +1704,46 @@ export default function CartPage() {
           }
         >
           <div
-            className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-zinc-800 bg-zinc-950 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl"
+            className="
+              absolute
+              inset-x-0
+              bottom-0
+              max-h-[90vh]
+              overflow-y-auto
+              rounded-t-3xl
+              border-t
+              border-zinc-800
+              bg-zinc-950
+              p-4
+              shadow-2xl
+              sm:mx-auto
+              sm:max-w-xl
+              sm:rounded-3xl
+              sm:bottom-4
+            "
+            style={{
+              paddingBottom:
+                "calc(1rem + env(safe-area-inset-bottom))",
+            }}
             onClick={(event) =>
               event.stopPropagation()
             }
           >
 
+            {/* DRAG HANDLE */}
+
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-zinc-700" />
+
+            {/* HEADER */}
 
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">
-                  Payment Method
+                  Choose Payment Method
                 </h2>
 
                 <p className="mt-1 text-xs text-zinc-500">
-                  Choose how you want to pay
+                  Select how you want to pay
                 </p>
               </div>
 
@@ -1569,171 +1754,304 @@ export default function CartPage() {
                     false
                   )
                 }
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 transition hover:bg-zinc-800 active:scale-90"
               >
-                <X
-                  size={17}
-                />
+                <X size={17} />
               </button>
             </div>
 
-            <div className="mt-5 space-y-2">
+            {/* ==================================================
+                PAYMENT OPTIONS
+            ================================================== */}
 
-              {/* ONLINE */}
+            <div className="mt-5 space-y-3">
+
+              {/* =================================================
+                  CAMPUSVITA WALLET
+              ================================================= */}
 
               <button
                 type="button"
                 onClick={() =>
-                  setPaymentMethod(
-                    "ONLINE"
+                  selectPaymentMethod(
+                    "WALLET"
                   )
                 }
-                className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left ${
-                  paymentMethod ===
-                  "ONLINE"
-                    ? "border-orange-500 bg-orange-500/10"
-                    : "border-zinc-800 bg-zinc-900"
-                }`}
+                disabled={
+                  !walletCanPay ||
+                  loading ||
+                  billLoading
+                }
+                className={`
+                  relative
+                  flex
+                  w-full
+                  items-center
+                  gap-3
+                  rounded-2xl
+                  border
+                  p-3.5
+                  text-left
+                  transition-all
+                  ${
+                    paymentMethod ===
+                    "WALLET"
+                      ? "border-orange-500 bg-orange-500/10"
+                      : walletCanPay
+                      ? "border-zinc-800 bg-zinc-900"
+                      : "border-zinc-800 bg-zinc-900/60"
+                  }
+                  ${
+                    !walletCanPay
+                      ? "cursor-not-allowed opacity-70"
+                      : "active:scale-[0.99]"
+                  }
+                `}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                  <CreditCard
-                    size={19}
+                {/* ICON */}
+
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10">
+                  <Wallet
+                    size={20}
                     className="text-orange-500"
                   />
                 </div>
+
+                {/* CONTENT */}
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">
+                      CampusVita Wallet
+                    </p>
+
+                    {walletCanPay && (
+                      <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[9px] font-semibold text-green-400">
+                        Available
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    Available Balance: ₹
+                    {walletBalance.toFixed(
+                      2
+                    )}
+                  </p>
+
+                  {!walletCanPay && (
+                    <p className="mt-1 text-[10px] font-medium text-red-400">
+                      Need ₹
+                      {total.toFixed(
+                        0
+                      )}{" "}
+                      • Available ₹
+                      {walletBalance.toFixed(
+                        0
+                      )}
+                    </p>
+                  )}
+                </div>
+
+                {/* RADIO */}
+
+                <div
+                  className={`
+                    flex
+                    h-5
+                    w-5
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    border-2
+                    ${
+                      paymentMethod ===
+                      "WALLET"
+                        ? "border-orange-500"
+                        : "border-zinc-600"
+                    }
+                  `}
+                >
+                  {paymentMethod ===
+                    "WALLET" && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                  )}
+                </div>
+              </button>
+
+              {/* =================================================
+                  ONLINE PAYMENT
+              ================================================= */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  selectPaymentMethod(
+                    "ONLINE"
+                  )
+                }
+                disabled={
+                  loading ||
+                  billLoading
+                }
+                className={`
+                  flex
+                  w-full
+                  items-center
+                  gap-3
+                  rounded-2xl
+                  border
+                  p-3.5
+                  text-left
+                  transition-all
+                  ${
+                    paymentMethod ===
+                    "ONLINE"
+                      ? "border-orange-500 bg-orange-500/10"
+                      : "border-zinc-800 bg-zinc-900"
+                  }
+                  active:scale-[0.99]
+                `}
+              >
+                {/* ICON */}
+
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10">
+                  <CreditCard
+                    size={20}
+                    className="text-orange-500"
+                  />
+                </div>
+
+                {/* CONTENT */}
 
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">
                     Online Payment
                   </p>
 
-                  <p className="mt-0.5 text-[11px] text-zinc-500">
-                    Razorpay • UPI, cards and enabled methods
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    UPI, Cards, Net Banking & more
+                  </p>
+
+                  <p className="mt-1 text-[10px] text-zinc-600">
+                    Secure checkout powered by Razorpay
                   </p>
                 </div>
 
-                {paymentMethod ===
-                  "ONLINE" && (
-                  <Check
-                    size={18}
-                    className="text-orange-500"
-                  />
-                )}
+                {/* RADIO */}
+
+                <div
+                  className={`
+                    flex
+                    h-5
+                    w-5
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    border-2
+                    ${
+                      paymentMethod ===
+                      "ONLINE"
+                        ? "border-orange-500"
+                        : "border-zinc-600"
+                    }
+                  `}
+                >
+                  {paymentMethod ===
+                    "ONLINE" && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-orange-500" />
+                  )}
+                </div>
               </button>
-
-              {/* WALLET */}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setPaymentMethod(
-                    "WALLET"
-                  )
-                }
-                className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left ${
-                  paymentMethod ===
-                  "WALLET"
-                    ? "border-orange-500 bg-orange-500/10"
-                    : "border-zinc-800 bg-zinc-900"
-                }`}
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                  <Wallet
-                    size={19}
-                    className="text-orange-500"
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">
-                    CampusVita Wallet
-                  </p>
-
-                  <p className="mt-0.5 text-[11px] text-zinc-500">
-                    Balance: ₹
-                    {profile?.wallet?.toFixed(
-                      0
-                    ) ?? "0"}
-                  </p>
-                </div>
-
-                {paymentMethod ===
-                  "WALLET" && (
-                  <Check
-                    size={18}
-                    className="text-orange-500"
-                  />
-                )}
-              </button>
-
-              {/* COD */}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setPaymentMethod(
-                    "COD"
-                  )
-                }
-                className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left ${
-                  paymentMethod ===
-                  "COD"
-                    ? "border-orange-500 bg-orange-500/10"
-                    : "border-zinc-800 bg-zinc-900"
-                }`}
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                  <ShoppingBag
-                    size={19}
-                    className="text-orange-500"
-                  />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">
-                    Cash on Delivery
-                  </p>
-
-                  <p className="mt-0.5 text-[11px] text-zinc-500">
-                    Pay when your order is collected
-                  </p>
-                </div>
-
-                {paymentMethod ===
-                  "COD" && (
-                  <Check
-                    size={18}
-                    className="text-orange-500"
-                  />
-                )}
-              </button>
-
             </div>
 
-            <div className="mt-4 flex items-center justify-between rounded-xl bg-black px-3 py-3">
-              <div>
-                <p className="text-[10px] text-zinc-500">
-                  Selected
-                </p>
+            {/* ==================================================
+                PAYABLE AMOUNT
+            ================================================== */}
 
-                <p className="text-sm font-semibold">
-                  {paymentLabel}
+            <div className="mt-5 rounded-2xl border border-zinc-800 bg-black p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-zinc-500">
+                    Payable Amount
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold">
+                    {paymentLabel}
+                  </p>
+                </div>
+
+                <p className="text-xl font-bold text-orange-500">
+                  ₹
+                  {total.toFixed(0)}
                 </p>
               </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setPaymentSheetOpen(
-                    false
-                  )
-                }
-                className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold"
-              >
-                Done
-              </button>
             </div>
 
+            {/* ==================================================
+                CONTINUE BUTTON
+            ================================================== */}
+
+            <button
+              type="button"
+              onClick={() =>
+                setPaymentSheetOpen(
+                  false
+                )
+              }
+              disabled={
+                loading ||
+                billLoading ||
+                !bill ||
+                (paymentMethod ===
+                  "WALLET" &&
+                  !walletCanPay)
+              }
+              className="
+                mt-4
+                flex
+                min-h-12
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                bg-orange-500
+                px-4
+                text-sm
+                font-bold
+                text-white
+                transition
+                active:scale-[0.98]
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              Continue with{" "}
+              {paymentMethod ===
+              "WALLET"
+                ? "Wallet"
+                : "Online Payment"}
+
+              <ArrowRight
+                size={17}
+              />
+            </button>
+
+            {/* SECURITY */}
+
+            <div className="mt-3 flex items-center justify-center gap-1.5">
+              <LockKeyhole
+                size={12}
+                className="text-zinc-600"
+              />
+
+              <p className="text-[10px] text-zinc-600">
+                Secure payment • CampusVita
+              </p>
+            </div>
           </div>
         </div>
       )}
