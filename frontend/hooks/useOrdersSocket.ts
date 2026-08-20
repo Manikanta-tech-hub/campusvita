@@ -7,14 +7,17 @@ export type SocketMessage = {
   data?: any;
 };
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
+const WS_URL = API_URL.replace(/^http/, "ws");
+
 export default function useOrdersSocket(
   onMessage: (message: SocketMessage) => void
 ) {
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef = useRef(true);
-
-  // Always keep the latest callback
+  const mountedRef = useRef(false);
   const onMessageRef = useRef(onMessage);
 
   useEffect(() => {
@@ -27,7 +30,6 @@ export default function useOrdersSocket(
     const connect = () => {
       if (!mountedRef.current) return;
 
-      // Prevent duplicate connections
       if (
         socketRef.current &&
         (socketRef.current.readyState === WebSocket.OPEN ||
@@ -36,23 +38,26 @@ export default function useOrdersSocket(
         return;
       }
 
-      console.log("🔄 Connecting to Orders WebSocket...");
+      const socketUrl = `${WS_URL}/ws/admin/orders`;
 
-      const socket = new WebSocket(
-        "ws://localhost:8000/ws/admin/orders"
-      );
+      console.log("🔄 Connecting to Orders WebSocket:", socketUrl);
+
+      const socket = new WebSocket(socketUrl);
 
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("✅ Orders WebSocket Connected");
+        if (!mountedRef.current) {
+          socket.close(1000, "Component unmounted");
+          return;
+        }
+
+        console.log("✅ Orders WebSocket Connected:", socketUrl);
       };
 
       socket.onmessage = (event) => {
         try {
           const message: SocketMessage = JSON.parse(event.data);
-
-          console.log("📨 Orders WebSocket message:", message);
 
           onMessageRef.current(message);
         } catch (error) {
@@ -65,36 +70,27 @@ export default function useOrdersSocket(
       };
 
       socket.onerror = () => {
-        console.error(
-          "❌ Orders WebSocket connection failed."
-        );
-
-        console.error(
-          "WebSocket URL:",
-          "ws://127.0.0.1:8000/ws/admin/orders"
-        );
-
-        console.error(
-          "Backend should be running at:",
-          "http://127.0.0.1:8000"
-        );
+        if (mountedRef.current) {
+          console.error(
+            "❌ Orders WebSocket connection failed:",
+            socketUrl
+          );
+        }
       };
 
       socket.onclose = (event) => {
-        console.log(
-          "⚠️ Orders WebSocket Closed",
-          {
-            code: event.code,
-            reason: event.reason || "No reason provided",
-            wasClean: event.wasClean,
-          }
-        );
+        console.log("⚠️ Orders WebSocket Closed", {
+          code: event.code,
+          reason: event.reason || "No reason provided",
+          wasClean: event.wasClean,
+        });
 
-        socketRef.current = null;
+        if (socketRef.current === socket) {
+          socketRef.current = null;
+        }
 
         if (!mountedRef.current) return;
 
-        // Don't create multiple reconnect timers
         if (reconnectTimer.current) {
           clearTimeout(reconnectTimer.current);
         }
@@ -116,20 +112,22 @@ export default function useOrdersSocket(
         reconnectTimer.current = null;
       }
 
-      if (socketRef.current) {
-        socketRef.current.onclose = null;
+      const socket = socketRef.current;
+
+      if (socket) {
+        socketRef.current = null;
+
+        socket.onopen = null;
+        socket.onmessage = null;
+        socket.onerror = null;
+        socket.onclose = null;
 
         if (
-          socketRef.current.readyState === WebSocket.OPEN ||
-          socketRef.current.readyState === WebSocket.CONNECTING
+          socket.readyState === WebSocket.OPEN ||
+          socket.readyState === WebSocket.CONNECTING
         ) {
-          socketRef.current.close(
-            1000,
-            "Component unmounted"
-          );
+          socket.close(1000, "Component unmounted");
         }
-
-        socketRef.current = null;
       }
     };
   }, []);

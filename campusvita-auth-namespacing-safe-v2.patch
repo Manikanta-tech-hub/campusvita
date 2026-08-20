@@ -1,0 +1,525 @@
+diff --git a/frontend/app/lib/auth.ts b/frontend/app/lib/auth.ts
+new file mode 100644
+--- /dev/null
++++ b/frontend/app/lib/auth.ts
+@@ -0,0 +1,91 @@
++export type AuthRole = "admin" | "user";
++
++const SESSION_FIELDS = [
++  "access_token",
++  "refresh_token",
++  "token_type",
++  "expires_in",
++  "isLoggedIn",
++  "userEmail",
++  "email",
++  "userName",
++  "userRole",
++] as const;
++
++type SessionField = (typeof SESSION_FIELDS)[number];
++
++function keyFor(field: SessionField, role: AuthRole): string {
++  return `${role}_${field}`;
++}
++
++export type LoginResponseData = {
++  access_token: string;
++  refresh_token: string;
++  token_type: string;
++  expires_in: number;
++  user: {
++    email: string;
++    name: string;
++    role: string;
++  };
++};
++
++export function normalizeRole(role: string | undefined | null): AuthRole {
++  return role === "ADMIN" ? "admin" : "user";
++}
++
++export function saveAuthSession(data: LoginResponseData): AuthRole {
++  const role = normalizeRole(data.user.role);
++
++  localStorage.setItem(keyFor("isLoggedIn", role), "true");
++  localStorage.setItem(keyFor("access_token", role), data.access_token);
++  localStorage.setItem(keyFor("refresh_token", role), data.refresh_token);
++  localStorage.setItem(keyFor("token_type", role), data.token_type);
++  localStorage.setItem(keyFor("expires_in", role), String(data.expires_in));
++  localStorage.setItem(keyFor("userEmail", role), data.user.email);
++  localStorage.setItem(keyFor("email", role), data.user.email);
++  localStorage.setItem(keyFor("userName", role), data.user.name);
++  localStorage.setItem(keyFor("userRole", role), data.user.role);
++
++  return role;
++}
++
++export function getAccessToken(role: AuthRole): string | null {
++  return localStorage.getItem(keyFor("access_token", role));
++}
++
++export function getSessionField(field: SessionField, role: AuthRole): string | null {
++  return localStorage.getItem(keyFor(field, role));
++}
++
++export function setSessionField(field: SessionField, value: string, role: AuthRole): void {
++  localStorage.setItem(keyFor(field, role), value);
++}
++
++export function isLoggedIn(role: AuthRole): boolean {
++  return localStorage.getItem(keyFor("isLoggedIn", role)) === "true";
++}
++
++export function clearAuthSession(role: AuthRole): void {
++  for (const field of SESSION_FIELDS) {
++    localStorage.removeItem(keyFor(field, role));
++  }
++}
++
++export function requireAuthHeader(role: AuthRole): { Authorization: string } {
++  const token = getAccessToken(role);
++  if (!token) {
++    throw new Error("No access token found");
++  }
++  return { Authorization: `Bearer ${token}` };
++}
++
++// Remove the old shared session keys once, but never remove either
++// role-namespaced session. This prevents stale shared values from being
++// accidentally used by code that has not yet been migrated.
++export function clearLegacyAuthKeys(): void {
++  for (const field of SESSION_FIELDS) {
++    localStorage.removeItem(field);
++  }
++}
++
+diff --git a/frontend/app/login/page.tsx b/frontend/app/login/page.tsx
+--- a/frontend/app/login/page.tsx
++++ b/frontend/app/login/page.tsx
+@@ -3,5 +3,6 @@ import toast from "react-hot-toast";
+ import Link from "next/link";
+ import { useEffect, useState } from "react";
+ import { useRouter } from "next/navigation";
++import { isLoggedIn as hasSession, saveAuthSession } from "@/app/lib/auth";
+ 
+ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+@@ -13,14 +14,8 @@ export default function LoginPage() {
+   const [loading, setLoading] = useState(false);
+   useEffect(() => {
+-    const isLoggedIn = localStorage.getItem("isLoggedIn");
+-    const savedEmail = localStorage.getItem("email");
+-    const role = localStorage.getItem("userRole");
+-
+-    if (isLoggedIn === "true" && savedEmail) {
+-      if (role === "ADMIN") {
+-        router.replace("/admin/dashboard");
+-      } else {
+-        router.replace("/");
+-      }
++    if (hasSession("admin")) {
++      router.replace("/admin/dashboard");
++    } else if (hasSession("user")) {
++      router.replace("/");
+     }
+   }, [router]);
+@@ -56,18 +53,9 @@ export default function LoginPage() {
+       }
+       if (response.ok && data.message === "Login Successful 🚀") {
+-        // Save auth tokens and user data
+-        localStorage.setItem("isLoggedIn", "true");
+-        localStorage.setItem("access_token", data.access_token);
+-        localStorage.setItem("refresh_token", data.refresh_token);
+-        localStorage.setItem("token_type", data.token_type);
+-        localStorage.setItem("expires_in", String(data.expires_in));
+-        localStorage.setItem("userEmail", data.user.email);
+-        localStorage.setItem("email", data.user.email);
+-        localStorage.setItem("userName", data.user.name);
+-        localStorage.setItem("userRole", data.user.role);
++        const role = saveAuthSession(data);
+         toast.success(data.message);
+-        if (data.user.role === "ADMIN") {
++        if (role === "admin") {
+           router.replace("/admin/dashboard");
+         } else {
+           router.replace("/");
+         }
+diff --git a/frontend/app/lib/api.ts b/frontend/app/lib/api.ts
+--- a/frontend/app/lib/api.ts
++++ b/frontend/app/lib/api.ts
+@@ -1,1 +1,3 @@
++import { getAccessToken } from "@/app/lib/auth";
++
+ const API_URL = "http://127.0.0.1:8000";
+@@ -1,2 +3,2 @@
+ export async function getDashboard() {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -18,2 +20,2 @@ export async function getDashboard() {
+ export async function getTopSelling() {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -29,2 +31,2 @@ export async function getTopSelling() {
+ export async function getLiveQueue() {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -41,2 +43,2 @@ export async function getLiveQueue() {
+ export async function getOrders() {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -56,6 +58,4 @@ export async function getOrders() {
+ export async function getTopSellingFoods(
+   month: string
+ ) {
+-  const token = localStorage.getItem(
+-    "access_token"
+-  );
++  const token = getAccessToken("admin");
+@@ -80,2 +80,2 @@ export async function getTopSellingFoods(
+ export async function getSalesDistribution(month: string) {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -112,2 +112,2 @@ export async function getSalesDistribution(month: string) {
+ export async function getOrderChartData() {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -127,2 +127,2 @@ export async function getOrderChartData() {
+ export async function getRevenueChartData(year?: number) {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -151,5 +151,5 @@ export async function getRevenueChartData(year?: number) {
+ export async function updateOrderStatus(
+   orderToken: number,
+   status: string
+ ) {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -241,4 +241,4 @@ export async function getRecentOrders(
+   sortBy = "token",
+   sortOrder = "desc"
+ ) {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+@@ -277,3 +277,3 @@ export async function getCustomers(
+   sort = "LATEST"
+ ) {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
+diff --git a/frontend/app/lib/settingsApi.ts b/frontend/app/lib/settingsApi.ts
+--- a/frontend/app/lib/settingsApi.ts
++++ b/frontend/app/lib/settingsApi.ts
+@@ -1,1 +1,3 @@
++import { getAccessToken as getRoleAccessToken } from "@/app/lib/auth";
++
+ const API_URL = "http://127.0.0.1:8000";
+@@ -11,4 +13,4 @@ type ApiError = {
+ function getAccessToken() {
+   if (typeof window === "undefined") return "";
+-  return localStorage.getItem("access_token") || "";
++  return getRoleAccessToken("admin") || "";
+ }
+diff --git a/frontend/app/admin/payments/page.tsx b/frontend/app/admin/payments/page.tsx
+--- a/frontend/app/admin/payments/page.tsx
++++ b/frontend/app/admin/payments/page.tsx
+@@ -9,3 +9,4 @@ import {
+   Eye,
+   CreditCard,
+ } from "lucide-react";
++import { getAccessToken } from "@/app/lib/auth";
+@@ -61,8 +62,5 @@ export default function AdminPaymentsPage() {
+   const [loading, setLoading] = useState(true);
+ 
+   const getToken = () => {
+-    return (
+-      localStorage.getItem("access_token") ||
+-      localStorage.getItem("token")
+-    );
++    return getAccessToken("admin");
+   };
+diff --git a/frontend/app/orders/page.tsx b/frontend/app/orders/page.tsx
+--- a/frontend/app/orders/page.tsx
++++ b/frontend/app/orders/page.tsx
+@@ -16,2 +16,3 @@ import { useRouter } from "next/navigation";
+ import { getImageUrl } from "@/app/lib/getImageUrl";
+ import Navbar from "@/components/layout/Navbar";
++import { getAccessToken } from "@/app/lib/auth";
+@@ -87,2 +88,2 @@ export default function OrdersPage() {
+-    return localStorage.getItem("access_token");
++    return getAccessToken("user");
+   };
+diff --git a/frontend/app/track-order/page.tsx b/frontend/app/track-order/page.tsx
+--- a/frontend/app/track-order/page.tsx
++++ b/frontend/app/track-order/page.tsx
+@@ -16,3 +16,4 @@ import Navbar from "@/components/layout/Navbar";
+ import { useCart } from "../../context/CartContext";
+ import { getImageUrl } from "@/app/lib/getImageUrl";
++import { getAccessToken, getSessionField } from "@/app/lib/auth";
+ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+@@ -95,1 +96,1 @@ export default function TrackOrderPage() {
+-      const token = localStorage.getItem("access_token");
++      const token = getAccessToken("user");
+@@ -149,1 +150,1 @@ export default function TrackOrderPage() {
+-    const email = localStorage.getItem("userEmail");
++    const email = getSessionField("userEmail", "user");
+@@ -182,1 +183,1 @@ export default function TrackOrderPage() {
+-      const userEmail = localStorage.getItem("userEmail");
++      const userEmail = getSessionField("userEmail", "user");
+diff --git a/frontend/app/wallet/page.tsx b/frontend/app/wallet/page.tsx
+--- a/frontend/app/wallet/page.tsx
++++ b/frontend/app/wallet/page.tsx
+@@ -11,2 +11,3 @@ import { useEffect, useState } from "react";
+ 
+ import Navbar from "@/components/layout/Navbar";
++import { getAccessToken } from "@/app/lib/auth";
+@@ -38,6 +39,3 @@ export default function WalletPage() {
+   const getToken = () => {
+-    return (
+-      localStorage.getItem("access_token") ||
+-      localStorage.getItem("token")
+-    );
++    return getAccessToken("user");
+   };
+diff --git a/frontend/app/checkout/page.tsx b/frontend/app/checkout/page.tsx
+--- a/frontend/app/checkout/page.tsx
++++ b/frontend/app/checkout/page.tsx
+@@ -13,2 +13,3 @@ import { useCart } from "../../context/CartContext";
+ 
+ import Navbar from "@/components/layout/Navbar";
++import { getAccessToken, getSessionField } from "@/app/lib/auth";
+@@ -105,2 +106,1 @@ export default function CheckoutPage() {
+-      const token =
+-        localStorage.getItem("access_token");
++      const token = getAccessToken("user");
+@@ -215,8 +216,2 @@ export default function CheckoutPage() {
+-            email:
+-              localStorage.getItem(
+-                "userEmail"
+-              ) ||
+-              localStorage.getItem(
+-                "email"
+-              ) ||
++            email: getSessionField("userEmail", "user") || getSessionField("email", "user") ||
+               "",
+@@ -296,4 +293,1 @@ export default function CheckoutPage() {
+-      const token =
+-        localStorage.getItem(
+-          "access_token"
+-        );
++      const token = getAccessToken("user");
+@@ -447,4 +442,1 @@ export default function CheckoutPage() {
+-        const token =
+-          localStorage.getItem(
+-            "access_token"
+-          );
++        const token = getAccessToken("user");
+@@ -601,4 +594,1 @@ export default function CheckoutPage() {
+-          const token =
+-            localStorage.getItem(
+-              "access_token"
+-            );
++          const token = getAccessToken("user");
+@@ -635,7 +626,1 @@ export default function CheckoutPage() {
+-                  email:
+-                    localStorage.getItem(
+-                      "userEmail"
+-                    ) ||
+-                    localStorage.getItem(
+-                      "email"
+-                    ),
++                  email: getSessionField("userEmail", "user") || getSessionField("email", "user"),
+diff --git a/frontend/components/layout/Navbar.tsx b/frontend/components/layout/Navbar.tsx
+--- a/frontend/components/layout/Navbar.tsx
++++ b/frontend/components/layout/Navbar.tsx
+@@ -17,3 +17,4 @@ import {
+ } from "lucide-react";
+ 
+ import { useCart } from "../../context/CartContext";
++import { clearAuthSession } from "@/app/lib/auth";
+@@ -73,15 +74,7 @@ export default function Navbar() {
+   // LOGOUT
+   // ============================================================
+   const handleLogout = () => {
+-    localStorage.removeItem("isLoggedIn");
+-    localStorage.removeItem("access_token");
+-    localStorage.removeItem("refresh_token");
+-    localStorage.removeItem("token_type");
+-    localStorage.removeItem("expires_in");
+-    localStorage.removeItem("userEmail");
+-    localStorage.removeItem("email");
+-    localStorage.removeItem("userName");
+-    localStorage.removeItem("userRole");
++    clearAuthSession("user");
+ 
+     router.replace("/login");
+   };
+diff --git a/frontend/app/profile/page.tsx b/frontend/app/profile/page.tsx
+--- a/frontend/app/profile/page.tsx
++++ b/frontend/app/profile/page.tsx
+@@ -20,1 +20,2 @@ import { useRouter } from "next/navigation";
+ import Navbar from "@/components/layout/Navbar";
++import { getAccessToken, setSessionField, clearAuthSession } from "@/app/lib/auth";
+@@ -201,12 +202,3 @@ export default function ProfilePage() {
+   const clearAuth = useCallback(() => {
+-    localStorage.removeItem("access_token");
+-    localStorage.removeItem("refresh_token");
+-    localStorage.removeItem("token_type");
+-    localStorage.removeItem("expires_in");
+-
+-    localStorage.removeItem("isLoggedIn");
+-    localStorage.removeItem("userEmail");
+-    localStorage.removeItem("email");
+-    localStorage.removeItem("userName");
+-    localStorage.removeItem("userRole");
++    clearAuthSession("user");
+   }, []);
+@@ -250,6 +243,3 @@ export default function ProfilePage() {
+     let cancelled = false;
+     async function loadProfile() {
+-      const token =
+-        localStorage.getItem(
+-          "access_token"
+-        );
++      const token = getAccessToken("user");
+@@ -370,18 +361,8 @@ export default function ProfilePage() {
+         if (liveProfile.email) {
+-          localStorage.setItem(
+-            "userEmail",
+-            liveProfile.email
+-          );
+-
+-          localStorage.setItem(
+-            "email",
+-            liveProfile.email
+-          );
++          setSessionField("userEmail", liveProfile.email, "user");
++          setSessionField("email", liveProfile.email, "user");
+         }
+ 
+         if (liveProfile.name) {
+-          localStorage.setItem(
+-            "userName",
+-            liveProfile.name
+-          );
++          setSessionField("userName", liveProfile.name, "user");
+         }
+@@ -421,5 +408,2 @@ export default function ProfilePage() {
+   const updateProfile = async () => {
+-    const token =
+-      localStorage.getItem(
+-        "access_token"
+-      );
++    const token = getAccessToken("user");
+@@ -650,4 +636,1 @@ export default function ProfilePage() {
+-        localStorage.setItem(
+-          "userName",
+-          updatedData.name
+-        );
++        setSessionField("userName", updatedData.name, "user");
+@@ -663,9 +649,2 @@ export default function ProfilePage() {
+-        localStorage.setItem(
+-          "userEmail",
+-          updatedData.email
+-        );
+-
+-        localStorage.setItem(
+-          "email",
+-          updatedData.email
+-        );
++        setSessionField("userEmail", updatedData.email, "user");
++        setSessionField("email", updatedData.email, "user");
+@@ -786,35 +766,1 @@ export default function ProfilePage() {
+-    localStorage.removeItem(
+-      "isLoggedIn"
+-    );
+-
+-    localStorage.removeItem(
+-      "access_token"
+-    );
+-
+-    localStorage.removeItem(
+-      "refresh_token"
+-    );
+-
+-    localStorage.removeItem(
+-      "token_type"
+-    );
+-
+-    localStorage.removeItem(
+-      "expires_in"
+-    );
+-
+-    localStorage.removeItem(
+-      "userEmail"
+-    );
+-
+-    localStorage.removeItem(
+-      "email"
+-    );
+-
+-    localStorage.removeItem(
+-      "userName"
+-    );
+-
+-    localStorage.removeItem(
+-      "userRole"
+-    );
++    clearAuthSession("user");
+diff --git a/frontend/components/admin/category/AddCategoryModal.tsx b/frontend/components/admin/category/AddCategoryModal.tsx
+--- a/frontend/components/admin/category/AddCategoryModal.tsx
++++ b/frontend/components/admin/category/AddCategoryModal.tsx
+@@ -1,3 +1,4 @@
+ "use client";
+ 
+ import { useState } from "react";
++import { getAccessToken } from "@/app/lib/auth";
+@@ -42,5 +43,3 @@ export default function AddCategoryModal({
+       setLoading(true);
+ 
+-      const token =
+-        localStorage.getItem("access_token") ||
+-        localStorage.getItem("token");
++      const token = getAccessToken("admin");
+diff --git a/frontend/components/admin/food/AddFoodModal.tsx b/frontend/components/admin/food/AddFoodModal.tsx
+--- a/frontend/components/admin/food/AddFoodModal.tsx
++++ b/frontend/components/admin/food/AddFoodModal.tsx
+@@ -1,2 +1,3 @@
+ import { useState } from "react";
+ import { addFood } from "@/app/lib/api";
++import { getAccessToken } from "@/app/lib/auth";
+@@ -42,1 +43,1 @@ export default function AddFoodModal({
+-          const token = localStorage.getItem("access_token");
++          const token = getAccessToken("admin");
+@@ -112,1 +113,1 @@ export default function AddFoodModal({
+-          const token = localStorage.getItem("access_token");
++          const token = getAccessToken("admin");
+diff --git a/frontend/components/admin/food/DeleteFoodModal.tsx b/frontend/components/admin/food/DeleteFoodModal.tsx
+--- a/frontend/components/admin/food/DeleteFoodModal.tsx
++++ b/frontend/components/admin/food/DeleteFoodModal.tsx
+@@ -1,3 +1,4 @@
+ "use client";
+ 
+ import { deleteFood } from "@/app/lib/api";
++import { getAccessToken } from "@/app/lib/auth";
+@@ -17,1 +18,1 @@ export default function DeleteFoodModal({
+-      const token = localStorage.getItem("access_token");
++      const token = getAccessToken("admin");
+diff --git a/frontend/components/admin/food/EditFoodModal.tsx b/frontend/components/admin/food/EditFoodModal.tsx
+--- a/frontend/components/admin/food/EditFoodModal.tsx
++++ b/frontend/components/admin/food/EditFoodModal.tsx
+@@ -1,2 +1,3 @@
+ import { useEffect, useState } from "react";
+ import { updateFood } from "@/app/lib/api";
++import { getAccessToken } from "@/app/lib/auth";
+@@ -57,1 +58,1 @@ export default function EditFoodModal({
+-      const token = localStorage.getItem("access_token");
++      const token = getAccessToken("admin");
+diff --git a/frontend/components/admin/notifications/notifications.ts b/frontend/components/admin/notifications/notifications.ts
+--- a/frontend/components/admin/notifications/notifications.ts
++++ b/frontend/components/admin/notifications/notifications.ts
+@@ -1,1 +1,3 @@
++import { getAccessToken } from "@/app/lib/auth";
++
+ export interface Notification {
+@@ -69,1 +71,1 @@ export async function getAdminNotifications(): Promise<Notification[]> {
+-  const token = localStorage.getItem("access_token");
++  const token = getAccessToken("admin");
