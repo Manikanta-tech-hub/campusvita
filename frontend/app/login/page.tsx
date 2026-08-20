@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { saveSession, clearAllSessions } from "@/app/lib/auth/session";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export default function LoginPage() {
@@ -15,15 +15,37 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const savedEmail = localStorage.getItem("email");
-    const role = localStorage.getItem("userRole");
+    const adminSession = localStorage.getItem(
+      "campusvita_admin_session"
+    );
   
-    if (isLoggedIn === "true" && savedEmail) {
-      if (role === "ADMIN") {
-        router.replace("/admin/dashboard");
-      } else {
-        router.replace("/");
+    const userSession = localStorage.getItem(
+      "campusvita_user_session"
+    );
+  
+    if (adminSession) {
+      try {
+        const session = JSON.parse(adminSession);
+  
+        if (session?.user?.role === "ADMIN") {
+          router.replace("/admin/dashboard");
+          return;
+        }
+      } catch {
+        localStorage.removeItem("campusvita_admin_session");
+      }
+    }
+  
+    if (userSession) {
+      try {
+        const session = JSON.parse(userSession);
+  
+        if (session?.user?.role === "USER") {
+          router.replace("/");
+          return;
+        }
+      } catch {
+        localStorage.removeItem("campusvita_user_session");
       }
     }
   }, [router]);
@@ -62,16 +84,25 @@ export default function LoginPage() {
       }
 
       if (response.ok && data.message === "Login Successful 🚀") {
-        // Save auth tokens and user data
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
-        localStorage.setItem("token_type", data.token_type);
-        localStorage.setItem("expires_in", String(data.expires_in));
-        localStorage.setItem("userEmail", data.user.email);
-        localStorage.setItem("email", data.user.email);
-        localStorage.setItem("userName", data.user.name);
-        localStorage.setItem("userRole", data.user.role);
+        // Clear any old active session first
+clearAllSessions();
+
+// Save the authenticated user into the correct role session
+saveSession({
+  accessToken: data.access_token,
+  refreshToken: data.refresh_token,
+  tokenType: data.token_type,
+  expiresIn: Number(data.expires_in),
+  user: {
+    name: data.user.name,
+    email: data.user.email,
+    role: data.user.role,
+    phone: data.user.phone || "",
+    department: data.user.department || "",
+    year: data.user.year || "",
+    profile_image: data.user.profile_image || "",
+  },
+});
 
         toast.success(data.message);
         if (data.user.role === "ADMIN") {
