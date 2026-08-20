@@ -4980,7 +4980,7 @@ def admin_dashboard(
                     "order_datetime": {
                         "$dateFromString": {
                             "dateString": "$date",
-                            "format": "%d %b %Y, %I:%M %p",
+                            "format": "%d %b %Y, %H:%M",
                             "onError": None,
                             "onNull": None
                         }
