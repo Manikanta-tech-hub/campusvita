@@ -102,11 +102,19 @@ export default function Navbar() {
     );
   };
 
+  // ============================================================
+  // HOME PAGE CHECK
+  //
+  // Theme and Logout are already available from Profile/Settings.
+  // Therefore hide them only on the Home page.
+  // ============================================================
+
+  const isHomePage = pathname === "/";
+
   return (
     <>
       {/* ========================================================
           DESKTOP NAVBAR
-          IMPORTANT: Desktop layout remains unchanged.
           ======================================================== */}
 
       <header className="sticky top-0 z-50 bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 backdrop-blur-lg shadow-sm">
@@ -148,57 +156,68 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Theme + Logout */}
+          {/* ====================================================
+              THEME + LOGOUT
 
-          <div className="flex items-center gap-3 ml-4">
+              Hidden on Home page because:
+              - Theme is available in Profile → Settings
+              - Logout is available directly on Profile
+              ==================================================== */}
 
-            {mounted && (
+          {!isHomePage && (
+            <div className="flex items-center gap-3 ml-4">
+
+              {/* Theme */}
+
+              {mounted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newTheme =
+                      theme === "dark" ? "light" : "dark";
+
+                    setTheme(newTheme);
+                  }}
+                  className="p-2 rounded-xl bg-zinc-800 dark:bg-zinc-700 hover:bg-orange-500 transition"
+                  aria-label="Toggle theme"
+                >
+                  {theme === "dark" ? (
+                    <Sun
+                      size={20}
+                      className="text-yellow-400"
+                    />
+                  ) : (
+                    <Moon
+                      size={20}
+                      className="text-white"
+                    />
+                  )}
+                </button>
+              )}
+
+              {/* Logout */}
+
               <button
                 type="button"
-                onClick={() => {
-                  const newTheme =
-                    theme === "dark" ? "light" : "dark";
-
-                  setTheme(newTheme);
-                }}
-                className="p-2 rounded-xl bg-zinc-800 dark:bg-zinc-700 hover:bg-orange-500 transition"
-                aria-label="Toggle theme"
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition"
               >
-                {theme === "dark" ? (
-                  <Sun
-                    size={20}
-                    className="text-yellow-400"
-                  />
-                ) : (
-                  <Moon
-                    size={20}
-                    className="text-white"
-                  />
-                )}
+                <LogOut size={18} />
+
+                <span className="hidden lg:inline">
+                  Logout
+                </span>
               </button>
-            )}
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition"
-            >
-              <LogOut size={18} />
-
-              <span className="hidden lg:inline">
-                Logout
-              </span>
-            </button>
-
-          </div>
+            </div>
+          )}
         </div>
       </header>
 
       {/* ========================================================
           MOBILE FLOATING CART
-          
+
           Only appears when cart has at least 1 item.
-          Desktop completely unaffected.
           ======================================================== */}
 
       <div
@@ -218,9 +237,12 @@ export default function Navbar() {
           {/* Cart Icon */}
 
           <div className="relative flex items-center justify-center">
-            <ShoppingCart size={22} strokeWidth={2.5} />
+            <ShoppingCart
+              size={22}
+              strokeWidth={2.5}
+            />
 
-            {/* Small live count badge */}
+            {/* Live count badge */}
 
             <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-orange-600 text-[10px] font-bold flex items-center justify-center shadow-sm">
               {cartCount}
@@ -252,11 +274,10 @@ export default function Navbar() {
 
       {/* ========================================================
           MOBILE BOTTOM NAVIGATION
-          
+
           Cart intentionally removed.
-          
+
           Home
-          Favorites
           Orders
           Wallet
           Profile
