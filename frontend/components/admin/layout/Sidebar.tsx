@@ -15,7 +15,7 @@ import {
   Users,
   LogOut,
 } from "lucide-react";
-
+import { clearAllSessions } from "@/app/lib/auth/session";
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
 
@@ -74,10 +74,13 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
+
 
   const handleLogout = () => {
-    const authKeys = [
+    clearAllSessions();
+  
+    // Remove any legacy authentication keys
+    [
       "isLoggedIn",
       "access_token",
       "refresh_token",
@@ -87,13 +90,14 @@ export default function Sidebar() {
       "email",
       "userName",
       "userRole",
-    ];
-
-    authKeys.forEach((key) => {
+    ].forEach((key) => {
       localStorage.removeItem(key);
     });
-
-    router.replace("/login");
+  
+    sessionStorage.clear();
+  
+    // Full navigation guarantees the admin dashboard is unmounted
+    window.location.replace("/login");
   };
 
   return (

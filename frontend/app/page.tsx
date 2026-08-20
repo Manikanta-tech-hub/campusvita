@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import Navbar from "@/components/layout/Navbar";
 
@@ -21,7 +22,7 @@ type Food = {
 };
 
 export default function Home() {
-
+  const router = useRouter();
   const [search, setSearch] =
     useState("");
 
@@ -46,25 +47,16 @@ export default function Home() {
   const [loading, setLoading] =
     useState(true);
 
-  useEffect(() => {
-
-    const isLoggedIn =
-      localStorage.getItem(
-        "isLoggedIn"
-      );
-
-    if (!isLoggedIn) {
-
-      window.location.href =
-        "/login";
-
-      return;
-
-    }
-
-    fetchFoods();
-
-  }, []);
+    useEffect(() => {
+      const token = localStorage.getItem("access_token");
+    
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+    
+      void fetchFoods();
+    }, []); 
 
   const fetchFoods = async () => {
 

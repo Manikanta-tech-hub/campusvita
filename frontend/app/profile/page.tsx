@@ -1,1388 +1,319 @@
 "use client";
 
-import toast from "react-hot-toast";
-
-import {
-  Camera,
-  CheckCircle2,
-  ShoppingBag,
-  User,
-  Wallet,
-} from "lucide-react";
-
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
+import {
+  Camera, CheckCircle2, ChevronRight, GraduationCap, Heart, HelpCircle,
+  Home, IndianRupee, LogOut, Mail, Pencil, Phone, Receipt, RefreshCw,
+  Settings, Share2, ShoppingBag, User, Building2, X
+} from "lucide-react";
+import { getImageUrl } from "@/app/lib/getImageUrl";
 
-import Navbar from "@/components/layout/Navbar";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-const API_URL = "http://127.0.0.1:8000";
-
-/* ============================================================
-   TYPES
-============================================================ */
-
-type ProfileData = {
-  name: string;
-  email: string;
-  phone: string;
-  department: string;
-  year: string;
-  profile_image: string;
-  wallet: number;
-  total_orders: number;
-  total_spent: number;
+type Profile = {
+  name: string; email: string; phone: string; department: string; year: string;
+  profile_image: string; total_orders: number; total_spent: number;
+  is_verified: boolean; notifications: boolean; theme: string;
 };
 
-/* ============================================================
-   EMPTY PROFILE
-============================================================ */
-
-const EMPTY_PROFILE: ProfileData = {
-  name: "",
-  email: "",
-  phone: "",
-  department: "",
-  year: "",
-  profile_image: "",
-  wallet: 0,
-  total_orders: 0,
-  total_spent: 0,
+const EMPTY: Profile = {
+  name: "", email: "", phone: "", department: "", year: "", profile_image: "",
+  total_orders: 0, total_spent: 0, is_verified: false, notifications: true, theme: "dark",
 };
 
-/* ============================================================
-   API ERROR HANDLER
-   Prevents:
-   [object Object],[object Object]
-============================================================ */
-
-function getApiErrorMessage(
-  errorData: unknown,
-  fallback: string
-): string {
-  if (!errorData) {
-    return fallback;
+function apiError(value: unknown, fallback: string) {
+  if (typeof value === "string" && value) return value;
+  if (Array.isArray(value)) {
+    return value.map((x) => {
+      if (typeof x === "string") return x;
+      if (x && typeof x === "object") {
+        const o = x as Record<string, unknown>;
+        return String(o.msg || o.message || o.detail || "");
+      }
+      return "";
+    }).filter(Boolean).join(", ") || fallback;
   }
-
-  // Simple string
-  if (typeof errorData === "string") {
-    return errorData;
+  if (value && typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    return String(o.detail || o.message || o.error || fallback);
   }
-
-  // Array response
-  if (Array.isArray(errorData)) {
-    const messages = errorData
-      .map((item) => {
-        if (typeof item === "string") {
-          return item;
-        }
-
-        if (
-          typeof item === "object" &&
-          item !== null
-        ) {
-          const objectItem =
-            item as Record<string, unknown>;
-
-          if (
-            typeof objectItem.msg === "string"
-          ) {
-            return objectItem.msg;
-          }
-
-          if (
-            typeof objectItem.message === "string"
-          ) {
-            return objectItem.message;
-          }
-
-          if (
-            typeof objectItem.detail === "string"
-          ) {
-            return objectItem.detail;
-          }
-
-          try {
-            return JSON.stringify(item);
-          } catch {
-            return "";
-          }
-        }
-
-        return String(item);
-      })
-      .filter(Boolean);
-
-    if (messages.length > 0) {
-      return messages.join(", ");
-    }
-
-    return fallback;
-  }
-
-  // Object response
-  if (
-    typeof errorData === "object" &&
-    errorData !== null
-  ) {
-    const objectData =
-      errorData as Record<string, unknown>;
-
-    if (
-      typeof objectData.detail === "string"
-    ) {
-      return objectData.detail;
-    }
-
-    if (
-      Array.isArray(objectData.detail)
-    ) {
-      return getApiErrorMessage(
-        objectData.detail,
-        fallback
-      );
-    }
-
-    if (
-      typeof objectData.message === "string"
-    ) {
-      return objectData.message;
-    }
-
-    if (
-      typeof objectData.error === "string"
-    ) {
-      return objectData.error;
-    }
-
-    try {
-      return JSON.stringify(objectData);
-    } catch {
-      return fallback;
-    }
-  }
-
   return fallback;
 }
 
-/* ============================================================
-   PROFILE PAGE
-============================================================ */
+function Skeleton({ className }: { className: string }) {
+  return <div className={`animate-pulse rounded-xl bg-zinc-800/80 ${className}`} />;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
-
-  /* ==========================================================
-     STATE
-  ========================================================== */
-
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [profile, setProfile] = useState<Profile>(EMPTY);
+  const [draft, setDraft] = useState<Profile>(EMPTY);
   const [loading, setLoading] = useState(true);
-
-  const [savingProfile, setSavingProfile] =
-    useState(false);
-
-  const [uploadingImage, setUploadingImage] =
-    useState(false);
-
-  const [profile, setProfile] =
-    useState<ProfileData>(EMPTY_PROFILE);
-
-  const [imagePreview, setImagePreview] =
-    useState("");
-
-  /*
-   * Keeps track of the latest saved profile.
-   * This prevents unnecessary duplicate PUT requests.
-   */
-  const lastSavedProfile = useRef({
-    name: "",
-    phone: "",
-    department: "",
-    year: "",
-  });
-
-  /* ============================================================
-     AUTH CLEANUP
-  ============================================================ */
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editField, setEditField] = useState<keyof Pick<Profile, "name"|"email"|"phone"|"department"|"year"> | null>(null);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [version, setVersion] = useState<any>(null);
+  const [versionError, setVersionError] = useState("");
+  const [shareBusy, setShareBusy] = useState(false);
 
   const clearAuth = useCallback(() => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("token_type");
-    localStorage.removeItem("expires_in");
-
-    localStorage.removeItem("isLoggedIn");
-
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("email");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userRole");
+    ["access_token","refresh_token","token_type","expires_in","isLoggedIn",
+     "userEmail","email","userName","userRole"].forEach((k) => localStorage.removeItem(k));
   }, []);
 
-  /* ============================================================
-     RESOLVE IMAGE URL
-  ============================================================ */
-
-  const resolveImageUrl = useCallback(
-    (image: string) => {
-      if (!image) {
-        return "";
+  const loadProfile = useCallback(async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) { router.replace("/login"); return; }
+    setLoading(true); setError("");
+    try {
+      const res = await fetch(`${API_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }, cache: "no-store"
+      });
+      const data = await res.json().catch(() => null);
+      if (res.status === 401) { clearAuth(); router.replace("/login"); return; }
+      if (!res.ok) throw new Error(apiError(data, "Unable to load profile"));
+      const s = data?.profile && typeof data.profile === "object" ? data.profile : data;
+      const next: Profile = {
+        name: String(s?.name ?? ""), email: String(s?.email ?? ""),
+        phone: String(s?.phone ?? ""), department: String(s?.department ?? ""),
+        year: String(s?.year ?? ""), profile_image: String(s?.profile_image ?? ""),
+        total_orders: Number(s?.total_orders ?? 0), total_spent: Number(s?.total_spent ?? 0),
+        is_verified: Boolean(s?.is_verified ?? s?.verified ?? false),
+        notifications: s?.notifications !== false, theme: String(s?.theme ?? "dark"),
+      };
+      setProfile(next); setDraft(next);
+      if (next.name) localStorage.setItem("userName", next.name);
+      if (next.email) {
+        localStorage.setItem("userEmail", next.email);
+        localStorage.setItem("email", next.email);
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load profile");
+    } finally { setLoading(false); }
+  }, [clearAuth, router]);
 
-      if (image.startsWith("blob:")) {
-        return image;
-      }
-
-      if (
-        image.startsWith("http://") ||
-        image.startsWith("https://")
-      ) {
-        return image;
-      }
-
-      if (image.startsWith("/")) {
-        return `${API_URL}${image}`;
-      }
-
-      return `${API_URL}/${image}`;
-    },
-    []
-  );
-
-  /* ============================================================
-     LOAD LIVE PROFILE
-  ============================================================ */
+  useEffect(() => { void loadProfile(); }, [loadProfile]);
 
   useEffect(() => {
-    let cancelled = false;
+    fetch("/api/app-version", { cache: "no-store" })
+      .then(async (r) => {
+        const d = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(apiError(d, "Unable to check for updates"));
+        setVersion(d);
+      })
+      .catch((e) => setVersionError(e instanceof Error ? e.message : "Unable to check for updates"));
+  }, []);
 
-    async function loadProfile() {
-      const token =
-        localStorage.getItem(
-          "access_token"
-        );
+  const initials = useMemo(() => {
+    const p = profile.name.trim().split(/\s+/).filter(Boolean);
+    return (p.slice(0, 2).map((x) => x[0]).join("") || "CV").toUpperCase();
+  }, [profile.name]);
 
-      if (!token) {
-        router.replace("/login");
-        return;
-      }
+  const openEdit = (field?: typeof editField) => {
+    setDraft(profile); setEditField(field ?? null); setEditOpen(true);
+  };
 
-      try {
-        setLoading(true);
-
-        const response = await fetch(
-          `${API_URL}/profile`,
-          {
-            method: "GET",
-
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-
-            cache: "no-store",
-          }
-        );
-
-        /* ------------------------------------------------------
-           AUTH ERROR
-        ------------------------------------------------------ */
-
-        if (response.status === 401) {
-          clearAuth();
-
-          toast.error(
-            "Session expired. Please login again."
-          );
-
-          router.replace("/login");
-          return;
-        }
-
-        /* ------------------------------------------------------
-           OTHER ERROR
-        ------------------------------------------------------ */
-
-        if (!response.ok) {
-          const errorData =
-            await response
-              .json()
-              .catch(() => null);
-
-          throw new Error(
-            getApiErrorMessage(
-              errorData,
-              "Failed to load profile"
-            )
-          );
-        }
-
-        const data =
-          await response.json();
-
-        if (cancelled) {
-          return;
-        }
-
-        console.log(
-          "========== LIVE USER PROFILE =========="
-        );
-
-        console.log(data);
-
-        console.log(
-          "========================================"
-        );
-
-        /* ------------------------------------------------------
-           PROFILE
-        ------------------------------------------------------ */
-
-        const liveProfile: ProfileData = {
-          name: data.name ?? "",
-          email: data.email ?? "",
-          phone: data.phone ?? "",
-          department:
-            data.department ?? "",
-          year: data.year ?? "",
-
-          profile_image:
-            typeof data.profile_image ===
-            "string"
-              ? data.profile_image.trim()
-              : "",
-
-          wallet: Number(
-            data.wallet ?? 0
-          ),
-
-          total_orders: Number(
-            data.total_orders ?? 0
-          ),
-
-          total_spent: Number(
-            data.total_spent ?? 0
-          ),
-        };
-
-        setProfile(liveProfile);
-
-        setImagePreview("");
-
-        /* ------------------------------------------------------
-           REMEMBER LAST SAVED PROFILE
-        ------------------------------------------------------ */
-
-        lastSavedProfile.current = {
-          name: liveProfile.name,
-          phone: liveProfile.phone,
-          department:
-            liveProfile.department,
-          year: liveProfile.year,
-        };
-
-        /* ------------------------------------------------------
-           KEEP LOGIN DATA IN SYNC
-        ------------------------------------------------------ */
-
-        if (liveProfile.email) {
-          localStorage.setItem(
-            "userEmail",
-            liveProfile.email
-          );
-
-          localStorage.setItem(
-            "email",
-            liveProfile.email
-          );
-        }
-
-        if (liveProfile.name) {
-          localStorage.setItem(
-            "userName",
-            liveProfile.name
-          );
-        }
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        console.error(
-          "Profile loading error:",
-          error
-        );
-
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load profile"
-        );
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+  const saveProfile = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) { router.replace("/login"); return; }
+    if (!draft.name.trim()) { toast.error("Name is required."); return; }
+    if (draft.phone && !/^[6789]\d{9}$/.test(draft.phone.trim())) {
+      toast.error("Enter a valid 10-digit Indian mobile number."); return;
     }
-
-    loadProfile();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [router, clearAuth]);
-
-  /* ============================================================
-     UPDATE PROFILE
-     AUTO-SAVES ON BLUR
-  ============================================================ */
-
-  const updateProfile = async () => {
-    const token =
-      localStorage.getItem(
-        "access_token"
-      );
-
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    const currentValues = {
-      name: profile.name.trim(),
-      phone: profile.phone.trim(),
-      department:
-        profile.department.trim(),
-      year: profile.year,
-    };
-
-    /* ----------------------------------------------------------
-       DON'T SEND DUPLICATE REQUEST
-    ---------------------------------------------------------- */
-
-    const lastSaved =
-      lastSavedProfile.current;
-
-    const hasChanges =
-      currentValues.name !==
-        lastSaved.name ||
-      currentValues.phone !==
-        lastSaved.phone ||
-      currentValues.department !==
-        lastSaved.department ||
-      currentValues.year !==
-        lastSaved.year;
-
-    if (!hasChanges) {
-      return;
-    }
-
-    /* ----------------------------------------------------------
-       BASIC VALIDATION
-    ---------------------------------------------------------- */
-
-    if (!currentValues.name) {
-      toast.error("Name is required.");
-      return;
-    }
-
-    if (currentValues.phone) {
-      if (
-        !/^\d{10}$/.test(
-          currentValues.phone
-        )
-      ) {
-        toast.error(
-          "Phone number must be exactly 10 digits."
-        );
-
-        return;
-      }
-
-      if (
-        !/^[6789]/.test(
-          currentValues.phone
-        )
-      ) {
-        toast.error(
-          "Please enter a valid Indian mobile number."
-        );
-
-        return;
-      }
-    }
-
+    setSaving(true);
     try {
-      setSavingProfile(true);
-
-      const response = await fetch(
-        `${API_URL}/profile`,
-        {
-          method: "PUT",
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            name: currentValues.name,
-            phone: currentValues.phone,
-            department:
-              currentValues.department,
-            year: currentValues.year,
-            profile_image:
-              profile.profile_image,
-          }),
-        }
-      );
-
-      /* --------------------------------------------------------
-         AUTH ERROR
-      -------------------------------------------------------- */
-
-      if (response.status === 401) {
-        clearAuth();
-
-        toast.error(
-          "Session expired. Please login again."
-        );
-
-        router.replace("/login");
-        return;
-      }
-
-      /* --------------------------------------------------------
-         API ERROR
-      -------------------------------------------------------- */
-
-      if (!response.ok) {
-        const errorData =
-          await response
-            .json()
-            .catch(() => null);
-
-        throw new Error(
-          getApiErrorMessage(
-            errorData,
-            "Failed to update profile"
-          )
-        );
-      }
-
-      const updatedData =
-        await response.json();
-
-      console.log(
-        "========== PROFILE UPDATED =========="
-      );
-
-      console.log(updatedData);
-
-      console.log(
-        "====================================="
-      );
-
-      /* --------------------------------------------------------
-         UPDATE LOCAL STATE
-      -------------------------------------------------------- */
-
-      setProfile((current) => ({
-        ...current,
-
-        name:
-          updatedData.name ??
-          current.name,
-
-        email:
-          updatedData.email ??
-          current.email,
-
-        phone:
-          updatedData.phone ??
-          current.phone,
-
-        department:
-          updatedData.department ??
-          current.department,
-
-        year:
-          updatedData.year ??
-          current.year,
-
-        profile_image:
-          updatedData.profile_image ??
-          current.profile_image,
-      }));
-
-      /* --------------------------------------------------------
-         UPDATE LAST SAVED VALUES
-      -------------------------------------------------------- */
-
-      lastSavedProfile.current = {
-        name:
-          updatedData.name ??
-          currentValues.name,
-
-        phone:
-          updatedData.phone ??
-          currentValues.phone,
-
-        department:
-          updatedData.department ??
-          currentValues.department,
-
-        year:
-          updatedData.year ??
-          currentValues.year,
+      const res = await fetch(`${API_URL}/profile`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: draft.name.trim(), phone: draft.phone.trim(),
+          department: draft.department.trim(), year: draft.year,
+          profile_image: profile.profile_image,
+          notifications: profile.notifications, theme: profile.theme,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.status === 401) { clearAuth(); router.replace("/login"); return; }
+      if (!res.ok) throw new Error(apiError(data, "Failed to update profile"));
+      const s = data?.profile && typeof data.profile === "object" ? data.profile : data;
+      const next = {
+        ...profile, name: String(s?.name ?? draft.name), email: String(s?.email ?? profile.email),
+        phone: String(s?.phone ?? draft.phone), department: String(s?.department ?? draft.department),
+        year: String(s?.year ?? draft.year), profile_image: String(s?.profile_image ?? profile.profile_image),
+        notifications: s?.notifications ?? profile.notifications, theme: String(s?.theme ?? profile.theme),
       };
-
-      /* --------------------------------------------------------
-         SYNC LOCAL STORAGE
-      -------------------------------------------------------- */
-
-      const savedName =
-        updatedData.name ??
-        currentValues.name;
-
-      const savedEmail =
-        updatedData.email ??
-        profile.email;
-
-      if (savedName) {
-        localStorage.setItem(
-          "userName",
-          savedName
-        );
-      }
-
-      if (savedEmail) {
-        localStorage.setItem(
-          "userEmail",
-          savedEmail
-        );
-
-        localStorage.setItem(
-          "email",
-          savedEmail
-        );
-      }
-
-      toast.success(
-        "Profile updated successfully."
-      );
-    } catch (error) {
-      console.error(
-        "Profile update error:",
-        error
-      );
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update profile"
-      );
-    } finally {
-      setSavingProfile(false);
-    }
+      setProfile(next); setDraft(next); setEditOpen(false); setEditField(null);
+      localStorage.setItem("userName", next.name);
+      toast.success("Profile updated successfully");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed to update profile"); }
+    finally { setSaving(false); }
   };
 
-  /* ============================================================
-     PROFILE IMAGE UPLOAD
-  ============================================================ */
-
-  const handleImageChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file =
-      event.target.files?.[0];
-
-    event.target.value = "";
-
-    if (!file) {
-      return;
-    }
-
-    /* ----------------------------------------------------------
-       VALIDATE FILE TYPE
-    ---------------------------------------------------------- */
-
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    if (
-      !allowedTypes.includes(
-        file.type
-      )
-    ) {
-      toast.error(
-        "Only JPG, PNG and WEBP images are allowed."
-      );
-
-      return;
-    }
-
-    /* ----------------------------------------------------------
-       VALIDATE FILE SIZE
-    ---------------------------------------------------------- */
-
-    if (
-      file.size >
-      5 * 1024 * 1024
-    ) {
-      toast.error(
-        "Image must be smaller than 5 MB."
-      );
-
-      return;
-    }
-
-    /* ----------------------------------------------------------
-       AUTH
-    ---------------------------------------------------------- */
-
-    const token =
-      localStorage.getItem(
-        "access_token"
-      );
-
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    const temporaryPreview =
-      URL.createObjectURL(file);
-
-    setImagePreview(
-      temporaryPreview
-    );
-
+  const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please choose an image."); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be smaller than 5 MB."); return; }
+    const token = localStorage.getItem("access_token");
+    if (!token) { router.replace("/login"); return; }
+    setUploading(true);
     try {
-      setUploadingImage(true);
-
-      /* --------------------------------------------------------
-         UPLOAD IMAGE
-      -------------------------------------------------------- */
-
-      const formData =
-        new FormData();
-
-      formData.append(
-        "file",
-        file
-      );
-
-      const uploadResponse =
-        await fetch(
-          `${API_URL}/profile/upload-image`,
-          {
-            method: "POST",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            body: formData,
-          }
-        );
-
-      const uploadData =
-        await uploadResponse
-          .json()
-          .catch(() => null);
-
-      /* --------------------------------------------------------
-         AUTH ERROR
-      -------------------------------------------------------- */
-
-      if (
-        uploadResponse.status ===
-        401
-      ) {
-        clearAuth();
-
-        toast.error(
-          "Session expired. Please login again."
-        );
-
-        router.replace("/login");
-        return;
-      }
-
-      /* --------------------------------------------------------
-         UPLOAD ERROR
-      -------------------------------------------------------- */
-
-      if (!uploadResponse.ok) {
-        throw new Error(
-          getApiErrorMessage(
-            uploadData,
-            "Profile image upload failed"
-          )
-        );
-      }
-
-      /* --------------------------------------------------------
-         GET PERMANENT IMAGE
-      -------------------------------------------------------- */
-
-      const uploadedImage =
-        uploadData?.profile_image ||
-        uploadData?.image_url ||
-        "";
-
-      if (
-        typeof uploadedImage !==
-          "string" ||
-        !uploadedImage.trim()
-      ) {
-        throw new Error(
-          "Backend did not return the saved profile image."
-        );
-      }
-
-      if (
-        uploadedImage.startsWith(
-          "blob:"
-        )
-      ) {
-        throw new Error(
-          "Backend returned an invalid temporary image URL."
-        );
-      }
-
-      const permanentImage =
-        uploadedImage.trim();
-
-      /* --------------------------------------------------------
-         UPDATE PROFILE IMAGE IN DATABASE
-      -------------------------------------------------------- */
-
-      const profileResponse =
-        await fetch(
-          `${API_URL}/profile`,
-          {
-            method: "PUT",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              name: profile.name.trim(),
-
-              phone:
-                profile.phone.trim(),
-
-              department:
-                profile.department.trim(),
-
-              year: profile.year,
-
-              profile_image:
-                permanentImage,
-            }),
-          }
-        );
-
-      /* --------------------------------------------------------
-         AUTH ERROR
-      -------------------------------------------------------- */
-
-      if (
-        profileResponse.status ===
-        401
-      ) {
-        clearAuth();
-
-        toast.error(
-          "Session expired. Please login again."
-        );
-
-        router.replace("/login");
-        return;
-      }
-
-      /* --------------------------------------------------------
-         PROFILE SAVE ERROR
-      -------------------------------------------------------- */
-
-      if (!profileResponse.ok) {
-        const errorData =
-          await profileResponse
-            .json()
-            .catch(() => null);
-
-        throw new Error(
-          getApiErrorMessage(
-            errorData,
-            "Failed to save profile image"
-          )
-        );
-      }
-
-      const savedProfile =
-        await profileResponse
-          .json()
-          .catch(() => null);
-
-      /* --------------------------------------------------------
-         UPDATE LOCAL IMAGE
-      -------------------------------------------------------- */
-
-      setProfile((current) => ({
-        ...current,
-
-        profile_image:
-          savedProfile?.profile_image ??
-          permanentImage,
-      }));
-
-      setImagePreview("");
-
-      URL.revokeObjectURL(
-        temporaryPreview
-      );
-
-      toast.success(
-        "Profile image updated successfully."
-      );
-    } catch (error) {
-      URL.revokeObjectURL(
-        temporaryPreview
-      );
-
-      setImagePreview("");
-
-      console.error(
-        "Profile image error:",
-        error
-      );
-
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update profile image"
-      );
-    } finally {
-      setUploadingImage(false);
-    }
+      const fd = new FormData(); fd.append("file", file);
+      const res = await fetch(`${API_URL}/profile/upload-image`, {
+        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd
+      });
+      const data = await res.json().catch(() => null);
+      if (res.status === 401) { clearAuth(); router.replace("/login"); return; }
+      if (!res.ok) throw new Error(apiError(data, "Failed to upload profile image"));
+      const url = String(data?.image_url ?? data?.profile_image ?? data?.url ?? "");
+      if (!url) throw new Error("The server did not return an image URL.");
+      setProfile((p) => ({ ...p, profile_image: url }));
+      setDraft((p) => ({ ...p, profile_image: url }));
+      toast.success("Profile photo updated");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed"); }
+    finally { setUploading(false); }
   };
 
-  /* ============================================================
-     DISPLAY IMAGE
-  ============================================================ */
+  const shareApp = async () => {
+    if (shareBusy) return;
+    setShareBusy(true);
+    try {
+      const data = { title: "CampusVita", text: "Smart Campus Food Ordering App", url: window.location.origin };
+      if (navigator.share) await navigator.share(data);
+      else { await navigator.clipboard.writeText(data.url); toast.success("CampusVita link copied"); }
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === "AbortError")) toast.error("Unable to share the app");
+    } finally { setShareBusy(false); }
+  };
 
-  const displayImage = useMemo(() => {
-    if (imagePreview) {
-      return imagePreview;
-    }
-
-    return resolveImageUrl(
-      profile.profile_image
-    );
-  }, [
-    imagePreview,
-    profile.profile_image,
-    resolveImageUrl,
-  ]);
-
-  /* ============================================================
-     LOADING SCREEN
-  ============================================================ */
+  const logout = () => {
+    clearAuth(); setLogoutOpen(false); router.replace("/login");
+  };
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-orange-500" />
-
-          <h1 className="text-xl font-semibold">
-            Loading Profile...
-          </h1>
-        </div>
-      </main>
-    );
+    return <main className="min-h-screen bg-[#090a0a] px-4 pt-6 text-white"><div className="mx-auto max-w-md space-y-4">
+      <div className="flex justify-between"><Skeleton className="h-8 w-32" /><Skeleton className="h-10 w-10 rounded-full" /></div>
+      <Skeleton className="h-36" /><Skeleton className="h-5 w-36" /><div className="grid grid-cols-2 gap-3"><Skeleton className="h-28" /><Skeleton className="h-28" /></div><Skeleton className="h-20" /><Skeleton className="h-64" /><Skeleton className="h-56" />
+    </div></main>;
   }
 
-  /* ============================================================
-     PAGE
-  ============================================================ */
+  return <main className="min-h-screen bg-[#090a0a] px-3 pb-[96px] pt-5 text-white sm:px-5">
+    <div className="mx-auto max-w-md">
+      <header className="relative mb-4 flex h-9 items-center justify-center">
+        <div className="text-[29px] font-extrabold"><span>Campus</span><span className="text-orange-500">Vita</span></div>
+        <button onClick={() => router.push("/settings")} aria-label="Open settings" className="absolute right-0 rounded-full p-2 active:scale-95"><Settings size={24}/></button>
+      </header>
 
-  return (
-    <>
-      <Navbar />
+      {error && <div className="mb-4 rounded-2xl border border-red-900/60 bg-[#171919] p-4 text-center">
+        <p className="font-semibold">Unable to load profile</p><p className="mt-1 text-xs text-zinc-400">{error}</p>
+        <button onClick={() => void loadProfile()} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-orange-500 px-4 py-2 text-sm text-orange-400"><RefreshCw size={15}/> Retry</button>
+      </div>}
 
-      <main className="min-h-screen bg-black text-white">
-        {/* =====================================================
-            PROFILE HERO
-        ===================================================== */}
-
-        <section className="relative flex min-h-[320px] flex-col items-center justify-center rounded-b-[45px] bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-10">
-          {/* PROFILE IMAGE */}
-
-          <div className="relative">
-            {displayImage ? (
-              <img
-                src={displayImage}
-                alt="Profile"
-                className="h-36 w-36 rounded-full border-4 border-white object-cover shadow-2xl sm:h-40 sm:w-40"
-                onError={(event) => {
-                  console.error(
-                    "Failed to load profile image:",
-                    displayImage
-                  );
-
-                  event.currentTarget.style.display =
-                    "none";
-                }}
-              />
-            ) : (
-              <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-white bg-zinc-800 text-5xl font-bold shadow-2xl sm:h-40 sm:w-40">
-                {profile.name
-                  ? profile.name
-                      .charAt(0)
-                      .toUpperCase()
-                  : "U"}
-              </div>
-            )}
-
-            {/* CAMERA */}
-
-            <label className="absolute bottom-0 right-0 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-black text-white shadow-lg transition hover:bg-zinc-800">
-              <Camera size={20} />
-
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                hidden
-                onChange={
-                  handleImageChange
-                }
-                disabled={
-                  uploadingImage
-                }
-              />
-            </label>
+      <section className="rounded-[24px] border border-zinc-800 bg-[#171919] p-4 shadow-xl">
+        <div className="flex gap-4">
+          <div className="relative shrink-0">
+            <div className="h-[116px] w-[116px] rounded-full border-2 border-orange-500 p-1">
+              {profile.profile_image ? <img src={getImageUrl(profile.profile_image)} alt="Profile photo" className="h-full w-full rounded-full object-cover"/> :
+                <div className="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-3xl font-bold text-orange-400">{initials}</div>}
+            </div>
+            <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change profile photo" className="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 shadow-lg active:scale-90">
+              {uploading ? <RefreshCw size={18} className="animate-spin"/> : <Camera size={19}/>}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={uploadImage} className="hidden"/>
           </div>
-
-          {/* NAME */}
-
-          <h1 className="mt-5 text-3xl font-bold sm:text-4xl">
-            {profile.name || "User"}
-          </h1>
-
-          {/* EMAIL */}
-
-          <p className="mt-2 text-base text-white/80 sm:text-lg">
-            {profile.email}
-          </p>
-
-          {/* IMAGE STATUS */}
-
-          {uploadingImage ? (
-            <p className="mt-3 rounded-full bg-black/20 px-4 py-1.5 text-sm text-white">
-              Updating profile image...
-            </p>
-          ) : null}
-        </section>
-
-        {/* =====================================================
-            CONTENT
-        ===================================================== */}
-
-        <div className="mx-auto w-full max-w-6xl px-5 py-8 md:px-8 md:py-10">
-          {/* ===================================================
-              ACCOUNT INFORMATION
-          =================================================== */}
-
-          <section className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl md:p-8">
-            {/* HEADER */}
-
-            <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold sm:text-3xl">
-                  Account Information
-                </h2>
-
-                <p className="mt-2 text-sm text-zinc-500">
-                  Your profile information is
-                  saved automatically.
-                </p>
-              </div>
-
-              {/* SAVE STATUS */}
-
-              <div className="flex items-center gap-2 text-sm">
-                {savingProfile ? (
-                  <>
-                    <div className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />
-
-                    <span className="text-orange-400">
-                      Saving...
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2
-                      size={16}
-                      className="text-emerald-400"
-                    />
-
-                    <span className="text-emerald-400">
-                      Saved
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* FORM */}
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {/* NAME */}
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-zinc-400">
-                  Full Name
-                </span>
-
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  value={profile.name}
-                  onChange={(event) =>
-                    setProfile(
-                      (current) => ({
-                        ...current,
-                        name: event.target.value,
-                      })
-                    )
-                  }
-                  onBlur={
-                    updateProfile
-                  }
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
-                />
-              </label>
-
-              {/* PHONE */}
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-zinc-400">
-                  Phone Number
-                </span>
-
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="Phone Number"
-                  value={profile.phone}
-                  onChange={(event) =>
-                    setProfile(
-                      (current) => ({
-                        ...current,
-                        phone: event.target.value.replace(
-                          /\D/g,
-                          ""
-                        ),
-                      })
-                    )
-                  }
-                  onBlur={
-                    updateProfile
-                  }
-                  maxLength={10}
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
-                />
-              </label>
-
-              {/* DEPARTMENT */}
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-zinc-400">
-                  Department
-                </span>
-
-                <input
-                  type="text"
-                  placeholder="Department"
-                  value={
-                    profile.department
-                  }
-                  onChange={(event) =>
-                    setProfile(
-                      (current) => ({
-                        ...current,
-                        department:
-                          event.target.value,
-                      })
-                    )
-                  }
-                  onBlur={
-                    updateProfile
-                  }
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
-                />
-              </label>
-
-              {/* YEAR */}
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-zinc-400">
-                  Academic Year
-                </span>
-
-                <select
-                  value={profile.year}
-                  onChange={(event) =>
-                    setProfile(
-                      (current) => ({
-                        ...current,
-                        year: event.target.value,
-                      })
-                    )
-                  }
-                  onBlur={
-                    updateProfile
-                  }
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition focus:border-orange-500"
-                >
-                  <option value="">
-                    Select Year
-                  </option>
-
-                  <option value="1st Year">
-                    1st Year
-                  </option>
-
-                  <option value="2nd Year">
-                    2nd Year
-                  </option>
-
-                  <option value="3rd Year">
-                    3rd Year
-                  </option>
-
-                  <option value="4th Year">
-                    4th Year
-                  </option>
-                </select>
-              </label>
-            </div>
-          </section>
-
-          {/* ===================================================
-              LIVE ACCOUNT STATISTICS
-          =================================================== */}
-
-          <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
-            {/* ORDERS */}
-
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl transition hover:border-zinc-700">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10">
-                <ShoppingBag
-                  className="text-orange-500"
-                  size={26}
-                />
-              </div>
-
-              <h3 className="mt-5 text-4xl font-bold">
-                {profile.total_orders}
-              </h3>
-
-              <p className="mt-2 text-gray-400">
-                Total Orders
-              </p>
-            </div>
-
-            {/* WALLET */}
-
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl transition hover:border-zinc-700">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500/10">
-                <Wallet
-                  className="text-green-400"
-                  size={26}
-                />
-              </div>
-
-              <h3 className="mt-5 text-4xl font-bold">
-                ₹
-                {profile.wallet.toLocaleString(
-                  "en-IN"
-                )}
-              </h3>
-
-              <p className="mt-2 text-gray-400">
-                Wallet Balance
-              </p>
-            </div>
-
-            {/* TOTAL SPENT */}
-
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl transition hover:border-zinc-700">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10">
-                <Wallet
-                  className="text-blue-400"
-                  size={26}
-                />
-              </div>
-
-              <h3 className="mt-5 text-4xl font-bold">
-                ₹
-                {profile.total_spent.toLocaleString(
-                  "en-IN"
-                )}
-              </h3>
-
-              <p className="mt-2 text-gray-400">
-                Total Spent
-              </p>
-            </div>
-          </section>
-
-          {/* ===================================================
-              PROFILE INFORMATION
-          =================================================== */}
-
-          <section className="mt-8 rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl md:p-7">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
-                <User size={20} />
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-white">
-                  Profile information
-                </h3>
-
-                <p className="mt-1 text-sm leading-6 text-zinc-500">
-                  Your account information and
-                  profile image are connected to
-                  your authenticated account.
-                  Changes are saved automatically
-                  through the existing backend.
-                </p>
-              </div>
-            </div>
-          </section>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2"><h1 className="truncate text-[22px] font-bold">{profile.name || "Not added"}</h1>{profile.is_verified && <CheckCircle2 size={20} className="shrink-0 text-orange-500" fill="currentColor"/>}</div>
+            <p className="mt-2 truncate text-sm text-zinc-300">{profile.department || "Not added"}</p>
+            <p className="mt-2 flex items-center gap-2 text-sm text-zinc-300"><Phone size={17}/>{profile.phone || "Not added"}</p>
+            <p className="mt-2 flex items-center gap-2 text-sm text-zinc-300"><GraduationCap size={18}/>{profile.year || "Not added"}</p>
+            <button onClick={() => openEdit()} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-orange-500 px-3.5 py-2 text-xs font-semibold text-orange-400 active:scale-95"><Pencil size={14}/> Edit Profile</button>
+          </div>
         </div>
-      </main>
-    </>
-  );
+      </section>
+
+      <section className="mt-4"><h2 className="mb-2 px-1 text-lg font-bold">Your Activity</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-[22px] border border-zinc-800 bg-[#171919] p-4 text-center"><ShoppingBag className="mx-auto text-orange-500" size={27}/><p className="mt-2 text-[29px] font-bold">{profile.total_orders || 0}</p><p className="mt-1 text-sm text-zinc-300">Total Orders</p></div>
+          <div className="rounded-[22px] border border-zinc-800 bg-[#171919] p-4 text-center"><IndianRupee className="mx-auto text-orange-500" size={27}/><p className="mt-2 text-[27px] font-bold">₹{Number(profile.total_spent || 0).toLocaleString("en-IN")}</p><p className="mt-1 text-sm text-zinc-300">Total Spent</p></div>
+        </div>
+      </section>
+
+      <button onClick={() => version?.updateAvailable && version.updateUrl ? window.open(version.updateUrl, "_blank", "noopener,noreferrer") : undefined} className="mt-4 flex w-full items-center gap-3 rounded-[22px] border border-zinc-800 bg-[#171919] p-3.5 text-left">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300"><RefreshCw size={22}/></div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold">{version?.updateAvailable ? "App update available" : versionError ? "Update check unavailable" : "You're up to date"}</p>
+          <p className="mt-0.5 truncate text-xs text-zinc-400">{versionError || (version?.updateAvailable ? `A newer version ${version.latestVersion} is available` : `Current version ${version?.currentVersion ?? "Not available"}`)}</p>
+        </div><ChevronRight size={21} className="text-zinc-400"/>
+      </button>
+
+      <section className="mt-5"><h2 className="mb-2 px-1 text-lg font-bold">About You</h2>
+        <div className="overflow-hidden rounded-[22px] border border-zinc-800 bg-[#171919]">
+          <InfoRow icon={<User size={21}/>} label="Full Name" value={profile.name} onClick={() => openEdit("name")}/>
+          <InfoRow icon={<Mail size={21}/>} label="Email" value={profile.email} onClick={() => openEdit("email")}/>
+          <InfoRow icon={<Phone size={21}/>} label="Phone Number" value={profile.phone} onClick={() => openEdit("phone")}/>
+          <InfoRow icon={<Building2 size={21}/>} label="Department / Branch" value={profile.department} onClick={() => openEdit("department")}/>
+          <InfoRow icon={<GraduationCap size={21}/>} label="Academic Year" value={profile.year} onClick={() => openEdit("year")} last/>
+        </div>
+      </section>
+
+      <section className="mt-5"><h2 className="mb-2 px-1 text-lg font-bold">Account</h2>
+        <div className="overflow-hidden rounded-[22px] border border-zinc-800 bg-[#171919]">
+          <AccountRow icon={<Heart size={22}/>} title="Favorites" subtitle="Your saved food items" href="/favorites"/>
+          <AccountRow icon={<Receipt size={22}/>} title="Payment History" subtitle="View your transactions" href="/wallet/transactions"/>
+          <AccountRow icon={<HelpCircle size={22}/>} title="About Us" subtitle="Learn more about CampusVita" href="/about"/>
+          <button onClick={shareApp} disabled={shareBusy} className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-zinc-900 disabled:opacity-60">
+            <span className="text-orange-500">{shareBusy ? <RefreshCw size={22} className="animate-spin"/> : <Share2 size={22}/>}</span>
+            <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Share the App</span><span className="mt-0.5 block text-xs text-zinc-400">Invite your friends to CampusVita</span></span><ChevronRight size={21} className="text-zinc-400"/>
+          </button>
+        </div>
+      </section>
+
+      <button onClick={() => setLogoutOpen(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[20px] border border-zinc-800 bg-[#171919] py-3.5 font-semibold text-orange-500 active:scale-[0.99]"><LogOut size={21}/> Logout</button>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-800 bg-[#0c0d0d]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
+        <div className="mx-auto grid h-[68px] max-w-md grid-cols-3">
+          <Bottom href="/" icon={<Home size={23}/>} label="Home"/><Bottom href="/orders" icon={<ShoppingBag size={23}/>} label="Orders"/><Bottom href="/profile" icon={<User size={23}/>} label="Profile" active/>
+        </div>
+      </nav>
+
+      {editOpen && <Modal onClose={() => !saving && setEditOpen(false)}>
+        <div className="flex items-center justify-between border-b border-zinc-800 p-5"><div><h2 className="text-lg font-bold">Edit Profile</h2><p className="mt-1 text-xs text-zinc-400">Saved to your authenticated account.</p></div><button onClick={() => setEditOpen(false)} aria-label="Close"><X size={21}/></button></div>
+        <div className="space-y-4 p-5">
+          <Field label="Full Name" value={draft.name} onChange={(v) => setDraft({...draft,name:v})} show={editField === null || editField === "name"}/>
+          <Field label="Email" value={draft.email} disabled show={editField === null || editField === "email"} hint="Email is controlled by the authenticated account."/>
+          <Field label="Phone Number" value={draft.phone} onChange={(v) => setDraft({...draft,phone:v.replace(/\D/g,"").slice(0,10)})} show={editField === null || editField === "phone"}/>
+          <Field label="Department / Branch" value={draft.department} onChange={(v) => setDraft({...draft,department:v})} show={editField === null || editField === "department"}/>
+          <Field label="Academic Year" value={draft.year} onChange={(v) => setDraft({...draft,year:v})} show={editField === null || editField === "year"}/>
+          <div className="flex gap-3 pt-2"><button onClick={() => setEditOpen(false)} disabled={saving} className="flex-1 rounded-xl border border-zinc-700 py-3 text-sm">Cancel</button><button onClick={() => void saveProfile()} disabled={saving || editField === "email"} className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-bold disabled:opacity-60">{saving ? "Saving..." : editField === "email" ? "Email cannot be changed" : "Save changes"}</button></div>
+        </div>
+      </Modal>}
+
+      {logoutOpen && <Modal onClose={() => setLogoutOpen(false)}>
+        <div className="p-5 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/10 text-orange-500"><LogOut size={24}/></div><h2 className="mt-4 text-lg font-bold">Sign out of CampusVita?</h2><p className="mt-2 text-sm text-zinc-400">You will need to sign in again to access your account.</p><div className="mt-5 flex gap-3"><button onClick={() => setLogoutOpen(false)} className="flex-1 rounded-xl border border-zinc-700 py-3 text-sm">Cancel</button><button onClick={logout} className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-bold">Logout</button></div></div>
+      </Modal>}
+    </div>
+  </main>;
+}
+
+function InfoRow({icon,label,value,onClick,last=false}:{icon:React.ReactNode;label:string;value:string;onClick:()=>void;last?:boolean}) {
+  return <button onClick={onClick} className={`flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-zinc-900 ${last ? "" : "border-b border-zinc-800"}`}><span className="text-zinc-300">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm text-zinc-200">{label}</span><span className={`mt-0.5 block truncate text-sm ${value ? "text-zinc-300" : "text-zinc-500"}`}>{value || "Not added"}</span></span><ChevronRight size={20} className="text-zinc-500"/></button>;
+}
+function AccountRow({icon,title,subtitle,href}:{icon:React.ReactNode;title:string;subtitle:string;href:string}) {
+  return <button onClick={() => window.location.assign(href)} className="flex w-full items-center gap-3 border-b border-zinc-800 px-4 py-3.5 text-left last:border-0 active:bg-zinc-900"><span className="text-orange-500">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="mt-0.5 block text-xs text-zinc-400">{subtitle}</span></span><ChevronRight size={21} className="text-zinc-400"/></button>;
+}
+function Bottom({href,icon,label,active=false}:{href:string;icon:React.ReactNode;label:string;active?:boolean}) {
+  return <button onClick={() => window.location.assign(href)} className={`flex flex-col items-center justify-center gap-1 text-xs active:scale-95 ${active ? "text-orange-500" : "text-zinc-500"}`}>{icon}<span>{label}</span></button>;
+}
+function Field({label,value,onChange,disabled=false,hint,show}:{label:string;value:string;onChange?:(v:string)=>void;disabled?:boolean;hint?:string;show:boolean}) {
+  if (!show) return null;
+  return <label className="block"><span className="mb-1.5 block text-xs font-semibold text-zinc-300">{label}</span><input value={value} disabled={disabled} onChange={(e)=>onChange?.(e.target.value)} className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-3 text-sm text-white outline-none focus:border-orange-500 disabled:text-zinc-500"/>{hint && <span className="mt-1 block text-[11px] text-zinc-500">{hint}</span>}</label>;
+}
+function Modal({children,onClose}:{children:React.ReactNode;onClose:()=>void}) {
+  return <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center"><button aria-label="Close dialog" onClick={onClose} className="absolute inset-0"/><div className="relative z-10 w-full max-w-md overflow-hidden rounded-[26px] border border-zinc-800 bg-[#151717] shadow-2xl">{children}</div></div>;
 }
