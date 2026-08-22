@@ -1,3 +1,4 @@
+import { getAccessToken } from "@/app/lib/auth/session";
 export interface Notification {
   id: string;
   title: string;
@@ -71,7 +72,7 @@ function getRelativeTime(dateValue?: string) {
 }
 
 export async function getAdminNotifications(): Promise<Notification[]> {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   if (!token) {
     throw new Error("Not authenticated");

@@ -3,7 +3,7 @@
 import { ArrowLeft, Heart, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export default function FavoritesPage() {
@@ -12,7 +12,7 @@ export default function FavoritesPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
+    const token = getAccessToken("USER");
     if (!token) { router.replace("/login"); return; }
 
     fetch(`${API_URL}/favorites`, {

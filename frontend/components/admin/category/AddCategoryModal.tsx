@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 type AddCategoryModalProps = {
   open: boolean;
   onClose: () => void;
@@ -44,9 +44,7 @@ export default function AddCategoryModal({
 
       setLoading(true);
 
-      const token =
-        localStorage.getItem("access_token") ||
-        localStorage.getItem("token");
+      const token = getAccessToken("ADMIN");
 
       if (!token) {
         setError(

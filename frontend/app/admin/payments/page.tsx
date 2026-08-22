@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getAccessToken } from "@/app/lib/auth/session";
 import axios from "axios";
 import toast from "react-hot-toast";
 import {
@@ -65,10 +66,7 @@ export default function AdminPaymentsPage() {
   const [loading, setLoading] = useState(true);
 
   const getToken = () => {
-    return (
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token")
-    );
+    return getAccessToken("ADMIN");
   };
 
   const getAuthHeaders = () => {

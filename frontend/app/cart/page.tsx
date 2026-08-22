@@ -4,7 +4,7 @@ import Script from "next/script";
 import toast from "react-hot-toast";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import {
   ArrowRight,
   Check,
@@ -112,7 +112,7 @@ export default function CartPage() {
 
     async function loadProfile() {
       const token =
-        localStorage.getItem("access_token");
+      getAccessToken("USER");
 
       if (!token) {
         router.replace("/login");
