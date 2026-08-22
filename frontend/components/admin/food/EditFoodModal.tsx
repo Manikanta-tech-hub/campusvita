@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { updateFood } from "@/app/lib/api";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 type Food = {
   name: string;
   description: string;
@@ -59,7 +59,7 @@ export default function EditFoodModal({
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("access_token");
+      const token = getAccessToken("ADMIN");
 
       if (!token) {
         alert("Please login again");

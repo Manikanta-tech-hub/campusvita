@@ -7,7 +7,8 @@ import {
   Eye,
   X,
 } from "lucide-react";
-
+import { getAccessToken } from "@/app/lib/auth/session";
+import { useRouter } from "next/navigation";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:8000";
@@ -61,6 +62,7 @@ interface OrdersResponse {
 }
 
 export default function OrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
 
   const [loading, setLoading] =
@@ -90,10 +92,12 @@ export default function OrdersPage() {
     try {
       setLoading(true);
 
-      const token =
-        localStorage.getItem(
-          "access_token"
-        );
+      const token = getAccessToken("ADMIN");
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
 
       const params =
         new URLSearchParams();

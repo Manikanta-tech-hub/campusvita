@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import {
   Pencil,
   Trash2,
@@ -39,13 +39,11 @@ export default function CategoryTable({
 
     try {
 
-      const token =
-        localStorage.getItem(
-          "access_token"
-        ) ||
-        localStorage.getItem(
-          "token"
-        );
+      const token = getAccessToken("ADMIN");
+
+if (!token) {
+  throw new Error("No admin access token found");
+}
 
       const response =
         await fetch(

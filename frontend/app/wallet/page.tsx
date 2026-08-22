@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import Navbar from "@/components/layout/Navbar";
 
 declare global {
@@ -46,7 +46,7 @@ export default function WalletPage() {
 
   const getToken = () => {
     return (
-      localStorage.getItem("access_token") ||
+      getAccessToken("USER") ||
       localStorage.getItem("token")
     );
   };

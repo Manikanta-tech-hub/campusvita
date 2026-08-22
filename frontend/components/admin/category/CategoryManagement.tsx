@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import CategoryStats from "./CategoryStats";
 import CategoryFilters from "./CategoryFilters";
 import CategoryTable from "./CategoryTable";
@@ -96,13 +96,11 @@ export default function CategoryManagement() {
 
       try {
 
-        const token =
-          localStorage.getItem(
-            "access_token"
-          ) ||
-          localStorage.getItem(
-            "token"
-          );
+        const token = getAccessToken("ADMIN");
+
+if (!token) {
+  throw new Error("No admin access token found");
+}
 
         const params =
           new URLSearchParams({
