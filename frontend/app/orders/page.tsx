@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { io } from "socket.io-client";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import { getImageUrl } from "@/app/lib/getImageUrl";
 import Navbar from "@/components/layout/Navbar";
 
@@ -95,7 +95,7 @@ export default function OrdersPage() {
       return null;
     }
 
-    return localStorage.getItem("access_token");
+    return getAccessToken("USER");
   };
 
   // ============================================================

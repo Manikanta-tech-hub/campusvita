@@ -1,12 +1,18 @@
+import { getAccessToken } from "@/app/lib/auth/session";
 const API_URL = "http://127.0.0.1:8000";
 
 export async function getDashboard() {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
+
+  if (!token) {
+    throw new Error("No admin access token found");
+  }
 
   const res = await fetch(`${API_URL}/admin/dashboard`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -17,7 +23,7 @@ export async function getDashboard() {
 }
 
 export async function getTopSelling() {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   const res = await fetch(`${API_URL}/admin/top-selling`, {
     headers: {
@@ -29,7 +35,7 @@ export async function getTopSelling() {
 }
 
 export async function getLiveQueue() {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   const res = await fetch(`${API_URL}/admin/live-queue`, {
     headers: {
@@ -41,7 +47,7 @@ export async function getLiveQueue() {
 }
 
 export async function getOrders() {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   const res = await fetch(`${API_URL}/admin/orders`, {
     headers: {
@@ -59,9 +65,11 @@ export async function getOrders() {
 export async function getTopSellingFoods(
   month: string
 ) {
-  const token = localStorage.getItem(
-    "access_token"
-  );
+  const token = getAccessToken("ADMIN");
+
+if (!token) {
+  throw new Error("No admin access token found");
+}
 
   const res = await fetch(
     `${API_URL}/admin/top-selling-foods?month=${encodeURIComponent(month)}`,
@@ -82,7 +90,7 @@ export async function getTopSellingFoods(
 }
 
 export async function getSalesDistribution(month: string) {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   if (!token) {
     throw new Error("No access token found");
@@ -116,7 +124,7 @@ export async function getSalesDistribution(month: string) {
   return response.json();
 }
 export async function getOrderChartData() {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   const res = await fetch(`${API_URL}/admin/order-chart-data`, {
     headers: {
@@ -132,7 +140,7 @@ export async function getOrderChartData() {
 }
 
 export async function getRevenueChartData(year?: number) {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   const params = year
     ? `?year=${year}`
@@ -160,7 +168,7 @@ export async function updateOrderStatus(
   orderToken: number,
   status: string
 ) {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   const res = await fetch(`${API_URL}/admin/orders/${orderToken}`, {
     method: "PUT",
@@ -259,7 +267,7 @@ export async function getRecentOrders(
   sortBy = "token",
   sortOrder = "desc"
 ) {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   const params = new URLSearchParams({
     page: String(page),
@@ -296,7 +304,7 @@ export async function getCustomers(
   status = "ALL",
   sort = "LATEST"
 ) {
-  const token = localStorage.getItem("access_token");
+  const token = getAccessToken("ADMIN");
 
   if (!token) {
     throw new Error("No access token found");

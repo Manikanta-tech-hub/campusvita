@@ -8,7 +8,7 @@ import Navbar from "@/components/layout/Navbar";
 import FoodCard from "../components/home/FoodCard";
 
 import { useCart } from "../context/CartContext";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import {
   requestNotificationPermission,
   listenNotifications,
@@ -48,7 +48,7 @@ export default function Home() {
     useState(true);
 
     useEffect(() => {
-      const token = localStorage.getItem("access_token");
+      const token = getAccessToken("USER");
     
       if (!token) {
         window.location.replace("/login");

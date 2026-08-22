@@ -1,3 +1,4 @@
+import { getAccessToken } from "@/app/lib/auth/session";
 const API_URL = "http://127.0.0.1:8000";
 
 type ApiError = {
@@ -10,13 +11,13 @@ async function readError(response: Response, fallback: string) {
   return data.detail || data.message || fallback;
 }
 
-function getAccessToken() {
+function getUserAccessToken() {
   if (typeof window === "undefined") return "";
-  return localStorage.getItem("access_token") || "";
+  return getAccessToken("USER") || "";
 }
 
 function authHeaders() {
-  const token = getAccessToken();
+  const token = getUserAccessToken();
 
   if (!token) {
     throw new Error("No access token found");

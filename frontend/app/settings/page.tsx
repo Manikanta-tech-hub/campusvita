@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, KeyRound, Moon, Save, ShieldCheck, Sun } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useTheme } from "next-themes";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export default function SettingsPage() {
@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("access_token");
+    const token = getAccessToken("USER");
     if (!token) { router.replace("/login"); return; }
     fetch(`${API_URL}/profile`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" })
       .then(async (r) => {
@@ -33,7 +33,7 @@ export default function SettingsPage() {
   }, [router]);
 
   const savePreferences = async () => {
-    const token = localStorage.getItem("access_token");
+    const token = getAccessToken("USER");
     if (!token) { router.replace("/login"); return; }
     setSaving(true);
     try {
@@ -53,7 +53,7 @@ export default function SettingsPage() {
     if (!passwords.current || !passwords.next) { toast.error("Enter your current and new password."); return; }
     if (passwords.next !== passwords.confirm) { toast.error("New passwords do not match."); return; }
     if (passwords.next.length < 8) { toast.error("New password must be at least 8 characters."); return; }
-    const token = localStorage.getItem("access_token");
+    const token = getAccessToken("USER");
     if (!token) { router.replace("/login"); return; }
     setChangingPassword(true);
     try {
