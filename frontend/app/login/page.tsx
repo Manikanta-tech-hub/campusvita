@@ -5,10 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import {
-  saveSession,
-  clearSession,
-} from "@/app/lib/auth/session";
+import { saveSession } from "@/app/lib/auth/session";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -19,8 +16,12 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
 
   // ============================================================
   // LOGIN
@@ -39,29 +40,28 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+          }),
+        }
+      );
 
       let data: any;
 
-      // ========================================================
-      // PARSE RESPONSE
-      // ========================================================
-
       try {
         data = await response.json();
-      } catch (jsonError) {
+      } catch (error) {
         console.error(
           "Login response JSON error:",
-          jsonError
+          error
         );
 
         toast.error(
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
       if (
         response.ok &&
-        data?.message === "Login Successful 🚀"
+        data.message === "Login Successful 🚀"
       ) {
         const role = data?.user?.role;
 
@@ -85,7 +85,10 @@ export default function LoginPage() {
         // Validate role
         // ------------------------------------------------------
 
-        if (role !== "ADMIN" && role !== "USER") {
+        if (
+          role !== "ADMIN" &&
+          role !== "USER"
+        ) {
           console.error(
             "Invalid role returned by backend:",
             role
@@ -102,7 +105,7 @@ export default function LoginPage() {
         // Validate access token
         // ------------------------------------------------------
 
-        if (!data?.access_token) {
+        if (!data.access_token) {
           console.error(
             "Login response does not contain access_token"
           );
@@ -114,29 +117,22 @@ export default function LoginPage() {
           return;
         }
 
-        // ------------------------------------------------------
-        // IMPORTANT:
+        // ======================================================
+        // IMPORTANT
         //
-        // Remove any previous role session before creating
-        // the new authenticated session.
+        // DO NOT clear ADMIN or USER sessions here.
         //
-        // This guarantees that:
-        //
-        // ADMIN login → only ADMIN session
-        // USER login  → only USER session
-        // ------------------------------------------------------
-
-        clearSession("ADMIN");
-        clearSession("USER");
-
-        // ------------------------------------------------------
-        // Save the session using the authenticated role.
-        //
-        // saveSession() automatically stores:
+        // Both sessions are independent:
         //
         // ADMIN → campusvita_admin_session
         // USER  → campusvita_user_session
-        // ------------------------------------------------------
+        //
+        // Logging in as USER must NOT remove ADMIN.
+        // Logging in as ADMIN must NOT remove USER.
+        //
+        // saveSession() automatically writes only to the
+        // namespace belonging to the authenticated role.
+        // ======================================================
 
         saveSession({
           accessToken: data.access_token,
@@ -148,40 +144,48 @@ export default function LoginPage() {
             data.token_type || "bearer",
 
           expiresIn:
-            Number(data.expires_in) || 0,
+            Number(data.expires_in || 0),
 
           user: {
             name:
-              data.user?.name || "",
+              data.user.name || "",
 
             email:
-              data.user?.email || "",
+              data.user.email || "",
 
             role,
 
             phone:
-              data.user?.phone || "",
+              data.user.phone || "",
 
             department:
-              data.user?.department || "",
+              data.user.department || "",
 
             year:
-              data.user?.year || "",
+              data.user.year || "",
 
             profile_image:
-              data.user?.profile_image || "",
+              data.user.profile_image || "",
           },
         });
 
         // ------------------------------------------------------
-        // SUCCESS MESSAGE
+        // Verify the correct namespace was created
         // ------------------------------------------------------
+
+        console.log(
+          `CampusVita ${role} session created`
+        );
+
+        // ======================================================
+        // SUCCESS MESSAGE
+        // ======================================================
 
         toast.success(data.message);
 
-        // ------------------------------------------------------
+        // ======================================================
         // ROLE-BASED REDIRECT
-        // ------------------------------------------------------
+        // ======================================================
 
         if (role === "ADMIN") {
           router.replace("/admin/dashboard");
@@ -223,10 +227,6 @@ export default function LoginPage() {
     <main className="min-h-screen bg-black flex items-center justify-center px-6">
       <div className="bg-zinc-900 p-10 rounded-3xl w-full max-w-md shadow-2xl border border-zinc-800">
 
-        {/* ======================================================
-            TITLE
-        ====================================================== */}
-
         <h1 className="text-5xl font-bold text-orange-500">
           Login
         </h1>
@@ -235,18 +235,14 @@ export default function LoginPage() {
           Welcome back to CampusVita 🚀
         </p>
 
-        {/* ======================================================
-            FORM
-        ====================================================== */}
-
         <form
           onSubmit={handleLogin}
           className="flex flex-col gap-5 mt-10"
         >
 
-          {/* ====================================================
+          {/* ==================================================
               EMAIL
-          ==================================================== */}
+          ================================================== */}
 
           <input
             type="email"
@@ -261,9 +257,9 @@ export default function LoginPage() {
             className="p-4 rounded-2xl bg-zinc-800 text-white outline-none border border-zinc-700 focus:border-orange-500 disabled:opacity-50"
           />
 
-          {/* ====================================================
+          {/* ==================================================
               PASSWORD
-          ==================================================== */}
+          ================================================== */}
 
           <div className="relative">
 
@@ -288,7 +284,8 @@ export default function LoginPage() {
               type="button"
               onClick={() =>
                 setShowPassword(
-                  (prev) => !prev
+                  (previous) =>
+                    !previous
                 )
               }
               aria-label={
@@ -305,9 +302,9 @@ export default function LoginPage() {
 
           </div>
 
-          {/* ====================================================
+          {/* ==================================================
               LOGIN BUTTON
-          ==================================================== */}
+          ================================================== */}
 
           <button
             type="submit"
@@ -319,9 +316,9 @@ export default function LoginPage() {
               : "Login"}
           </button>
 
-          {/* ====================================================
+          {/* ==================================================
               SIGNUP
-          ==================================================== */}
+          ================================================== */}
 
           <Link href="/signup">
             <button
