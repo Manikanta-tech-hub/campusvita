@@ -16,7 +16,7 @@ import {
   Sun,
   ArrowRight,
 } from "lucide-react";
-
+import { clearSession } from "@/app/lib/auth/session";
 import { useCart } from "../../context/CartContext";
 
 const navItems = [
@@ -50,12 +50,11 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
 
   // ============================================================
-  // EXISTING CART CONTEXT
+  // CART
   // ============================================================
 
   const { cartItems } = useCart();
 
-  // Count actual quantities, not just unique products.
   const cartCount = useMemo(() => {
     return cartItems.reduce(
       (total, item) => total + Number(item.quantity || 0),
@@ -74,19 +73,25 @@ export default function Navbar() {
   }, []);
 
   // ============================================================
-  // LOGOUT
+  // USER LOGOUT
   // ============================================================
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("token_type");
-    localStorage.removeItem("expires_in");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("email");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userRole");
+    /*
+     * IMPORTANT:
+     * Only clear the USER session.
+     *
+     * Do NOT manually remove:
+     * - access_token
+     * - refresh_token
+     * - userRole
+     * - userEmail
+     * - userName
+     *
+     * Those are legacy shared keys and can cause
+     * ADMIN <-> USER session collisions.
+     */
+    clearSession("USER");
 
     router.replace("/login");
   };
@@ -104,9 +109,6 @@ export default function Navbar() {
 
   // ============================================================
   // HOME PAGE CHECK
-  //
-  // Theme and Logout are already available from Profile/Settings.
-  // Therefore hide them only on the Home page.
   // ============================================================
 
   const isHomePage = pathname === "/";
@@ -117,23 +119,27 @@ export default function Navbar() {
           DESKTOP NAVBAR
           ======================================================== */}
 
-      <header className="sticky top-0 z-50 bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 backdrop-blur-lg shadow-sm">
-        <div className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
 
-          {/* Logo */}
+          {/* ====================================================
+              LOGO
+              ==================================================== */}
 
           <Link
             href="/"
-            className="flex items-center gap-2 font-bold text-2xl text-orange-600"
+            className="flex items-center gap-2 text-2xl font-bold text-orange-600"
           >
             <ChefHat size={28} />
 
             <span>CampusVita</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* ====================================================
+              DESKTOP NAVIGATION
+              ==================================================== */}
 
-          <nav className="hidden md:flex items-center gap-3">
+          <nav className="hidden items-center gap-3 md:flex">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -142,10 +148,10 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+                  className={`relative flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300 ${
                     active
-                      ? "bg-orange-500 text-white shadow-lg font-semibold"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-orange-100 dark:hover:bg-zinc-800 hover:text-orange-600"
+                      ? "bg-orange-500 font-semibold text-white shadow-lg"
+                      : "text-gray-700 hover:bg-orange-100 hover:text-orange-600 dark:text-gray-300 dark:hover:bg-zinc-800"
                   }`}
                 >
                   <Icon size={18} />
@@ -159,15 +165,15 @@ export default function Navbar() {
           {/* ====================================================
               THEME + LOGOUT
 
-              Hidden on Home page because:
-              - Theme is available in Profile → Settings
-              - Logout is available directly on Profile
+              Hidden on Home.
               ==================================================== */}
 
           {!isHomePage && (
-            <div className="flex items-center gap-3 ml-4">
+            <div className="ml-4 flex items-center gap-3">
 
-              {/* Theme */}
+              {/* ==================================================
+                  THEME
+                  ================================================== */}
 
               {mounted && (
                 <button
@@ -178,7 +184,7 @@ export default function Navbar() {
 
                     setTheme(newTheme);
                   }}
-                  className="p-2 rounded-xl bg-zinc-800 dark:bg-zinc-700 hover:bg-orange-500 transition"
+                  className="rounded-xl bg-zinc-800 p-2 transition hover:bg-orange-500 dark:bg-zinc-700"
                   aria-label="Toggle theme"
                 >
                   {theme === "dark" ? (
@@ -195,12 +201,14 @@ export default function Navbar() {
                 </button>
               )}
 
-              {/* Logout */}
+              {/* ==================================================
+                  LOGOUT
+                  ================================================== */}
 
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-medium transition"
+                className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 font-medium text-white transition hover:bg-red-600"
               >
                 <LogOut size={18} />
 
@@ -208,7 +216,6 @@ export default function Navbar() {
                   Logout
                 </span>
               </button>
-
             </div>
           )}
         </div>
@@ -216,15 +223,13 @@ export default function Navbar() {
 
       {/* ========================================================
           MOBILE FLOATING CART
-
-          Only appears when cart has at least 1 item.
           ======================================================== */}
 
       <div
-        className={`fixed bottom-[76px] right-4 z-[60] md:hidden transition-all duration-300 ease-out ${
+        className={`fixed bottom-[76px] right-4 z-[60] transition-all duration-300 ease-out md:hidden ${
           hasItemsInCart
-            ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-            : "opacity-0 translate-y-4 scale-90 pointer-events-none"
+            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+            : "pointer-events-none translate-y-4 scale-90 opacity-0"
         }`}
       >
         <Link
@@ -232,7 +237,7 @@ export default function Navbar() {
           aria-label={`Open cart with ${cartCount} ${
             cartCount === 1 ? "item" : "items"
           }`}
-          className="group flex items-center gap-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 shadow-2xl shadow-black/40 border border-orange-400/30 transition-all duration-300 active:scale-95"
+          className="group flex items-center gap-3 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 py-3 text-white shadow-2xl shadow-black/40 transition-all duration-300 hover:bg-orange-600 active:scale-95"
         >
           {/* Cart Icon */}
 
@@ -242,9 +247,9 @@ export default function Navbar() {
               strokeWidth={2.5}
             />
 
-            {/* Live count badge */}
+            {/* Cart Count */}
 
-            <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-white text-orange-600 text-[10px] font-bold flex items-center justify-center shadow-sm">
+            <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 shadow-sm">
               {cartCount}
             </span>
           </div>
@@ -256,7 +261,7 @@ export default function Navbar() {
               Cart
             </span>
 
-            <span className="text-[11px] text-orange-100 mt-1">
+            <span className="mt-1 text-[11px] text-orange-100">
               {cartCount}{" "}
               {cartCount === 1 ? "item" : "items"}
             </span>
@@ -275,17 +280,14 @@ export default function Navbar() {
       {/* ========================================================
           MOBILE BOTTOM NAVIGATION
 
-          Cart intentionally removed.
-
           Home
           Orders
           Wallet
           Profile
           ======================================================== */}
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800 shadow-lg md:hidden z-50">
-        <div className="grid grid-cols-4 h-16">
-
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
+        <div className="grid h-16 grid-cols-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -294,7 +296,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center text-xs relative transition-all duration-200 ${
+                className={`relative flex flex-col items-center justify-center text-xs transition-all duration-200 ${
                   active
                     ? "text-orange-600"
                     : "text-gray-500 hover:text-orange-500"
@@ -308,7 +310,6 @@ export default function Navbar() {
               </Link>
             );
           })}
-
         </div>
       </nav>
     </>

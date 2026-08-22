@@ -15,7 +15,7 @@ import {
   Users,
   LogOut,
 } from "lucide-react";
-import { clearAllSessions } from "@/app/lib/auth/session";
+import { clearSession } from "@/app/lib/auth/session";
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
 
@@ -77,26 +77,8 @@ export default function Sidebar() {
 
 
   const handleLogout = () => {
-    clearAllSessions();
-  
-    // Remove any legacy authentication keys
-    [
-      "isLoggedIn",
-      "access_token",
-      "refresh_token",
-      "token_type",
-      "expires_in",
-      "userEmail",
-      "email",
-      "userName",
-      "userRole",
-    ].forEach((key) => {
-      localStorage.removeItem(key);
-    });
-  
+    clearSession("ADMIN");
     sessionStorage.clear();
-  
-    // Full navigation guarantees the admin dashboard is unmounted
     window.location.replace("/login");
   };
 

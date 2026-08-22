@@ -18,6 +18,10 @@ import QRCode from "react-qr-code";
 import Navbar from "@/components/layout/Navbar";
 import { useCart } from "../../context/CartContext";
 import { getImageUrl } from "@/app/lib/getImageUrl";
+import {
+  getAccessToken,
+  getSessionUser,
+} from "@/app/lib/auth/session";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 type OrderItem = {
@@ -97,7 +101,7 @@ export default function TrackOrderPage() {
     try {
       if (showRefresh) setIsRefreshing(true);
 
-      const token = localStorage.getItem("access_token");
+      const token = getAccessToken("USER");
       if (!token) {
         setFetchCompleted(true);
         setLoading(false);
@@ -151,9 +155,11 @@ export default function TrackOrderPage() {
   // =====================================
   useEffect(() => {
     // ✅ FIX 7: Check if cached order belongs to the logged-in user
-    const email = localStorage.getItem("userEmail");
-    const cached = localStorage.getItem("latestOrder");
-    if (cached && email) {
+    const sessionUser = getSessionUser("USER");
+const email = sessionUser?.email ?? "";
+const cached = localStorage.getItem("latestOrder");
+
+if (cached && email) {
       try {
         const order = JSON.parse(cached);
         if (order.email === email) {
@@ -184,7 +190,9 @@ export default function TrackOrderPage() {
     });
 
     socket.on("order_update", (updatedOrder: Order) => {
-      const userEmail = localStorage.getItem("userEmail");
+      const sessionUser = getSessionUser("USER");
+      const userEmail = sessionUser?.email ?? "";
+    
       if (updatedOrder.email && updatedOrder.email !== userEmail) {
         return;
       }

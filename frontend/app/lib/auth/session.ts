@@ -18,125 +18,161 @@ export type Session = {
   user: SessionUser;
 };
 
-const SESSION_KEYS = {
+export const SESSION_KEYS: Record<UserRole, string> = {
   ADMIN: "campusvita_admin_session",
   USER: "campusvita_user_session",
-} as const;
+};
 
-function getStorageKey(role: UserRole) {
+function getStorageKey(role: UserRole): string {
   return SESSION_KEYS[role];
 }
 
-export function saveSession(session: Session) {
+/**
+ * Save a session only inside the storage namespace
+ * belonging to that session's role.
+ */
+export function saveSession(session: Session): void {
   if (typeof window === "undefined") return;
 
   const role = session.user.role;
+
+  if (role !== "ADMIN" && role !== "USER") {
+    console.error("Invalid session role:", role);
+    return;
+  }
 
   localStorage.setItem(
     getStorageKey(role),
     JSON.stringify(session)
   );
-
-  // Keep compatibility with your existing code for now.
-  localStorage.setItem("isLoggedIn", "true");
-  localStorage.setItem("userRole", role);
-  localStorage.setItem("userEmail", session.user.email);
-  localStorage.setItem("email", session.user.email);
-  localStorage.setItem("userName", session.user.name);
 }
 
+/**
+ * Read ONLY the requested role's session.
+ */
 export function getSession(role: UserRole): Session | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") {
+    return null;
+  }
 
   const raw = localStorage.getItem(getStorageKey(role));
 
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
 
   try {
-    return JSON.parse(raw) as Session;
-  } catch {
+    const session = JSON.parse(raw) as Session;
+
+    if (
+      !session ||
+      !session.accessToken ||
+      !session.user
+    ) {
+      localStorage.removeItem(getStorageKey(role));
+      return null;
+    }
+
+    if (session.user.role !== role) {
+      console.error(
+        `Invalid ${role} session: stored role is ${session.user.role}`
+      );
+
+      localStorage.removeItem(getStorageKey(role));
+      return null;
+    }
+
+    return session;
+  } catch (error) {
+    console.error(
+      `Invalid ${role} session JSON`,
+      error
+    );
+
     localStorage.removeItem(getStorageKey(role));
     return null;
   }
 }
 
-export function getAccessToken(role: UserRole): string | null {
-  const session = getSession(role);
-
-  return session?.accessToken || null;
+export function getAccessToken(
+  role: UserRole
+): string | null {
+  return getSession(role)?.accessToken ?? null;
 }
 
-export function getCurrentRole(): UserRole | null {
-  if (typeof window === "undefined") return null;
-
-  const role = localStorage.getItem("userRole");
-
-  if (role === "ADMIN" || role === "USER") {
-    return role;
-  }
-
-  return null;
+export function getSessionUser(
+  role: UserRole
+): SessionUser | null {
+  return getSession(role)?.user ?? null;
 }
 
-export function isLoggedIn(role: UserRole): boolean {
+export function isLoggedIn(
+  role: UserRole
+): boolean {
   return getSession(role) !== null;
 }
 
-export function clearSession(role: UserRole) {
+/**
+ * Returns the session for the requested application area.
+ *
+ * IMPORTANT:
+ * Never use this to decide which role a user should have.
+ * The pathname determines the required role.
+ */
+export function getSessionForPath(
+  pathname: string
+): Session | null {
+  return pathname.startsWith("/admin")
+    ? getSession("ADMIN")
+    : getSession("USER");
+}
+
+export function getRoleForPath(
+  pathname: string
+): UserRole {
+  return pathname.startsWith("/admin")
+    ? "ADMIN"
+    : "USER";
+}
+
+/**
+ * Clear ONLY one role's session.
+ */
+export function clearSession(
+  role: UserRole
+): void {
   if (typeof window === "undefined") return;
 
   localStorage.removeItem(getStorageKey(role));
-
-  /*
-   * Only clear the old compatibility keys if the
-   * currently active role is being logged out.
-   */
-  if (localStorage.getItem("userRole") === role) {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("email");
-    localStorage.removeItem("userName");
-
-    // Old token keys
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("token_type");
-    localStorage.removeItem("expires_in");
-  }
 }
 
-export function clearAllSessions() {
+/**
+ * Clear both role sessions.
+ *
+ * Use this ONLY when intentionally signing out
+ * of the entire application.
+ */
+export function clearAllSessions(): void {
   if (typeof window === "undefined") return;
 
-  Object.values(SESSION_KEYS).forEach((key) => {
-    localStorage.removeItem(key);
-  });
+  localStorage.removeItem(
+    SESSION_KEYS.ADMIN
+  );
 
+  localStorage.removeItem(
+    SESSION_KEYS.USER
+  );
+
+  // Remove legacy authentication keys.
   localStorage.removeItem("isLoggedIn");
   localStorage.removeItem("userRole");
   localStorage.removeItem("userEmail");
   localStorage.removeItem("email");
   localStorage.removeItem("userName");
-
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
   localStorage.removeItem("token_type");
   localStorage.removeItem("expires_in");
-}
-
-export function getSessionForPath(pathname: string): Session | null {
-  if (pathname.startsWith("/admin")) {
-    return getSession("ADMIN");
-  }
-
-  return getSession("USER");
-}
-
-export function getRoleForPath(pathname: string): UserRole {
-  if (pathname.startsWith("/admin")) {
-    return "ADMIN";
-  }
-
-  return "USER";
+  localStorage.removeItem("adminToken");
+  localStorage.removeItem("token");
 }

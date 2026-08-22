@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { addFood } from "@/app/lib/api";
+import { getAccessToken } from "@/app/lib/auth/session";
 type Category = {
   id: string;
   name: string;
@@ -44,7 +45,7 @@ const [selectedCategory, setSelectedCategory] =
         try {
           setLoading(true);
       
-          const token = localStorage.getItem("access_token");
+          const token = getAccessToken("ADMIN");
       
           if (!token) {
             alert("Please login again");
@@ -114,7 +115,7 @@ const [selectedCategory, setSelectedCategory] =
           setCategoryLoading(true);
           setCategoryError("");
       
-          const token = localStorage.getItem("access_token");
+          const token = getAccessToken("ADMIN");
       
           if (!token) {
             setCategoryError("Please login again.");
