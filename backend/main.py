@@ -48,7 +48,10 @@ from fastapi import (
     Query,
     WebSocket, WebSocketDisconnect
 )
-from utils.file_upload import save_food_image
+from utils.file_upload import (
+    save_food_image,
+    save_category_image,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -60,7 +63,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from firebase_admin import messaging
 import firebase_config
-
+from models.stall_model import StallData
 from database import (
     users_collection,
     orders_collection,
@@ -69,6 +72,7 @@ from database import (
     payments_collection,
     counters_collection,
     categories_collection,
+    stalls_collection,
 )
 
 load_dotenv()
@@ -834,7 +838,10 @@ class FoodData(BaseModel):
     description: str = Field(default="")
     price: float = Field(gt=0)
     category: str = Field(min_length=1)
+    category_id: str = Field(min_length=1)
+    stall_id: str = Field(min_length=1)
     image: str
+    available: bool = True
 
 
 class ProfileData(BaseModel):
@@ -2616,6 +2623,7 @@ async def add_food(
     price: float = Form(...),
     category: str = Form(...),
     category_id: str = Form(...),
+    stall_id: str = Form(...),
     description: str = Form(...),
     available: bool = Form(...),
     image: UploadFile = File(...),
@@ -2626,6 +2634,28 @@ async def add_food(
     try:
         from bson import ObjectId
 
+        # --------------------------------
+        # Validate stall ID
+        # --------------------------------
+
+        try:
+            stall_object_id = ObjectId(stall_id)
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid stall ID"
+            )
+
+        stall_doc = stalls_collection.find_one({
+            "_id": stall_object_id,
+            "active": True
+        })
+
+        if not stall_doc:
+            raise HTTPException(
+                status_code=400,
+                detail="Stall not found or inactive"
+            )
         # --------------------------------
         # Validate category ID
         # --------------------------------
@@ -2692,6 +2722,7 @@ async def add_food(
             "price": price,
             "category": category,
             "category_id": category_id,
+            "stall_id": stall_id,
             "description": description,
             "available": available,
             "image": image_path,
@@ -2855,7 +2886,343 @@ def sync_categories_from_foods():
             f"Category sync error: {e}"
         )
         raise
-    
+
+# ============================================================
+# ADMIN STALL MANAGEMENT
+# ============================================================
+
+@fastapi_app.post("/admin/stalls")
+def create_stall(
+    stall: StallData,
+    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+):
+    try:
+        name = stall.name.strip()
+
+        if not name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Stall name is required",
+            )
+
+        # Prevent duplicate stall names
+        existing = stalls_collection.find_one(
+            {
+                "name": {
+                    "$regex": f"^{re.escape(name)}$",
+                    "$options": "i",
+                }
+            }
+        )
+
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A stall with this name already exists",
+            )
+
+        stall_data = {
+            "name": name,
+            "image": stall.image.strip(),
+            "description": stall.description.strip(),
+            "is_open": stall.is_open,
+            "active": stall.active,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }
+
+        result = stalls_collection.insert_one(stall_data)
+
+        created_stall = stalls_collection.find_one(
+            {"_id": result.inserted_id}
+        )
+
+        created_stall["_id"] = str(created_stall["_id"])
+
+        return {
+            "success": True,
+            "message": "Stall created successfully",
+            "stall": created_stall,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(f"Create stall error: {e}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create stall",
+        )
+
+
+@fastapi_app.get("/admin/stalls")
+def get_stalls(
+    search: str = "",
+    status_filter: str = "ALL",
+    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+):
+    try:
+        query = {}
+
+        # Search
+        if search.strip():
+            query["name"] = {
+                "$regex": re.escape(search.strip()),
+                "$options": "i",
+            }
+
+        # Active/inactive filter
+        if status_filter == "ACTIVE":
+            query["active"] = True
+
+        elif status_filter == "INACTIVE":
+            query["active"] = False
+
+        stalls = []
+
+        for stall in stalls_collection.find(query).sort(
+            "created_at",
+            DESCENDING,
+        ):
+            stall["_id"] = str(stall["_id"])
+
+            stalls.append(stall)
+
+        return {
+            "success": True,
+            "stalls": stalls,
+            "total": len(stalls),
+        }
+
+    except Exception as e:
+        logger.exception(f"Get stalls error: {e}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch stalls",
+        )
+
+
+@fastapi_app.put("/admin/stalls/{stall_id}")
+def update_stall(
+    stall_id: str,
+    stall: StallData,
+    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+):
+    try:
+        try:
+            object_id = ObjectId(stall_id)
+        except InvalidId:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid stall ID",
+            )
+
+        existing = stalls_collection.find_one(
+            {"_id": object_id}
+        )
+
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Stall not found",
+            )
+
+        name = stall.name.strip()
+
+        if not name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Stall name is required",
+            )
+
+        # Prevent duplicate names
+        duplicate = stalls_collection.find_one(
+            {
+                "_id": {"$ne": object_id},
+                "name": {
+                    "$regex": f"^{re.escape(name)}$",
+                    "$options": "i",
+                },
+            }
+        )
+
+        if duplicate:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Another stall with this name already exists",
+            )
+
+        update_data = {
+            "name": name,
+            "image": stall.image.strip(),
+            "description": stall.description.strip(),
+            "is_open": stall.is_open,
+            "active": stall.active,
+            "updated_at": datetime.utcnow(),
+        }
+
+        stalls_collection.update_one(
+            {"_id": object_id},
+            {"$set": update_data},
+        )
+
+        updated_stall = stalls_collection.find_one(
+            {"_id": object_id}
+        )
+
+        updated_stall["_id"] = str(updated_stall["_id"])
+
+        return {
+            "success": True,
+            "message": "Stall updated successfully",
+            "stall": updated_stall,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(f"Update stall error: {e}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update stall",
+        )
+
+
+@fastapi_app.delete("/admin/stalls/{stall_id}")
+def delete_stall(
+    stall_id: str,
+    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+):
+    try:
+        try:
+            object_id = ObjectId(stall_id)
+        except InvalidId:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid stall ID",
+            )
+
+        existing = stalls_collection.find_one(
+            {"_id": object_id}
+        )
+
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Stall not found",
+            )
+
+        # Don't delete if food items are still linked to this stall
+        linked_food = foods_collection.find_one(
+            {"stall_id": stall_id}
+        )
+
+        if linked_food:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Cannot delete this stall because food items "
+                    "are still assigned to it"
+                ),
+            )
+
+        stalls_collection.delete_one(
+            {"_id": object_id}
+        )
+
+        return {
+            "success": True,
+            "message": "Stall deleted successfully",
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(f"Delete stall error: {e}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete stall",
+        )
+
+# ============================================================
+# PUBLIC STALLS FOR USER HOME
+# ============================================================
+
+@fastapi_app.get("/stalls")
+def get_public_stalls():
+    """
+    Return all active stalls for the user home page.
+
+    IMPORTANT:
+    - Open and closed stalls are both returned.
+    - The real MongoDB `is_open` value is preserved.
+    - Inactive/deleted stalls are not returned.
+    - No fake/default Open status is created.
+    """
+
+    try:
+        stalls = []
+
+        cursor = stalls_collection.find(
+            {
+                "active": True,
+            }
+        ).sort(
+            "created_at",
+            DESCENDING
+        )
+
+        for stall in cursor:
+
+            stall_id = str(stall["_id"])
+
+            is_open = bool(
+                stall.get("is_open", False)
+            )
+
+            active = bool(
+                stall.get("active", False)
+            )
+
+            stalls.append({
+                "_id": stall_id,
+                "name": str(
+                    stall.get("name", "")
+                ).strip(),
+                "image": str(
+                    stall.get("image", "")
+                ).strip(),
+                "description": str(
+                    stall.get("description", "")
+                ).strip(),
+                "is_open": is_open,
+                "active": active,
+            })
+
+        return {
+            "success": True,
+            "stalls": stalls,
+            "total": len(stalls),
+        }
+
+    except Exception as e:
+
+        logger.exception(
+            f"Get public stalls error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch stalls",
+        )
+
 @fastapi_app.get("/admin/categories")
 def get_categories(
     search: str = "",
@@ -3440,11 +3807,24 @@ def delete_category(
     ),
 ):
     try:
-
         from bson import ObjectId
 
+        # -----------------------------------------
+        # Validate category ID
+        # -----------------------------------------
+        try:
+            object_id = ObjectId(category_id)
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid category ID"
+            )
+
+        # -----------------------------------------
+        # Find category
+        # -----------------------------------------
         category = categories_collection.find_one({
-            "_id": ObjectId(category_id)
+            "_id": object_id
         })
 
         if not category:
@@ -3453,28 +3833,44 @@ def delete_category(
                 detail="Category not found"
             )
 
-        category_name = category["name"]
+        category_name = category.get("name", "")
 
-        food_count = foods_collection.count_documents({
-            "category": {
-                "$regex":
-                    f"^{re.escape(category_name)}$",
-                "$options": "i",
+        # -----------------------------------------
+        # Detach foods from this category
+        #
+        # IMPORTANT:
+        # We do NOT delete the food items.
+        # We only remove their category relationship.
+        # -----------------------------------------
+
+        foods_collection.update_many(
+            {
+                "$or": [
+                    {
+                        "category_id": category_id
+                    },
+                    {
+                        "category": {
+                            "$regex": f"^{re.escape(category_name)}$",
+                            "$options": "i"
+                        }
+                    }
+                ]
+            },
+            {
+                "$set": {
+                    "category_id": None,
+                    "category": ""
+                }
             }
-        })
+        )
 
-        if food_count > 0:
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    f"Cannot delete category. "
-                    f"{food_count} food item(s) "
-                    f"belong to this category."
-                )
-            )
+        # -----------------------------------------
+        # Delete category
+        # -----------------------------------------
 
         result = categories_collection.delete_one({
-            "_id": ObjectId(category_id)
+            "_id": object_id
         })
 
         if result.deleted_count == 0:
@@ -3483,16 +3879,22 @@ def delete_category(
                 detail="Category not found"
             )
 
+        logger.info(
+            f"Category deleted successfully: "
+            f"{category_name} ({category_id})"
+        )
+
         return {
             "success": True,
-            "message": "Category deleted successfully"
+            "message": "Category deleted successfully",
+            "category_id": category_id,
+            "category_name": category_name
         }
 
     except HTTPException:
         raise
 
     except Exception as e:
-
         logger.error(
             f"Delete category error: {e}"
         )

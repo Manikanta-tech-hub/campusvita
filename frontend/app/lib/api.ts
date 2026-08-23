@@ -196,30 +196,38 @@ export async function addFood(
   formData.append("description", food.description);
   formData.append("category", food.category);
   formData.append("category_id", food.category_id);
-  formData.append("price", food.price);
+  formData.append("stall_id", food.stall_id);
+  formData.append("price", String(food.price));
   formData.append(
-      "available",
-      String(food.available)
+    "available",
+    String(food.available)
   );
 
   formData.append("image", image);
 
   const res = await fetch(
-      `${API_URL}/add-food`,
-      {
-          method: "POST",
-          headers: {
-              Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-      }
+    `${API_URL}/add-food`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  const data = await res.json().catch(
+    () => null
   );
 
   if (!res.ok) {
-      throw new Error("Failed to add food");
+    throw new Error(
+      data?.detail ||
+        "Failed to add food"
+    );
   }
 
-  return res.json();
+  return data;
 }
 export async function updateFood(
   foodName: string,

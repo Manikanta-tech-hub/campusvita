@@ -16,8 +16,9 @@ export default function useOrdersSocket(
   onMessage: (message: SocketMessage) => void
 ) {
   const socketRef = useRef<WebSocket | null>(null);
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(false);
+  const connectingRef = useRef(false);
   const onMessageRef = useRef(onMessage);
 
   useEffect(() => {
@@ -27,32 +28,83 @@ export default function useOrdersSocket(
   useEffect(() => {
     mountedRef.current = true;
 
+    const clearReconnectTimer = () => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+
     const connect = () => {
       if (!mountedRef.current) return;
 
+      if (connectingRef.current) return;
+
+      const existingSocket = socketRef.current;
+
       if (
-        socketRef.current &&
-        (socketRef.current.readyState === WebSocket.OPEN ||
-          socketRef.current.readyState === WebSocket.CONNECTING)
+        existingSocket &&
+        (existingSocket.readyState === WebSocket.OPEN ||
+          existingSocket.readyState === WebSocket.CONNECTING)
       ) {
+        return;
+      }
+
+      const sessionRaw = localStorage.getItem(
+        "campusvita_admin_session"
+      );
+
+      if (!sessionRaw) {
+        console.warn(
+          "⚠️ No admin session found. Orders WebSocket will not connect."
+        );
+        return;
+      }
+
+      let session: any;
+
+      try {
+        session = JSON.parse(sessionRaw);
+      } catch {
+        console.error("❌ Invalid admin session.");
+        return;
+      }
+
+      const token = session?.accessToken;
+      const role = session?.user?.role;
+
+      if (!token || role !== "ADMIN") {
+        console.warn(
+          "⚠️ Valid ADMIN session not found. Orders WebSocket will not connect."
+        );
         return;
       }
 
       const socketUrl = `${WS_URL}/ws/admin/orders`;
 
-      console.log("🔄 Connecting to Orders WebSocket:", socketUrl);
+      console.log(
+        "🔄 Connecting to Orders WebSocket:",
+        socketUrl
+      );
+
+      connectingRef.current = true;
 
       const socket = new WebSocket(socketUrl);
 
       socketRef.current = socket;
 
       socket.onopen = () => {
+        connectingRef.current = false;
+
         if (!mountedRef.current) {
           socket.close(1000, "Component unmounted");
           return;
         }
 
-        console.log("✅ Orders WebSocket Connected:", socketUrl);
+        console.log(
+          "✅ Orders WebSocket Connected:",
+          socketUrl
+        );
       };
 
       socket.onmessage = (event) => {
@@ -72,13 +124,15 @@ export default function useOrdersSocket(
       socket.onerror = () => {
         if (mountedRef.current) {
           console.error(
-            "❌ Orders WebSocket connection failed:",
+            "❌ Orders WebSocket error:",
             socketUrl
           );
         }
       };
 
       socket.onclose = (event) => {
+        connectingRef.current = false;
+
         console.log("⚠️ Orders WebSocket Closed", {
           code: event.code,
           reason: event.reason || "No reason provided",
@@ -89,15 +143,18 @@ export default function useOrdersSocket(
           socketRef.current = null;
         }
 
-        if (!mountedRef.current) return;
-
-        if (reconnectTimer.current) {
-          clearTimeout(reconnectTimer.current);
+        if (!mountedRef.current) {
+          return;
         }
 
-        reconnectTimer.current = setTimeout(() => {
-          reconnectTimer.current = null;
-          connect();
+        clearReconnectTimer();
+
+        reconnectTimerRef.current = setTimeout(() => {
+          reconnectTimerRef.current = null;
+
+          if (mountedRef.current) {
+            connect();
+          }
         }, 3000);
       };
     };
@@ -107,27 +164,28 @@ export default function useOrdersSocket(
     return () => {
       mountedRef.current = false;
 
-      if (reconnectTimer.current) {
-        clearTimeout(reconnectTimer.current);
-        reconnectTimer.current = null;
-      }
+      clearReconnectTimer();
+
+      connectingRef.current = false;
 
       const socket = socketRef.current;
 
-      if (socket) {
-        socketRef.current = null;
+      if (!socket) {
+        return;
+      }
 
-        socket.onopen = null;
-        socket.onmessage = null;
-        socket.onerror = null;
-        socket.onclose = null;
+      socketRef.current = null;
 
-        if (
-          socket.readyState === WebSocket.OPEN ||
-          socket.readyState === WebSocket.CONNECTING
-        ) {
-          socket.close(1000, "Component unmounted");
-        }
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+
+      if (
+        socket.readyState === WebSocket.OPEN ||
+        socket.readyState === WebSocket.CONNECTING
+      ) {
+        socket.close(1000, "Component unmounted");
       }
     };
   }, []);
