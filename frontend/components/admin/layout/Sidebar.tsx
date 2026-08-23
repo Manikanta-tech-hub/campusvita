@@ -14,6 +14,7 @@ import {
   CreditCard,
   Users,
   LogOut,
+  Store,
 } from "lucide-react";
 import { clearSession } from "@/app/lib/auth/session";
 import SidebarItem from "./SidebarItem";
@@ -47,6 +48,11 @@ const navigation = [
         label: "Categories",
         href: "/admin/category",
         icon: Layers3,
+      },
+      {
+        label: "Stalls",
+        href: "/admin/stalls",
+        icon: Store,
       },
       {
         label: "Customers",

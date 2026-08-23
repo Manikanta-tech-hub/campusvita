@@ -203,6 +203,76 @@ if (!token) {
 
   }, [loadCategories]);
 
+
+  async function handleDeleteCategory(category: Category) {
+    try {
+      const token = getAccessToken("ADMIN");
+
+      if (!token) {
+        throw new Error("Admin session expired. Please login again.");
+      }
+
+      if (!category.id) {
+        throw new Error("Category ID is missing.");
+      }
+
+      console.log(
+        "Deleting category:",
+        category.name,
+        "ID:",
+        category.id
+      );
+
+      const response = await fetch(
+        `${API_URL}/admin/categories/${encodeURIComponent(category.id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json().catch(() => null);
+
+      console.log(
+        "Delete category response:",
+        response.status,
+        data
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          data?.detail ||
+          data?.message ||
+          `Failed to delete category (${response.status})`
+        );
+      }
+
+      alert(
+        data?.message ||
+        "Category deleted successfully"
+      );
+
+      setDeletingCategory(null);
+
+      await loadCategories(false);
+
+    } catch (error) {
+      console.error(
+        "Delete category error:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete category"
+      );
+    }
+  }
+
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
@@ -327,8 +397,9 @@ if (!token) {
           setDeletingCategory(null)
         }
         onSuccess={() => {
-          setDeletingCategory(null);
-          loadCategories(false);
+          if (deletingCategory) {
+            handleDeleteCategory(deletingCategory);
+          }
         }}
       />
 
