@@ -22,6 +22,7 @@ export default function DeleteCategoryModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+
         <h2 className="text-xl font-bold text-white">
           Delete Category
         </h2>
@@ -31,19 +32,23 @@ export default function DeleteCategoryModal({
         </p>
 
         <div className="mt-6 flex justify-end gap-3">
+
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-xl bg-zinc-800 px-4 py-2 text-white"
+            className="rounded-xl bg-zinc-800 px-4 py-2 text-white hover:bg-zinc-700"
           >
             Cancel
           </button>
 
           <button
+            type="button"
             onClick={onSuccess}
-            className="rounded-xl bg-red-500 px-4 py-2 font-semibold text-white"
+            className="rounded-xl bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600"
           >
             Delete
           </button>
+
         </div>
       </div>
     </div>
