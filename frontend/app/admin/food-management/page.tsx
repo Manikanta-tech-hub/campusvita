@@ -14,15 +14,18 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:8000";
 
-type Food = {
-  id?: string;
-  name: string;
-  description: string;
-  category: string;
-  price: number;
-  image: string;
-  available: boolean;
-};
+  type Food = {
+    id?: string;
+    _id?: string;
+    name: string;
+    description: string;
+    category: string;
+    category_id: string;
+    stall_id: string;
+    price: number;
+    image: string;
+    available: boolean;
+  };
 
 export default function FoodManagementPage() {
   const [showAddModal, setShowAddModal] = useState(false);
