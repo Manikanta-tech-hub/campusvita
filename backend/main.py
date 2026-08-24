@@ -842,6 +842,7 @@ class FoodData(BaseModel):
     stall_id: str = Field(min_length=1)
     image: str
     available: bool = True
+    is_veg: bool | None = None
 
 
 class ProfileData(BaseModel):
@@ -2626,6 +2627,7 @@ async def add_food(
     stall_id: str = Form(...),
     description: str = Form(...),
     available: bool = Form(...),
+    is_veg: str = Form("unknown"),
     image: UploadFile = File(...),
     _: Dict[str, Any] = Depends(
         require_role(UserRole.ADMIN)
@@ -2694,6 +2696,18 @@ async def add_food(
         category = category_doc["name"].strip()
 
         # --------------------------------
+        # Normalize VEG / NON-VEG
+        # --------------------------------
+
+        is_veg_value = is_veg.strip().lower()
+        if is_veg_value == "veg":
+            is_veg_bool = True
+        elif is_veg_value in ["non-veg", "nonveg"]:
+            is_veg_bool = False
+        else:
+            is_veg_bool = None
+
+        # --------------------------------
         # Check duplicate food
         # --------------------------------
 
@@ -2725,6 +2739,7 @@ async def add_food(
             "stall_id": stall_id,
             "description": description,
             "available": available,
+            "is_veg": is_veg_bool,
             "image": image_path,
         }
 
@@ -3480,6 +3495,140 @@ def get_categories(
         raise HTTPException(
             status_code=500,
             detail="Failed to load categories"
+        )
+# ============================================================
+# PUBLIC FOODS FOR A SPECIFIC STALL
+# ============================================================
+
+@fastapi_app.get("/stalls/{stall_id}/foods")
+def get_stall_foods(stall_id: str):
+    """
+    Return real food items belonging only to the requested stall.
+
+    IMPORTANT:
+    - Stall must exist and be active.
+    - Foods are filtered by the real stall_id stored in MongoDB.
+    - No fake/default food data is generated.
+    - Empty food lists are returned as empty arrays.
+    """
+
+    try:
+        # --------------------------------------------------------
+        # Validate stall ID
+        # --------------------------------------------------------
+
+        try:
+            stall_object_id = ObjectId(stall_id)
+        except (InvalidId, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid stall ID",
+            )
+
+        # --------------------------------------------------------
+        # Find the real active stall
+        # --------------------------------------------------------
+
+        stall = stalls_collection.find_one({
+            "_id": stall_object_id,
+            "active": True,
+        })
+
+        if not stall:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Stall not found",
+            )
+
+        # --------------------------------------------------------
+        # Find only foods belonging to this stall
+        # --------------------------------------------------------
+
+        food_docs = foods_collection.find({
+            "stall_id": stall_id,
+        })
+
+        foods = []
+
+        for food in food_docs:
+            foods.append({
+                "_id": str(food["_id"]),
+                "name": str(
+                    food.get("name", "")
+                ).strip(),
+                "price": float(
+                    food.get("price", 0)
+                ),
+                "category": str(
+                    food.get("category", "")
+                ).strip(),
+                "category_id": str(
+                    food.get("category_id", "")
+                ).strip(),
+                "stall_id": str(
+                    food.get("stall_id", "")
+                ).strip(),
+                "image": str(
+                    food.get("image", "")
+                ).strip(),
+                "description": str(
+                    food.get("description", "")
+                ).strip(),
+                "available": bool(
+                    food.get("available", False)
+                ),
+                "is_veg": food.get("is_veg"),
+            })
+
+        # --------------------------------------------------------
+        # Return real stall + real foods
+        # --------------------------------------------------------
+
+        return {
+            "success": True,
+            "stall": {
+                "_id": str(stall["_id"]),
+                "name": str(
+                    stall.get("name", "")
+                ).strip(),
+                "image": str(
+                    stall.get("image", "")
+                ).strip(),
+                "description": str(
+                    stall.get("description", "")
+                ).strip(),
+                "is_open": bool(
+                    stall.get("is_open", False)
+                ),
+                "active": bool(
+                    stall.get("active", False)
+                ),
+                "rating": stall.get("rating"),
+                "opening_time": stall.get(
+                    "opening_time"
+                ),
+                "closing_time": stall.get(
+                    "closing_time"
+                ),
+                "preparation_time": stall.get(
+                    "preparation_time"
+                ),
+            },
+            "foods": foods,
+            "total": len(foods),
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(
+            f"Get stall foods error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch stall foods",
         )
 @fastapi_app.post("/admin/categories/sync")
 def sync_categories(

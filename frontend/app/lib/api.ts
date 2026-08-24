@@ -198,11 +198,8 @@ export async function addFood(
   formData.append("category_id", food.category_id);
   formData.append("stall_id", food.stall_id);
   formData.append("price", String(food.price));
-  formData.append(
-    "available",
-    String(food.available)
-  );
-
+  formData.append("available",String(food.available));
+  formData.append("is_veg",food.is_veg ?? "unknown");
   formData.append("image", image);
 
   const res = await fetch(

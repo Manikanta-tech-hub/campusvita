@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { getImageUrl } from "@/app/lib/getImageUrl";
 import Navbar from "@/components/layout/Navbar";
 import { getAccessToken } from "@/app/lib/auth/session";
 
@@ -220,7 +220,7 @@ export default function Home() {
 
                       {stall.image ? (
                         <img
-                          src={stall.image}
+                        src={getImageUrl(stall.image)}
                           alt={stall.name}
                           className={`h-full w-full object-cover transition-all duration-300 ${
                             isOpen

@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-
+import { getImageUrl } from "@/app/lib/getImageUrl";
 type Stall = {
   _id: string;
   name: string;
@@ -428,7 +428,7 @@ export default function StallsPage() {
               <div className="relative h-48 bg-zinc-900">
                 {stall.image ? (
                   <img
-                    src={stall.image}
+                  src={getImageUrl(stall.image)}
                     alt={stall.name}
                     className="h-full w-full object-cover"
                   />
