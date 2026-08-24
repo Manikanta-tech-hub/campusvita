@@ -25,6 +25,7 @@ const API_URL =
     price: number;
     image: string;
     available: boolean;
+    is_veg: boolean | null;
   };
 
 export default function FoodManagementPage() {
