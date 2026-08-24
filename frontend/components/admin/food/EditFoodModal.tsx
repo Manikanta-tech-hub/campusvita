@@ -13,6 +13,7 @@ type Food = {
   price: number | "";
   image: string;
   available: boolean;
+  is_veg: boolean | null;
 };
 
 type Props = {
@@ -37,31 +38,43 @@ export default function EditFoodModal({
     price: "",
     image: "",
     available: true,
+    is_veg: null,
   });
 
   const [loading, setLoading] = useState(false);
 
+  // --------------------------------------------------
+  // LOAD FOOD INTO FORM
+  // --------------------------------------------------
+
   useEffect(() => {
-    if (food) {
-      setForm({
-        name: food.name || "",
-        description: food.description || "",
-        category: food.category || "",
-        category_id: food.category_id || "",
-        stall_id: food.stall_id || "",
-        price: food.price ?? "",
-        image: food.image || "",
-        available: food.available ?? true,
-      });
-    }
+    if (!food) return;
+
+    setForm({
+      name: food.name || "",
+      description: food.description || "",
+      category: food.category || "",
+      category_id: food.category_id || "",
+      stall_id: food.stall_id || "",
+      price: food.price ?? "",
+      image: food.image || "",
+      available: food.available ?? true,
+      is_veg: food.is_veg ?? null,
+    });
   }, [food]);
 
   if (!open || !food) {
     return null;
   }
 
+  // --------------------------------------------------
+  // HANDLE INPUT CHANGES
+  // --------------------------------------------------
+
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement
+    >
   ) {
     const { name, value } = e.target;
 
@@ -76,44 +89,56 @@ export default function EditFoodModal({
     }));
   }
 
+  // --------------------------------------------------
+  // UPDATE FOOD
+  // --------------------------------------------------
+
   async function handleSubmit() {
     if (!food) return;
-  
+
     try {
       setLoading(true);
-  
+
       const token = getAccessToken("ADMIN");
-  
+
       if (!token) {
-        alert("Please login again");
+        alert("Please login again.");
         return;
       }
-  
+
+      // -----------------------------
+      // VALIDATION
+      // -----------------------------
+
       if (!form.name.trim()) {
-        alert("Food name is required");
+        alert("Food name is required.");
         return;
       }
-  
+
       if (!form.description.trim()) {
-        alert("Description is required");
+        alert("Description is required.");
         return;
       }
-  
+
       if (!form.category_id) {
-        alert("Category ID is missing");
+        alert("Category ID is missing.");
         return;
       }
-  
+
       if (!form.stall_id) {
-        alert("Stall ID is missing");
+        alert("Stall ID is missing.");
         return;
       }
-  
+
       if (!form.price || Number(form.price) <= 0) {
-        alert("Enter a valid price");
+        alert("Enter a valid price.");
         return;
       }
-  
+
+      // -----------------------------
+      // UPDATE
+      // -----------------------------
+
       await updateFood(
         food.name,
         {
@@ -125,30 +150,40 @@ export default function EditFoodModal({
           price: Number(form.price),
           image: form.image.trim(),
           available: form.available,
+
+          // IMPORTANT:
+          // Preserve true / false / null
+          is_veg: form.is_veg,
         },
         token
       );
-  
-      alert("Food Updated Successfully");
-  
+
+      alert("Food Updated Successfully.");
+
       onSuccess();
       onClose();
     } catch (error) {
       console.error("Update food error:", error);
-  
+
       alert(
         error instanceof Error
           ? error.message
-          : "Failed to update food"
+          : "Failed to update food."
       );
     } finally {
       setLoading(false);
     }
   }
 
+  // --------------------------------------------------
+  // UI
+  // --------------------------------------------------
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-xl rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl">
+
+        {/* HEADER */}
 
         <h2 className="mb-6 text-2xl font-bold text-white">
           Edit Food
@@ -156,7 +191,8 @@ export default function EditFoodModal({
 
         <div className="space-y-4">
 
-          {/* Food Name */}
+          {/* FOOD NAME */}
+
           <div>
             <label className="mb-1 block text-sm text-zinc-300">
               Food Name
@@ -172,7 +208,8 @@ export default function EditFoodModal({
             />
           </div>
 
-          {/* Description */}
+          {/* DESCRIPTION */}
+
           <div>
             <label className="mb-1 block text-sm text-zinc-300">
               Description
@@ -189,7 +226,8 @@ export default function EditFoodModal({
             />
           </div>
 
-          {/* Category */}
+          {/* CATEGORY */}
+
           <div>
             <label className="mb-1 block text-sm text-zinc-300">
               Category
@@ -205,7 +243,8 @@ export default function EditFoodModal({
             />
           </div>
 
-          {/* Stall ID */}
+          {/* STALL ID */}
+
           <div>
             <label className="mb-1 block text-sm text-zinc-300">
               Stall ID
@@ -221,7 +260,8 @@ export default function EditFoodModal({
             />
           </div>
 
-          {/* Price */}
+          {/* PRICE */}
+
           <div>
             <label className="mb-1 block text-sm text-zinc-300">
               Price
@@ -240,7 +280,8 @@ export default function EditFoodModal({
             />
           </div>
 
-          {/* Image */}
+          {/* IMAGE */}
+
           <div>
             <label className="mb-1 block text-sm text-zinc-300">
               Image URL
@@ -256,7 +297,84 @@ export default function EditFoodModal({
             />
           </div>
 
-          {/* Available */}
+          {/* ==========================================
+              FOOD TYPE
+          ========================================== */}
+
+          <div>
+            <label className="mb-2 block text-sm text-zinc-300">
+              Food Type
+            </label>
+
+            <div className="grid grid-cols-3 gap-2">
+
+              {/* VEG */}
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    is_veg: true,
+                  }))
+                }
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  form.is_veg === true
+                    ? "border-green-500 bg-green-500/10 text-green-400"
+                    : "border-zinc-700 text-zinc-400 hover:border-green-500/50 hover:text-green-400"
+                }`}
+              >
+                🟢 VEG
+              </button>
+
+              {/* NON-VEG */}
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    is_veg: false,
+                  }))
+                }
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  form.is_veg === false
+                    ? "border-red-500 bg-red-500/10 text-red-400"
+                    : "border-zinc-700 text-zinc-400 hover:border-red-500/50 hover:text-red-400"
+                }`}
+              >
+                🔴 NON-VEG
+              </button>
+
+              {/* UNKNOWN */}
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    is_veg: null,
+                  }))
+                }
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  form.is_veg === null
+                    ? "border-zinc-500 bg-zinc-800 text-white"
+                    : "border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                }`}
+              >
+                Unknown
+              </button>
+
+            </div>
+          </div>
+
+          {/* ==========================================
+              AVAILABLE
+          ========================================== */}
+
           <label className="flex items-center gap-3 text-white">
             <input
               type="checkbox"
@@ -276,14 +394,17 @@ export default function EditFoodModal({
 
         </div>
 
-        {/* Buttons */}
+        {/* ==========================================
+            ACTION BUTTONS
+        ========================================== */}
+
         <div className="mt-6 flex justify-end gap-3">
 
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg bg-zinc-700 px-5 py-2 text-white hover:bg-zinc-600 disabled:opacity-50"
+            className="rounded-lg bg-zinc-700 px-5 py-2 text-white transition-colors hover:bg-zinc-600 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -292,7 +413,7 @@ export default function EditFoodModal({
             type="button"
             disabled={loading}
             onClick={handleSubmit}
-            className="rounded-lg bg-orange-500 px-5 py-2 font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-orange-500 px-5 py-2 font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Updating..." : "Update Food"}
           </button>

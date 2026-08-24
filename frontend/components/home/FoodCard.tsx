@@ -8,6 +8,7 @@ type Props = {
   price: number;
   image: string;
   quantity: number;
+  isVeg: boolean | null;
   onAddToCart: () => void;
   onIncrease: () => void;
   onDecrease: () => void;
@@ -18,6 +19,7 @@ export default function FoodCard({
   price,
   image,
   quantity,
+  isVeg,
   onAddToCart,
   onIncrease,
   onDecrease,
@@ -32,6 +34,31 @@ export default function FoodCard({
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
+
+        {/* VEG / NON-VEG BADGE */}
+        {isVeg !== null && (
+          <div className="absolute right-3 top-3 rounded-full bg-black/80 px-2.5 py-1">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`h-2.5 w-2.5 rounded-full border-2 ${
+                  isVeg
+                    ? "border-green-500 bg-green-500"
+                    : "border-red-500 bg-red-500"
+                }`}
+              />
+
+              <span
+                className={`text-[10px] font-bold tracking-wide ${
+                  isVeg
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
+                {isVeg ? "VEG" : "NON-VEG"}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* CONTENT */}
@@ -74,7 +101,6 @@ export default function FoodCard({
               </button>
             </div>
           ) : (
-            /* COMPACT ADD BUTTON */
             <button
               type="button"
               onClick={onAddToCart}
