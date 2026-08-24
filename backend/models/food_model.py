@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -14,3 +16,4 @@ class FoodData(BaseModel):
     image: str = ""
     description: str = ""
     available: bool = True
+    is_veg: Optional[bool] = None
