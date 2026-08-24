@@ -29,6 +29,7 @@ type OrderItem = {
   quantity: number;
   price: number;
   image?: string;
+  stall_id: string;
 };
 
 type Order = {
@@ -293,6 +294,7 @@ export default function OrdersPage() {
         name: item.name,
         price: item.price,
         image: item.image || "",
+        stall_id: item.stall_id,
       });
     });
 

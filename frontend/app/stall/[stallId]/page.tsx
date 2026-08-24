@@ -74,8 +74,10 @@ export default function StallPage() {
 
   const [selectedCategory, setSelectedCategory] =
     useState("ALL");
-    const [selectedFoodType, setSelectedFoodType] = useState<
-    "ALL" | "VEG" | "NON_VEG">("ALL");
+
+  const [selectedFoodType, setSelectedFoodType] =
+    useState<"ALL" | "VEG" | "NON_VEG">("ALL");
+
   useEffect(() => {
     if (!stallId) return;
 
@@ -153,24 +155,31 @@ export default function StallPage() {
 
   const filteredFoods = useMemo(() => {
     if (!data) return [];
-  
-    const normalizedSearch = search.trim().toLowerCase();
-  
+
+    const normalizedSearch =
+      search.trim().toLowerCase();
+
     return data.foods.filter((food) => {
       const matchesCategory =
         selectedCategory === "ALL" ||
         food.category === selectedCategory;
-  
+
       const matchesFoodType =
         selectedFoodType === "ALL" ||
-        (selectedFoodType === "VEG" && food.is_veg === true) ||
-        (selectedFoodType === "NON_VEG" && food.is_veg === false);
-  
+        (selectedFoodType === "VEG" &&
+          food.is_veg === true) ||
+        (selectedFoodType === "NON_VEG" &&
+          food.is_veg === false);
+
       const matchesSearch =
         !normalizedSearch ||
-        food.name.toLowerCase().includes(normalizedSearch) ||
-        food.description.toLowerCase().includes(normalizedSearch);
-  
+        food.name
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        food.description
+          .toLowerCase()
+          .includes(normalizedSearch);
+
       return (
         matchesCategory &&
         matchesFoodType &&
@@ -183,13 +192,25 @@ export default function StallPage() {
     selectedCategory,
     selectedFoodType,
   ]);
+
+  /*
+   * IMPORTANT:
+   * Cart identity is now:
+   *
+   * food name + stall_id
+   *
+   * This prevents two foods with the same name
+   * from different stalls being treated as one item.
+   */
   const getQuantity = (
-    foodName: string
+    foodName: string,
+    foodStallId: string
   ) => {
     return (
       cartItems.find(
         (item) =>
-          item.name === foodName
+          item.name === foodName &&
+          item.stall_id === foodStallId
       )?.quantity ?? 0
     );
   };
@@ -203,7 +224,26 @@ export default function StallPage() {
       name: food.name,
       price: food.price,
       image: food.image,
+      stall_id: food.stall_id,
     });
+  };
+
+  const handleIncreaseQuantity = (
+    food: Food
+  ) => {
+    increaseQuantity(
+      food.name,
+      food.stall_id
+    );
+  };
+
+  const handleDecreaseQuantity = (
+    food: Food
+  ) => {
+    decreaseQuantity(
+      food.name,
+      food.stall_id
+    );
   };
 
   if (loading) {
@@ -275,9 +315,7 @@ export default function StallPage() {
             <div className="relative h-56 sm:h-72 lg:h-80">
               {stall.image ? (
                 <img
-                  src={getImageUrl(
-                    stall.image
-                  )}
+                  src={getImageUrl(stall.image)}
                   alt={stall.name}
                   className="h-full w-full object-cover"
                 />
@@ -306,8 +344,7 @@ export default function StallPage() {
                       : "CLOSED"}
                   </span>
 
-                  {stall.rating !==
-                    null && (
+                  {stall.rating !== null && (
                     <span className="flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">
                       <Star
                         size={13}
@@ -333,6 +370,7 @@ export default function StallPage() {
                 {stall.preparation_time && (
                   <div className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
                     <Clock3 size={16} />
+
                     Preparation:{" "}
                     {stall.preparation_time}
                   </div>
@@ -379,59 +417,64 @@ export default function StallPage() {
             />
           </div>
         </div>
-{/* FOOD TYPE FILTERS */}
-<div className="mb-5">
-  <div className="flex gap-2 overflow-x-auto pb-2">
-    <button
-      type="button"
-      onClick={() => setSelectedFoodType("ALL")}
-      className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-        selectedFoodType === "ALL"
-          ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
-          : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-      }`}
-    >
-      All
-    </button>
 
-    <button
-      type="button"
-      onClick={() => setSelectedFoodType("VEG")}
-      className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-        selectedFoodType === "VEG"
-          ? "border border-green-500/40 bg-green-500/15 text-green-400"
-          : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-      }`}
-    >
-      🟢 Veg
-    </button>
+        {/* FOOD TYPE FILTERS */}
+        <div className="mb-5">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedFoodType("ALL")
+              }
+              className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                selectedFoodType === "ALL"
+                  ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                  : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              }`}
+            >
+              All
+            </button>
 
-    <button
-      type="button"
-      onClick={() => setSelectedFoodType("NON_VEG")}
-      className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-        selectedFoodType === "NON_VEG"
-          ? "border border-red-500/40 bg-red-500/15 text-red-400"
-          : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-      }`}
-    >
-      🔴 Non-Veg
-    </button>
-  </div>
-</div>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedFoodType("VEG")
+              }
+              className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                selectedFoodType === "VEG"
+                  ? "border border-green-500/40 bg-green-500/15 text-green-400"
+                  : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              }`}
+            >
+              🟢 Veg
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedFoodType("NON_VEG")
+              }
+              className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+                selectedFoodType === "NON_VEG"
+                  ? "border border-red-500/40 bg-red-500/15 text-red-400"
+                  : "border border-zinc-800 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              }`}
+            >
+              🔴 Non-Veg
+            </button>
+          </div>
+        </div>
+
         {/* CATEGORIES */}
         {categories.length > 0 && (
           <div className="mb-7 flex gap-2 overflow-x-auto pb-2">
             <button
               type="button"
               onClick={() =>
-                setSelectedCategory(
-                  "ALL"
-                )
+                setSelectedCategory("ALL")
               }
               className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                selectedCategory ===
-                "ALL"
+                selectedCategory === "ALL"
                   ? "bg-orange-500 text-white"
                   : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
               }`}
@@ -464,8 +507,7 @@ export default function StallPage() {
         )}
 
         {/* FOOD GRID */}
-        {filteredFoods.length ===
-        0 ? (
+        {filteredFoods.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-zinc-800 bg-zinc-950 p-12 text-center">
             <div className="text-5xl">
               🍽️
@@ -486,7 +528,8 @@ export default function StallPage() {
               (food) => {
                 const quantity =
                   getQuantity(
-                    food.name
+                    food.name,
+                    food.stall_id
                   );
 
                 return (
@@ -505,19 +548,13 @@ export default function StallPage() {
                       quantity={quantity}
                       isVeg={food.is_veg}
                       onAddToCart={() =>
-                        handleAddToCart(
-                          food
-                        )
+                        handleAddToCart(food)
                       }
                       onIncrease={() =>
-                        increaseQuantity(
-                          food.name
-                        )
+                        handleIncreaseQuantity(food)
                       }
                       onDecrease={() =>
-                        decreaseQuantity(
-                          food.name
-                        )
+                        handleDecreaseQuantity(food)
                       }
                     />
 

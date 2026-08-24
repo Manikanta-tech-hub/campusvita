@@ -5,6 +5,7 @@ import { Pencil, Trash2, ImageOff } from "lucide-react";
 
 type Food = {
   id?: string;
+  _id?: string;
   name: string;
   description: string;
   category: string;
@@ -13,6 +14,7 @@ type Food = {
   price: number;
   image: string;
   available: boolean;
+  is_veg: boolean | null;
 };
 
 type Props = {

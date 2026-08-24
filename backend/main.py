@@ -2211,11 +2211,12 @@ def _price_items_from_db(items: List[OrderItemRequest]) -> tuple[list, float]:
             )
         price = float(food["price"])
         priced_items.append({
-            "name": item.name,
-            "price": price,
-            "quantity": item.quantity,
-            "image": food.get("image", ""),
-        })
+    "name": item.name,
+    "price": price,
+    "quantity": item.quantity,
+    "image": food.get("image", ""),
+    "stall_id": str(food.get("stall_id", "")),
+})
         total += price * item.quantity
 
     return priced_items, round(total, 2)

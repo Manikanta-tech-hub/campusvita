@@ -1,8 +1,15 @@
 "use client";
 
-import Script from "next/script";
+import {
+  getAccessToken,
+} from "@/app/lib/auth/session";
+import {
+  loadRazorpay,
+} from "@/app/lib/payment/razorpay";
+
 import axios from "axios";
 import toast from "react-hot-toast";
+
 import {
   Wallet,
   Plus,
@@ -11,9 +18,14 @@ import {
   Gift,
   ChevronRight,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
-import { getAccessToken } from "@/app/lib/auth/session";
+
 import Navbar from "@/components/layout/Navbar";
 
 declare global {
@@ -37,18 +49,28 @@ const API_URL =
 
 export default function WalletPage() {
   const router = useRouter();
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [amount, setAmount] = useState("");
-  const [history, setHistory] = useState<WalletHistory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+
+  const [walletBalance, setWalletBalance] =
+    useState(0);
+
+  const [amount, setAmount] =
+    useState("");
+
+  const [history, setHistory] =
+    useState<WalletHistory[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [processing, setProcessing] =
+    useState(false);
+
+  // ============================================================
+  // AUTH TOKEN
+  // ============================================================
 
   const getToken = () => {
-    return (
-      getAccessToken("USER") ||
-      localStorage.getItem("token")
-    );
+    return getAccessToken("USER");
   };
 
   const getAuthHeaders = () => {
@@ -67,19 +89,33 @@ export default function WalletPage() {
     try {
       setLoading(true);
 
+      const token = getToken();
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
       const response = await axios.get(
         `${API_URL}/wallet/balance`,
         {
-          headers: getAuthHeaders(),
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+          },
         }
       );
 
       setWalletBalance(
-        Number(response.data.balance || 0)
+        Number(
+          response.data?.balance || 0
+        )
       );
 
       setHistory(
-        Array.isArray(response.data.history)
+        Array.isArray(
+          response.data?.history
+        )
           ? response.data.history
           : []
       );
@@ -89,10 +125,14 @@ export default function WalletPage() {
         error
       );
 
-      if (error?.response?.status === 401) {
+      if (
+        error?.response?.status === 401
+      ) {
         toast.error(
           "Session expired. Please login again."
         );
+
+        router.replace("/login");
       } else {
         toast.error(
           "Failed to load wallet"
@@ -103,126 +143,16 @@ export default function WalletPage() {
     }
   };
 
+  // ============================================================
+  // INITIAL WALLET LOAD
+  // ============================================================
+
   useEffect(() => {
-    fetchWallet();
+    void fetchWallet();
   }, []);
 
   // ============================================================
-  // ADD MONEY
-  // ============================================================
-
-  const handleAddMoney = async () => {
-    const numericAmount = Number(amount);
-
-    if (!amount.trim()) {
-      toast.error("Enter amount");
-      return;
-    }
-
-    if (
-      !Number.isFinite(numericAmount) ||
-      numericAmount <= 0
-    ) {
-      toast.error("Enter a valid amount");
-      return;
-    }
-
-    try {
-      setProcessing(true);
-
-      const response = await axios.post(
-        `${API_URL}/wallet/create-topup-order`,
-        {
-          amount: numericAmount,
-        },
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-
-      const orderData = response.data;
-
-      if (!orderData.success) {
-        toast.error(
-          orderData.message ||
-            "Failed to create wallet payment"
-        );
-
-        setProcessing(false);
-        return;
-      }
-
-      if (!razorpayLoaded || !window.Razorpay) {
-        toast.error(
-          "Razorpay is still loading. Please wait a moment."
-        );
-        setProcessing(false);
-        return;
-      }
-
-      const options = {
-        key: orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency,
-
-        name: "CampusVita",
-
-        description:
-          "CampusVita Wallet Top-up",
-
-        order_id: orderData.order_id,
-
-        handler: async function (
-          paymentResponse: any
-        ) {
-          await verifyWalletTopup(
-            paymentResponse,
-            orderData.order_intent
-          );
-        },
-
-        theme: {
-          color: "#f97316",
-        },
-      };
-
-      const razorpay =
-        new window.Razorpay(options);
-
-      razorpay.on(
-        "payment.failed",
-        function (response: any) {
-          console.error(
-            "Wallet payment failed:",
-            response.error
-          );
-
-          toast.error(
-            "Wallet payment failed"
-          );
-
-          setProcessing(false);
-        }
-      );
-
-      razorpay.open();
-    } catch (error: any) {
-      console.error(
-        "Create wallet payment error:",
-        error
-      );
-
-      toast.error(
-        error?.response?.data?.detail ||
-          "Failed to initialize payment"
-      );
-
-      setProcessing(false);
-    }
-  };
-
-  // ============================================================
-  // VERIFY TOP-UP
+  // VERIFY WALLET TOP-UP
   // ============================================================
 
   const verifyWalletTopup = async (
@@ -230,41 +160,64 @@ export default function WalletPage() {
     orderIntent: string
   ) => {
     try {
+      const token = getToken();
+
+      if (!token) {
+        toast.error(
+          "Your session has expired. Please login again."
+        );
+
+        router.replace("/login");
+        return;
+      }
+
       const response = await axios.post(
         `${API_URL}/wallet/verify-topup`,
         {
           razorpay_payment_id:
-            paymentResponse.razorpay_payment_id,
+            paymentResponse?.razorpay_payment_id,
 
           razorpay_order_id:
-            paymentResponse.razorpay_order_id,
+            paymentResponse?.razorpay_order_id,
 
           razorpay_signature:
-            paymentResponse.razorpay_signature,
+            paymentResponse?.razorpay_signature,
 
-          order_intent: orderIntent,
+          order_intent:
+            orderIntent,
         },
         {
-          headers: getAuthHeaders(),
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+          },
         }
       );
 
-      const data = response.data;
+      const data =
+        response.data;
 
-      if (data.success) {
-        toast.success(
-          `₹${data.amount_added} added to wallet 🚀`
-        );
-
-        setAmount("");
-
-        await fetchWallet();
-      } else {
-        toast.error(
-          data.message ||
+      if (!data?.success) {
+        throw new Error(
+          data?.message ||
             "Wallet verification failed"
         );
       }
+
+      // ========================================================
+      // PAYMENT SUCCESS
+      // ========================================================
+
+      toast.success(
+        `₹${Number(
+          data.amount_added || 0
+        ).toFixed(2)} added to wallet 🚀`
+      );
+
+      setAmount("");
+
+      // Reload the real backend balance/history.
+      await fetchWallet();
     } catch (error: any) {
       console.error(
         "Wallet verification error:",
@@ -273,6 +226,8 @@ export default function WalletPage() {
 
       toast.error(
         error?.response?.data?.detail ||
+          error?.response?.data?.message ||
+          error?.message ||
           "Wallet payment verification failed"
       );
     } finally {
@@ -281,7 +236,309 @@ export default function WalletPage() {
   };
 
   // ============================================================
-  // LOADING
+  // ADD MONEY
+  // ============================================================
+
+  const handleAddMoney = async () => {
+    const numericAmount =
+      Number(amount);
+
+    // ----------------------------------------------------------
+    // VALIDATION
+    // ----------------------------------------------------------
+
+    if (!amount.trim()) {
+      toast.error(
+        "Enter amount"
+      );
+
+      return;
+    }
+
+    if (
+      !Number.isFinite(
+        numericAmount
+      ) ||
+      numericAmount <= 0
+    ) {
+      toast.error(
+        "Enter a valid amount"
+      );
+
+      return;
+    }
+
+    if (processing) {
+      return;
+    }
+
+    // ----------------------------------------------------------
+    // MINIMUM AMOUNT
+    // ----------------------------------------------------------
+
+    if (numericAmount < 1) {
+      toast.error(
+        "Minimum wallet amount is ₹1"
+      );
+
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      // ========================================================
+      // 1. AUTHENTICATION
+      // ========================================================
+
+      const token =
+        getToken();
+
+      if (!token) {
+        toast.error(
+          "Your session has expired. Please login again."
+        );
+
+        router.replace("/login");
+
+        setProcessing(false);
+
+        return;
+      }
+
+      // ========================================================
+      // 2. LOAD RAZORPAY
+      // ========================================================
+      //
+      // IMPORTANT:
+      // We do not depend on <Script onLoad>.
+      //
+      // loadRazorpay() dynamically loads the SDK and waits
+      // until window.Razorpay is actually available.
+      //
+
+      const razorpayReady =
+        await loadRazorpay();
+
+      if (
+        !razorpayReady ||
+        !window.Razorpay
+      ) {
+        throw new Error(
+          "Unable to load Razorpay. Please try again."
+        );
+      }
+
+      // ========================================================
+      // 3. CREATE BACKEND RAZORPAY ORDER
+      // ========================================================
+
+      const response =
+        await axios.post(
+          `${API_URL}/wallet/create-topup-order`,
+          {
+            amount:
+              numericAmount,
+          },
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+
+              "Content-Type":
+                "application/json",
+            },
+          }
+        );
+
+      const orderData =
+        response.data;
+
+      console.log(
+        "💰 Wallet Razorpay order:",
+        orderData
+      );
+
+      // ========================================================
+      // 4. VALIDATE BACKEND RESPONSE
+      // ========================================================
+
+      if (
+        !orderData?.success
+      ) {
+        throw new Error(
+          orderData?.message ||
+            "Failed to create wallet payment"
+        );
+      }
+
+      if (
+        !orderData?.order_id
+      ) {
+        throw new Error(
+          "Razorpay order was not created"
+        );
+      }
+
+      if (
+        !orderData?.key
+      ) {
+        throw new Error(
+          "Razorpay key was not returned by the server"
+        );
+      }
+
+      if (
+        !orderData?.order_intent
+      ) {
+        throw new Error(
+          "Payment security intent was not created"
+        );
+      }
+
+      // ========================================================
+      // 5. RAZORPAY CHECKOUT OPTIONS
+      // ========================================================
+
+      const options = {
+        key:
+          orderData.key,
+
+        amount:
+          orderData.amount,
+
+        currency:
+          orderData.currency ||
+          "INR",
+
+        name:
+          "CampusVita",
+
+        description:
+          "CampusVita Wallet Top-up",
+
+        order_id:
+          orderData.order_id,
+
+        prefill: {
+          name:
+            orderData.name ||
+            "",
+
+          email:
+            orderData.email ||
+            "",
+
+          contact:
+            orderData.phone ||
+            "",
+        },
+
+        theme: {
+          color:
+            "#f97316",
+        },
+
+        // ======================================================
+        // PAYMENT SUCCESS
+        // ======================================================
+
+        handler:
+          async function (
+            paymentResponse: any
+          ) {
+            console.log(
+              "✅ Razorpay wallet payment response:",
+              paymentResponse
+            );
+
+            await verifyWalletTopup(
+              paymentResponse,
+              orderData.order_intent
+            );
+          },
+
+        // ======================================================
+        // USER CLOSES RAZORPAY
+        // ======================================================
+
+        modal: {
+          ondismiss: () => {
+            console.log(
+              "Wallet payment cancelled"
+            );
+
+            setProcessing(false);
+
+            toast(
+              "Payment cancelled. Your wallet was not changed."
+            );
+          },
+        },
+      };
+
+      // ========================================================
+      // 6. CREATE RAZORPAY INSTANCE
+      // ========================================================
+
+      const razorpay =
+        new window.Razorpay(
+          options
+        );
+
+      // ========================================================
+      // PAYMENT FAILED
+      // ========================================================
+
+      razorpay.on(
+        "payment.failed",
+        (
+          response: any
+        ) => {
+          console.error(
+            "❌ Razorpay wallet payment failed:",
+            response?.error
+          );
+
+          toast.error(
+            response?.error
+              ?.description ||
+              "Wallet payment failed"
+          );
+
+          setProcessing(false);
+        }
+      );
+
+      // ========================================================
+      // 7. OPEN RAZORPAY
+      // ========================================================
+
+      razorpay.open();
+    } catch (error: any) {
+      console.error(
+        "Create wallet payment error:",
+        error
+      );
+
+      const message =
+        error?.response?.data
+          ?.detail ||
+        error?.response?.data
+          ?.message ||
+        error?.message ||
+        "Unable to start wallet payment";
+
+      toast.error(
+        message
+      );
+
+      setProcessing(false);
+    }
+  };
+
+  // ============================================================
+  // LOADING SCREEN
   // ============================================================
 
   if (loading) {
@@ -289,7 +546,7 @@ export default function WalletPage() {
       <>
         <Navbar />
 
-        <main className="min-h-screen bg-black text-white px-4 pt-6 pb-24 md:px-6">
+        <main className="min-h-screen bg-black px-4 pb-24 pt-6 text-white md:px-6">
           <div className="mx-auto w-full max-w-md">
 
             <div className="h-7 w-32 animate-pulse rounded-lg bg-zinc-800" />
@@ -310,33 +567,24 @@ export default function WalletPage() {
   // REAL TRANSACTIONS
   // ============================================================
 
-  const recentTransactions = history.slice(0, 4);
+  const recentTransactions =
+    history.slice(0, 4);
+
+  // ============================================================
+  // PAGE
+  // ============================================================
 
   return (
     <>
-      <Script
-  src="https://checkout.razorpay.com/v1/checkout.js"
-  strategy="afterInteractive"
-  onLoad={() => {
-    console.log("✅ Razorpay SDK loaded");
-    setRazorpayLoaded(true);
-  }}
-  onError={() => {
-    console.error("❌ Razorpay SDK failed to load");
-    setRazorpayLoaded(false);
-    toast.error("Unable to load Razorpay");
-  }}
-/>
-
       <Navbar />
 
-      <main className="min-h-screen bg-black text-white px-4 pt-5 pb-24 md:px-6 md:pt-8">
+      <main className="min-h-screen bg-black px-4 pb-24 pt-5 text-white md:px-6 md:pt-8">
 
         <div className="mx-auto w-full max-w-md">
 
-          {/* ====================================================
+          {/* ==================================================
               HEADER
-              ==================================================== */}
+              ================================================== */}
 
           <div className="mb-5">
 
@@ -350,9 +598,9 @@ export default function WalletPage() {
 
           </div>
 
-          {/* ====================================================
+          {/* ==================================================
               BALANCE CARD
-              ==================================================== */}
+              ================================================== */}
 
           <section className="relative overflow-hidden rounded-3xl border border-orange-400/20 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-5 shadow-xl shadow-orange-950/30">
 
@@ -365,10 +613,12 @@ export default function WalletPage() {
                 <div className="flex items-center gap-2">
 
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+
                     <Wallet
                       size={19}
                       strokeWidth={2.3}
                     />
+
                   </div>
 
                   <span className="text-sm font-medium text-orange-50">
@@ -382,7 +632,10 @@ export default function WalletPage() {
               <div className="mt-4">
 
                 <p className="text-3xl font-bold tracking-tight">
-                  ₹{walletBalance.toFixed(2)}
+                  ₹
+                  {walletBalance.toFixed(
+                    2
+                  )}
                 </p>
 
                 <p className="mt-1 text-xs text-orange-100">
@@ -395,9 +648,9 @@ export default function WalletPage() {
 
           </section>
 
-          {/* ====================================================
+          {/* ==================================================
               ADD MONEY
-              ==================================================== */}
+              ================================================== */}
 
           <section className="mt-5 rounded-3xl border border-zinc-800 bg-zinc-900 p-4">
 
@@ -416,12 +669,16 @@ export default function WalletPage() {
               </div>
 
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+
                 <Plus size={19} />
+
               </div>
 
             </div>
 
-            {/* Amount */}
+            {/* ==================================================
+                AMOUNT
+                ================================================== */}
 
             <div className="mt-4">
 
@@ -437,51 +694,77 @@ export default function WalletPage() {
                   inputMode="decimal"
                   placeholder="Enter amount"
                   value={amount}
-                  onChange={(e) =>
-                    setAmount(e.target.value)
+                  onChange={(event) =>
+                    setAmount(
+                      event.target.value
+                    )
                   }
-                  className="h-12 w-full bg-transparent text-base text-white outline-none placeholder:text-zinc-500"
+                  disabled={
+                    processing
+                  }
+                  className="h-12 w-full bg-transparent text-base text-white outline-none placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
               </div>
 
             </div>
 
-            {/* Quick amounts */}
+            {/* ==================================================
+                QUICK AMOUNTS
+                ================================================== */}
 
             <div className="mt-3 grid grid-cols-4 gap-2">
 
               {[100, 500, 1000, 2000].map(
-                (quickAmount) => (
+                (
+                  quickAmount
+                ) => (
                   <button
-                    key={quickAmount}
+                    key={
+                      quickAmount
+                    }
                     type="button"
                     onClick={() =>
                       setAmount(
-                        String(quickAmount)
+                        String(
+                          quickAmount
+                        )
                       )
                     }
-                    disabled={processing}
-                    className={`rounded-xl border px-2 py-2.5 text-xs font-semibold transition active:scale-95 ${
-                      Number(amount) ===
+                    disabled={
+                      processing
+                    }
+                    className={`rounded-xl border px-2 py-2.5 text-xs font-semibold transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
+                      Number(
+                        amount
+                      ) ===
                       quickAmount
                         ? "border-orange-500 bg-orange-500/15 text-orange-400"
                         : "border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-orange-500/60 hover:text-orange-400"
                     }`}
                   >
-                    + ₹{quickAmount}
+                    + ₹
+                    {
+                      quickAmount
+                    }
                   </button>
                 )
               )}
 
             </div>
 
-            {/* Add button */}
+            {/* ==================================================
+                ADD MONEY BUTTON
+                ================================================== */}
 
             <button
               type="button"
-              onClick={handleAddMoney}
-              disabled={processing}
+              onClick={
+                handleAddMoney
+              }
+              disabled={
+                processing
+              }
               className="mt-3 flex h-12 w-full items-center justify-center rounded-2xl bg-orange-500 text-sm font-bold text-white shadow-lg shadow-orange-950/20 transition hover:bg-orange-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {processing
@@ -491,9 +774,9 @@ export default function WalletPage() {
 
           </section>
 
-          {/* ====================================================
+          {/* ==================================================
               RECENT TRANSACTIONS
-              ==================================================== */}
+              ================================================== */}
 
           <section className="mt-5">
 
@@ -511,10 +794,14 @@ export default function WalletPage() {
 
               </div>
 
-              {history.length > 0 && (
+              {history.length >
+                0 && (
                 <span className="text-xs text-zinc-500">
-                  {history.length}{" "}
-                  {history.length === 1
+                  {
+                    history.length
+                  }{" "}
+                  {history.length ===
+                  1
                     ? "transaction"
                     : "transactions"}
                 </span>
@@ -524,12 +811,17 @@ export default function WalletPage() {
 
             <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
 
-              {recentTransactions.length === 0 ? (
+              {recentTransactions.length ===
+              0 ? (
 
                 <div className="px-5 py-8 text-center">
 
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-800 text-zinc-500">
-                    <Wallet size={21} />
+
+                    <Wallet
+                      size={21}
+                    />
+
                   </div>
 
                   <p className="mt-3 text-sm font-medium text-zinc-300">
@@ -547,11 +839,16 @@ export default function WalletPage() {
                 <div>
 
                   {recentTransactions.map(
-                    (item, index) => {
+                    (
+                      item,
+                      index
+                    ) => {
 
                       const isCredit =
-                        item.type === "credit" ||
-                        item.type === "refund";
+                        item.type ===
+                          "credit" ||
+                        item.type ===
+                          "refund";
 
                       return (
                         <div
@@ -562,7 +859,8 @@ export default function WalletPage() {
                           }
                           className={`flex items-center justify-between gap-3 px-4 py-4 ${
                             index !==
-                            recentTransactions.length - 1
+                            recentTransactions.length -
+                              1
                               ? "border-b border-zinc-800"
                               : ""
                           }`}
@@ -577,18 +875,28 @@ export default function WalletPage() {
                                   : "bg-red-500/10 text-red-400"
                               }`}
                             >
+
                               {item.type ===
                               "refund" ? (
-                                <Gift size={18} />
+                                <Gift
+                                  size={
+                                    18
+                                  }
+                                />
                               ) : isCredit ? (
                                 <ArrowDownLeft
-                                  size={18}
+                                  size={
+                                    18
+                                  }
                                 />
                               ) : (
                                 <ArrowUpRight
-                                  size={18}
+                                  size={
+                                    18
+                                  }
                                 />
                               )}
+
                             </div>
 
                             <div className="min-w-0">
@@ -599,7 +907,9 @@ export default function WalletPage() {
                               </p>
 
                               <p className="mt-1 truncate text-[11px] text-zinc-500">
-                                {item.date}
+                                {
+                                  item.date
+                                }
                               </p>
 
                             </div>
@@ -619,7 +929,9 @@ export default function WalletPage() {
                             ₹
                             {Number(
                               item.amount
-                            ).toFixed(2)}
+                            ).toFixed(
+                              2
+                            )}
                           </p>
 
                         </div>
@@ -633,16 +945,22 @@ export default function WalletPage() {
 
             </div>
 
-            {/* View all */}
+            {/* ==================================================
+                VIEW ALL TRANSACTIONS
+                ================================================== */}
 
-            {history.length > 0 && (
+            {history.length >
+              0 && (
               <button
-              type="button"
-              onClick={() =>
-                router.push("/wallet/transactions")
-              }
-              className="mt-3 flex w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-4 text-left transition hover:border-orange-500/40 hover:bg-zinc-800 active:scale-[0.99]"
-            >
+                type="button"
+                onClick={() =>
+                  router.push(
+                    "/wallet/transactions"
+                  )
+                }
+                className="mt-3 flex w-full items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-4 text-left transition hover:border-orange-500/40 hover:bg-zinc-800 active:scale-[0.99]"
+              >
+
                 <div>
 
                   <p className="text-sm font-semibold">
