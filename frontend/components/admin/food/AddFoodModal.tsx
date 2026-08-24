@@ -35,6 +35,7 @@ export default function AddFoodModal({
     stall_id: "",
     price: "",
     available: true,
+    is_veg: "unknown",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -213,7 +214,8 @@ export default function AddFoodModal({
         alert("Please select an image.");
         return;
       }
-
+      console.log("FOOD TYPE BEFORE SUBMIT:", form.is_veg);
+      console.log("FULL FOOD FORM:", form);
       await addFood(
         {
           ...form,
@@ -235,6 +237,7 @@ export default function AddFoodModal({
         stall_id: "",
         price: "",
         available: true,
+        is_veg: "unknown",
       });
 
       setSelectedCategory(null);
@@ -289,7 +292,65 @@ export default function AddFoodModal({
           rows={3}
           className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
         />
+{/* FOOD TYPE */}
+<div className="mb-3">
+  <label className="mb-2 block text-sm font-medium text-gray-700">
+    Food Type
+  </label>
 
+  <div className="grid grid-cols-3 gap-2">
+    <button
+      type="button"
+      onClick={() =>
+        setForm((prev) => ({
+          ...prev,
+          is_veg: "veg",
+        }))
+      }
+      className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+        form.is_veg === "veg"
+          ? "border-green-500 bg-green-50 text-green-700"
+          : "border-gray-300 bg-white text-gray-600"
+      }`}
+    >
+      🟢 VEG
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        setForm((prev) => ({
+          ...prev,
+          is_veg: "non-veg",
+        }))
+      }
+      className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+        form.is_veg === "non-veg"
+          ? "border-red-500 bg-red-50 text-red-700"
+          : "border-gray-300 bg-white text-gray-600"
+      }`}
+    >
+      🔴 NON-VEG
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        setForm((prev) => ({
+          ...prev,
+          is_veg: "unknown",
+        }))
+      }
+      className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+        form.is_veg === "unknown"
+          ? "border-gray-500 bg-gray-100 text-gray-700"
+          : "border-gray-300 bg-white text-gray-600"
+      }`}
+    >
+      Unknown
+    </button>
+  </div>
+</div>
         {/* Category */}
         <div className="relative mb-3">
 
@@ -472,7 +533,6 @@ export default function AddFoodModal({
 
           </div>
         )}
-
         {/* Availability */}
         <label className="mb-5 flex items-center gap-2 text-black">
 
