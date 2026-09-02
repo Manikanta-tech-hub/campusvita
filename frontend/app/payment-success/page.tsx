@@ -1,20 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Download,
   Home,
   ShoppingBag,
   Store,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
-import Navbar from "@/components/layout/Navbar";
 import { getImageUrl } from "@/app/lib/getImageUrl";
 
 const API_URL =
@@ -81,298 +79,41 @@ function formatOrderDate(rawDate?: string): string {
 }
 
 /* ============================================================
-   INVOICE
-   ============================================================ */
+   PAGE HEADER
+============================================================ */
 
-function generateInvoicePDF(order: InvoiceOrder) {
-  const doc = new jsPDF({
-    unit: "pt",
-    format: "a4",
-  });
+interface PaymentSuccessHeaderProps {
+  router: ReturnType<typeof useRouter>;
+}
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const marginX = 40;
+function PaymentSuccessHeader({
+  router,
+}: PaymentSuccessHeaderProps) {
+  return (
+    <header className="sticky top-0 z-50 border-b border-zinc-800 bg-black">
+      <div className="relative mx-auto flex h-16 max-w-3xl items-center justify-between px-4 sm:px-6">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="Go back"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-zinc-900 active:scale-95"
+        >
+          <ArrowLeft size={24} strokeWidth={2} />
+        </button>
 
-  const invoiceNo = `INV-${new Date()
-    .toISOString()
-    .slice(0, 10)
-    .replace(/-/g, "")}-${order.token ?? "N/A"}`;
+        <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-orange-500">
+          CampusVita
+        </h1>
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(234, 88, 12);
-  doc.text("CampusVita", marginX, 50);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-
-  doc.text(
-    "Smart Campus Food Ordering",
-    marginX,
-    66
-  );
-
-  doc.text(
-    "Email: support@campusvita.com",
-    marginX,
-    80
-  );
-
-  doc.text(
-    `Phone: ${order.phone || "N/A"}`,
-    marginX,
-    94
-  );
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(20);
-
-  doc.text(
-    "INVOICE",
-    pageWidth - marginX,
-    50,
-    { align: "right" }
-  );
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-
-  doc.text(
-    `Invoice No: ${invoiceNo}`,
-    pageWidth - marginX,
-    66,
-    { align: "right" }
-  );
-
-  doc.text(
-    `Order Token: #${order.token ?? "N/A"}`,
-    pageWidth - marginX,
-    80,
-    { align: "right" }
-  );
-
-  doc.text(
-    `Date: ${formatOrderDate(order.date)}`,
-    pageWidth - marginX,
-    94,
-    { align: "right" }
-  );
-
-  doc.setDrawColor(230);
-  doc.line(
-    marginX,
-    110,
-    pageWidth - marginX,
-    110
-  );
-
-  let y = 134;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(20);
-
-  doc.text("Billed To", marginX, y);
-  doc.text(
-    "Payment Details",
-    marginX + 280,
-    y
-  );
-
-  y += 16;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(80);
-
-  const billedToLines = [
-    order.name || "N/A",
-    order.phone || "N/A",
-    order.location || "N/A",
-    order.email || "N/A",
-  ];
-
-  const paymentLines = [
-    `Payment ID: ${
-      order.payment_id ?? "Not Available"
-    }`,
-    `Razorpay Order ID: ${
-      order.razorpay_order_id ??
-      "Not Available"
-    }`,
-    `Method: ${
-      order.payment_method ?? "ONLINE"
-    }`,
-    `Status: ${
-      order.payment_status ?? "Paid"
-    }`,
-  ];
-
-  const lineHeight = 14;
-
-  billedToLines.forEach((line, i) => {
-    doc.text(
-      line,
-      marginX,
-      y + i * lineHeight
-    );
-  });
-
-  paymentLines.forEach((line, i) => {
-    doc.text(
-      line,
-      marginX + 280,
-      y + i * lineHeight
-    );
-  });
-
-  y +=
-    billedToLines.length *
-      lineHeight +
-    20;
-
-  const rows =
-    order.items && order.items.length > 0
-      ? order.items.map((item) => {
-          const price =
-            Number(item.price) || 0;
-
-          const qty =
-            Number(item.quantity) || 0;
-
-          return [
-            item.name,
-            String(qty),
-            `Rs. ${price.toFixed(2)}`,
-            `Rs. ${(price * qty).toFixed(
-              2
-            )}`,
-          ];
-        })
-      : [["No items found", "-", "-", "-"]];
-
-  autoTable(doc, {
-    startY: y,
-    head: [
-      [
-        "Item",
-        "Qty",
-        "Unit Price",
-        "Amount",
-      ],
-    ],
-    body: rows,
-    theme: "grid",
-    headStyles: {
-      fillColor: [234, 88, 12],
-      textColor: 255,
-      fontStyle: "bold",
-    },
-    styles: {
-      fontSize: 10,
-      cellPadding: 6,
-    },
-    columnStyles: {
-      1: {
-        halign: "center",
-      },
-      2: {
-        halign: "right",
-      },
-      3: {
-        halign: "right",
-      },
-    },
-    margin: {
-      left: marginX,
-      right: marginX,
-    },
-  });
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const finalY =
-    (doc as any).lastAutoTable.finalY +
-    20;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(20);
-
-  doc.text(
-    `Total Paid: Rs. ${Number(
-      order.total ?? 0
-    ).toFixed(2)}`,
-    pageWidth - marginX,
-    finalY,
-    { align: "right" }
-  );
-
-  const pickupY = finalY + 34;
-
-  doc.setDrawColor(234, 88, 12);
-  doc.setFillColor(255, 247, 237);
-
-  doc.roundedRect(
-    marginX,
-    pickupY - 16,
-    pageWidth - marginX * 2,
-    46,
-    6,
-    6,
-    "FD"
-  );
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(120, 53, 15);
-
-  doc.text(
-    `Pickup Code: ${
-      order.pickup_code ||
-      "Generating..."
-    }`,
-    marginX + 14,
-    pickupY + 6
-  );
-
-  doc.text(
-    `Estimated Time: ${
-      order.estimated_time ??
-      "Not Available"
-    }`,
-    marginX + 14,
-    pickupY + 22
-  );
-
-  const footerY = pickupY + 70;
-
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(140);
-
-  doc.text(
-    "Thank you for ordering with CampusVita!",
-    pageWidth / 2,
-    footerY,
-    { align: "center" }
-  );
-
-  const today =
-    new Date()
-      .toISOString()
-      .slice(0, 10);
-
-  doc.save(
-    `CampusVita-Invoice-${today}-${order.token ?? "order"}.pdf`
+        <div className="h-10 w-10" />
+      </div>
+    </header>
   );
 }
 
 /* ============================================================
    PAGE
-   ============================================================ */
+============================================================ */
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
@@ -383,9 +124,6 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] =
     useState(true);
 
-  const [downloading, setDownloading] =
-    useState(false);
-
   const [stalls, setStalls] =
     useState<Stall[]>([]);
 
@@ -394,39 +132,57 @@ export default function PaymentSuccessPage() {
   ---------------------------------------------------------- */
 
   useEffect(() => {
-    const orderData =
-      localStorage.getItem(
-        "latestOrder"
-      );
+    let redirectTimer: ReturnType<typeof setTimeout> | undefined;
 
-    if (!orderData) {
-      toast.error("No order found");
+    const loadOrder = () => {
+      const orderData =
+        window.localStorage.getItem("latestOrder");
 
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
+      if (!orderData) {
+        toast.error("No order found");
+
+        redirectTimer = setTimeout(() => {
+          router.push("/");
+        }, 1500);
+
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const parsedOrder =
+          JSON.parse(orderData) as InvoiceOrder;
+
+        setOrder(parsedOrder);
+      } catch (error) {
+        console.error(
+          "Error parsing order:",
+          error
+        );
+
+        toast.error(
+          "Failed to load order details"
+        );
+      }
 
       setLoading(false);
-      return;
-    }
+    };
 
-    try {
-      const parsedOrder =
-        JSON.parse(orderData);
+    /*
+     * Defer the state updates until after the current
+     * effect execution. This avoids the React
+     * set-state-in-effect lint error.
+     */
+    const loadTimer =
+      setTimeout(loadOrder, 0);
 
-      setOrder(parsedOrder);
-    } catch (error) {
-      console.error(
-        "Error parsing order:",
-        error
-      );
+    return () => {
+      clearTimeout(loadTimer);
 
-      toast.error(
-        "Failed to load order details"
-      );
-    }
-
-    setLoading(false);
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
+    };
   }, [router]);
 
   /* ----------------------------------------------------------
@@ -438,39 +194,54 @@ export default function PaymentSuccessPage() {
       return;
     }
 
+    let cancelled = false;
+
     const loadStalls = async () => {
       try {
         const response =
-          await fetch(
-            `${API_URL}/stalls`
-          );
+          await fetch(`${API_URL}/stalls`);
 
         if (!response.ok) {
           return;
         }
 
-        const data =
+        const data: unknown =
           await response.json();
 
         const stallList =
           Array.isArray(data)
             ? data
-            : data?.stalls;
+            : typeof data === "object" &&
+                data !== null &&
+                "stalls" in data
+              ? (data as {
+                  stalls?: unknown;
+                }).stalls
+              : undefined;
 
         if (
+          !cancelled &&
           Array.isArray(stallList)
         ) {
-          setStalls(stallList);
+          setStalls(
+            stallList as Stall[]
+          );
         }
       } catch (error) {
-        console.error(
-          "Failed to load stalls:",
-          error
-        );
+        if (!cancelled) {
+          console.error(
+            "Failed to load stalls:",
+            error
+          );
+        }
       }
     };
 
-    loadStalls();
+    void loadStalls();
+
+    return () => {
+      cancelled = true;
+    };
   }, [order]);
 
   /* ----------------------------------------------------------
@@ -499,10 +270,10 @@ export default function PaymentSuccessPage() {
 
           const stall =
             stalls.find(
-              (s) =>
+              (currentStall) =>
                 String(
-                  s._id ||
-                    s.id ||
+                  currentStall._id ||
+                    currentStall.id ||
                     ""
                 ) === stallId
             );
@@ -510,15 +281,14 @@ export default function PaymentSuccessPage() {
           const existing =
             groups.get(stallId);
 
+          const itemSubtotal =
+            Number(item.price) *
+            Number(item.quantity);
+
           if (existing) {
-            existing.items.push(
-              item
-            );
-
+            existing.items.push(item);
             existing.subtotal +=
-              Number(item.price) *
-              Number(item.quantity);
-
+              itemSubtotal;
             return;
           }
 
@@ -531,8 +301,7 @@ export default function PaymentSuccessPage() {
               stall?.image,
             items: [item],
             subtotal:
-              Number(item.price) *
-              Number(item.quantity),
+              itemSubtotal,
           });
         }
       );
@@ -546,45 +315,13 @@ export default function PaymentSuccessPage() {
      ACTIONS
   ---------------------------------------------------------- */
 
-  const handleTrackOrder =
-    () => {
-      router.push(
-        "/track-order"
-      );
-    };
+  const handleTrackOrder = () => {
+    router.push("/track-order");
+  };
 
-  const handleDownloadInvoice =
-    () => {
-      if (!order) {
-        toast.error(
-          "No order found"
-        );
-        return;
-      }
-
-      setDownloading(true);
-
-      try {
-        generateInvoicePDF(
-          order
-        );
-
-        toast.success(
-          "Invoice downloaded successfully"
-        );
-      } catch (error) {
-        console.error(
-          "Invoice generation error:",
-          error
-        );
-
-        toast.error(
-          "Failed to generate invoice"
-        );
-      } finally {
-        setDownloading(false);
-      }
-    };
+  const handleBackToHome = () => {
+    router.push("/");
+  };
 
   /* ----------------------------------------------------------
      LOADING
@@ -593,11 +330,31 @@ export default function PaymentSuccessPage() {
   if (loading) {
     return (
       <>
-        <Navbar />
+        <header className="sticky top-0 z-50 border-b border-zinc-800 bg-black">
+          <div className="relative mx-auto flex h-16 max-w-3xl items-center justify-between px-4 sm:px-6">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-zinc-900"
+            >
+              <ArrowLeft
+                size={24}
+                strokeWidth={2}
+              />
+            </button>
 
-        <main className="min-h-screen bg-black text-white flex items-center justify-center">
+            <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-orange-500">
+              CampusVita
+            </h1>
+
+            <div className="h-10 w-10" />
+          </div>
+        </header>
+
+        <main className="flex min-h-screen items-center justify-center bg-black text-white">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 rounded-full border-2 border-zinc-800 border-t-orange-500 animate-spin" />
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-zinc-800 border-t-orange-500" />
 
             <p className="mt-4 text-sm text-zinc-400">
               Loading order confirmation...
@@ -615,15 +372,36 @@ export default function PaymentSuccessPage() {
   if (!order) {
     return (
       <>
-        <Navbar />
+        <header className="sticky top-0 z-50 border-b border-zinc-800 bg-black">
+          <div className="relative mx-auto flex h-16 max-w-3xl items-center justify-between px-4 sm:px-6">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-zinc-900"
+            >
+              <ArrowLeft
+                size={24}
+                strokeWidth={2}
+              />
+            </button>
 
-        <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+            <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-orange-500">
+              CampusVita
+            </h1>
+
+            <div className="h-10 w-10" />
+          </div>
+        </header>
+
+        <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
           <div className="text-center">
             <p className="text-zinc-400">
               No order found.
             </p>
 
             <button
+              type="button"
               onClick={() =>
                 router.push("/")
               }
@@ -637,14 +415,17 @@ export default function PaymentSuccessPage() {
     );
   }
 
+  /* ----------------------------------------------------------
+     ORDER TOTALS
+  ---------------------------------------------------------- */
+
   const total =
     Number(order.total ?? 0);
 
   const totalItems =
     order.items?.reduce(
       (sum, item) =>
-        sum +
-        Number(item.quantity),
+        sum + Number(item.quantity),
       0
     ) ?? 0;
 
@@ -654,9 +435,11 @@ export default function PaymentSuccessPage() {
 
   return (
     <>
-      <Navbar />
+      <PaymentSuccessHeader
+        router={router}
+      />
 
-      <main className="min-h-screen bg-black text-white px-4 pb-28 pt-6 sm:px-6 md:px-8">
+      <main className="min-h-screen bg-black px-4 pb-28 pt-6 text-white sm:px-6 md:px-8">
         <div className="mx-auto w-full max-w-3xl">
 
           {/* ==================================================
@@ -664,7 +447,6 @@ export default function PaymentSuccessPage() {
           ================================================== */}
 
           <section className="mb-6 text-center">
-
             <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10 ring-1 ring-green-500/20">
               <CheckCircle2
                 size={48}
@@ -682,7 +464,6 @@ export default function PaymentSuccessPage() {
             </p>
 
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm">
-
               <span className="rounded-full bg-zinc-900 px-4 py-2 text-zinc-300 ring-1 ring-zinc-800">
                 Token #{order.token ?? "N/A"}
               </span>
@@ -690,7 +471,6 @@ export default function PaymentSuccessPage() {
               <span className="rounded-full bg-green-500/10 px-4 py-2 font-medium text-green-400 ring-1 ring-green-500/20">
                 Payment Paid
               </span>
-
             </div>
           </section>
 
@@ -699,11 +479,8 @@ export default function PaymentSuccessPage() {
           ================================================== */}
 
           <section className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 shadow-xl">
-
             <div className="border-b border-zinc-800 px-5 py-5 sm:px-6">
-
               <div className="flex items-center justify-between gap-4">
-
                 <div>
                   <h2 className="text-xl font-bold sm:text-2xl">
                     Order Information
@@ -728,9 +505,7 @@ export default function PaymentSuccessPage() {
                     className="text-orange-500"
                   />
                 </div>
-
               </div>
-
             </div>
 
             {/* =================================================
@@ -738,179 +513,157 @@ export default function PaymentSuccessPage() {
             ================================================= */}
 
             <div className="divide-y divide-zinc-800">
-
               {stallGroups.length > 0 ? (
                 stallGroups.map(
-                  (group) => (
-                    <div
-                      key={
-                        group.stallId
-                      }
-                      className="px-5 py-5 sm:px-6"
-                    >
+                  (group) => {
+                    const groupItemCount =
+                      group.items.reduce(
+                        (
+                          sum,
+                          item
+                        ) =>
+                          sum +
+                          Number(
+                            item.quantity
+                          ),
+                        0
+                      );
 
-                      {/* STALL HEADER */}
+                    return (
+                      <div
+                        key={
+                          group.stallId
+                        }
+                        className="px-5 py-5 sm:px-6"
+                      >
+                        {/* STALL HEADER */}
 
-                      <div className="flex items-center justify-between gap-4">
-
-                        <div className="flex min-w-0 items-center gap-3">
-
-                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
-
-                            {group.stallImage ? (
-                              <img
-                                src={getImageUrl(
-                                  group.stallImage
-                                )}
-                                alt={
-                                  group.stallName
-                                }
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-zinc-900 ring-1 ring-zinc-800">
+                              {group.stallImage ? (
+                                <Image
+                                src={getImageUrl(group.stallImage)}
+                                alt={group.stallName}
+                                width={44}
+                                height={44}
                                 className="h-full w-full object-cover"
                               />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center">
-                                <Store
-                                  size={21}
-                                  className="text-orange-500"
-                                />
-                              </div>
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                  <Store
+                                    size={21}
+                                    className="text-orange-500"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="min-w-0">
+                              <h3 className="truncate text-base font-bold sm:text-lg">
+                                {
+                                  group.stallName
+                                }
+                              </h3>
+
+                              <p className="text-xs text-zinc-500 sm:text-sm">
+                                {
+                                  groupItemCount
+                                }{" "}
+                                {groupItemCount ===
+                                1
+                                  ? "Item"
+                                  : "Items"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <span className="shrink-0 text-base font-bold text-white sm:text-lg">
+                            ₹
+                            {group.subtotal.toFixed(
+                              2
                             )}
-
-                          </div>
-
-                          <div className="min-w-0">
-
-                            <h3 className="truncate text-base font-bold sm:text-lg">
-                              {group.stallName}
-                            </h3>
-
-                            <p className="text-xs text-zinc-500 sm:text-sm">
-                              {group.items.reduce(
-                                (
-                                  sum,
-                                  item
-                                ) =>
-                                  sum +
-                                  Number(
-                                    item.quantity
-                                  ),
-                                0
-                              )}{" "}
-                              {group.items.reduce(
-                                (
-                                  sum,
-                                  item
-                                ) =>
-                                  sum +
-                                  Number(
-                                    item.quantity
-                                  ),
-                                0
-                              ) === 1
-                                ? "Item"
-                                : "Items"}
-                            </p>
-
-                          </div>
-
+                          </span>
                         </div>
 
-                        <span className="shrink-0 text-base font-bold text-white sm:text-lg">
-                          ₹
-                          {group.subtotal.toFixed(
-                            2
-                          )}
-                        </span>
+                        {/* ITEMS */}
 
-                      </div>
+                        <div className="mt-4 space-y-3">
+                          {group.items.map(
+                            (
+                              item,
+                              index
+                            ) => (
+                              <div
+                                key={`${group.stallId}-${item.name}-${index}`}
+                                className="flex items-center gap-3 rounded-2xl bg-zinc-900/70 p-3"
+                              >
+                                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
+                                  {item.image ? (
+                                   <Image
+                                   src={getImageUrl(item.image)}
+                                   alt={item.name}
+                                   width={56}
+                                   height={56}
+                                   className="h-full w-full object-cover"
+                                 />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center">
+                                      <ShoppingBag
+                                        size={20}
+                                        className="text-zinc-500"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
 
-                      {/* ITEMS */}
-
-                      <div className="mt-4 space-y-3">
-
-                        {group.items.map(
-                          (
-                            item,
-                            index
-                          ) => (
-                            <div
-                              key={`${group.stallId}-${item.name}-${index}`}
-                              className="flex items-center gap-3 rounded-2xl bg-zinc-900/70 p-3"
-                            >
-
-                              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
-
-                                {item.image ? (
-                                  <img
-                                    src={getImageUrl(
-                                      item.image
-                                    )}
-                                    alt={
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-semibold text-white sm:text-base">
+                                    {
                                       item.name
                                     }
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center">
-                                    <ShoppingBag
-                                      size={20}
-                                      className="text-zinc-500"
-                                    />
-                                  </div>
-                                )}
+                                  </p>
 
-                              </div>
+                                  <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
+                                    ₹
+                                    {Number(
+                                      item.price
+                                    ).toFixed(
+                                      2
+                                    )}{" "}
+                                    ×{" "}
+                                    {
+                                      item.quantity
+                                    }
+                                  </p>
+                                </div>
 
-                              <div className="min-w-0 flex-1">
-
-                                <p className="truncate text-sm font-semibold text-white sm:text-base">
-                                  {item.name}
-                                </p>
-
-                                <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
+                                <p className="shrink-0 text-sm font-semibold text-zinc-200 sm:text-base">
                                   ₹
-                                  {Number(
-                                    item.price
+                                  {(
+                                    Number(
+                                      item.price
+                                    ) *
+                                    Number(
+                                      item.quantity
+                                    )
                                   ).toFixed(
                                     2
-                                  )}{" "}
-                                  ×{" "}
-                                  {
-                                    item.quantity
-                                  }
+                                  )}
                                 </p>
-
                               </div>
-
-                              <p className="shrink-0 text-sm font-semibold text-zinc-200 sm:text-base">
-                                ₹
-                                {(
-                                  Number(
-                                    item.price
-                                  ) *
-                                  Number(
-                                    item.quantity
-                                  )
-                                ).toFixed(
-                                  2
-                                )}
-                              </p>
-
-                            </div>
-                          )
-                        )}
-
+                            )
+                          )}
+                        </div>
                       </div>
-
-                    </div>
-                  )
+                    );
+                  }
                 )
               ) : (
                 <div className="px-6 py-10 text-center text-sm text-zinc-500">
                   No order items found.
                 </div>
               )}
-
             </div>
 
             {/* =================================================
@@ -918,9 +671,7 @@ export default function PaymentSuccessPage() {
             ================================================= */}
 
             <div className="border-t border-zinc-800 bg-zinc-900/40 px-5 py-5 sm:px-6">
-
               <div className="flex items-end justify-between gap-4">
-
                 <div>
                   <p className="text-sm text-zinc-500">
                     Total Paid
@@ -936,45 +687,8 @@ export default function PaymentSuccessPage() {
                 <p className="text-2xl font-extrabold text-orange-500 sm:text-3xl">
                   ₹{total.toFixed(2)}
                 </p>
-
               </div>
-
             </div>
-
-          </section>
-
-          {/* ==================================================
-              PICKUP INFORMATION
-          ================================================== */}
-
-          <section className="mt-5 rounded-3xl border border-orange-500/20 bg-orange-500/5 p-5 sm:p-6">
-
-            <div className="grid gap-4 sm:grid-cols-2">
-
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-orange-400/70">
-                  Pickup Code
-                </p>
-
-                <p className="mt-1 font-mono text-2xl font-extrabold tracking-widest text-orange-500">
-                  {order.pickup_code ||
-                    "Generating..."}
-                </p>
-              </div>
-
-              <div className="sm:text-right">
-                <p className="text-xs font-medium uppercase tracking-wider text-orange-400/70">
-                  Estimated Time
-                </p>
-
-                <p className="mt-1 text-base font-semibold text-white">
-                  {order.estimated_time ||
-                    "Not Available"}
-                </p>
-              </div>
-
-            </div>
-
           </section>
 
           {/* ==================================================
@@ -982,14 +696,16 @@ export default function PaymentSuccessPage() {
           ================================================== */}
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {/* TRACK ORDER */}
 
             <button
-              onClick={handleTrackOrder}
+              type="button"
+              onClick={
+                handleTrackOrder
+              }
               className="group flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-4 text-base font-bold text-white transition hover:bg-orange-600 active:scale-[0.99]"
             >
-              <ShoppingBag
-                size={21}
-              />
+              <ShoppingBag size={21} />
 
               Track Order
 
@@ -999,39 +715,20 @@ export default function PaymentSuccessPage() {
               />
             </button>
 
+            {/* BACK TO HOME */}
+
             <button
+              type="button"
               onClick={
-                handleDownloadInvoice
+                handleBackToHome
               }
-              disabled={downloading}
-              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 text-base font-bold text-white transition hover:border-orange-500 hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 text-base font-bold text-white transition hover:border-orange-500 hover:text-orange-500 active:scale-[0.99]"
             >
-              <Download
-                size={20}
-              />
+              <Home size={20} />
 
-              {downloading
-                ? "Generating..."
-                : "Download Invoice"}
+              Back to Home
             </button>
-
           </div>
-
-          {/* ==================================================
-              HOME
-          ================================================== */}
-
-          <button
-            onClick={() =>
-              router.push("/")
-            }
-            className="mx-auto mt-6 flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-white"
-          >
-            <Home size={17} />
-
-            Back to Home
-          </button>
-
         </div>
       </main>
     </>
