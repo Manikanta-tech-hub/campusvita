@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import {
   LayoutDashboard,
   UtensilsCrossed,
   ClipboardList,
   Layers3,
-  BarChart3,
   Settings,
   ShieldCheck,
   CreditCard,
@@ -16,6 +15,7 @@ import {
   LogOut,
   Store,
 } from "lucide-react";
+
 import { clearSession } from "@/app/lib/auth/session";
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
@@ -81,7 +81,6 @@ const navigation = [
 export default function Sidebar() {
   const pathname = usePathname();
 
-
   const handleLogout = () => {
     clearSession("ADMIN");
     sessionStorage.clear();
@@ -93,7 +92,7 @@ export default function Sidebar() {
       initial={{ x: -40, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="w-72 border-r border-zinc-800 bg-[#111113] flex flex-col"
+      className="w-full border-r border-zinc-800 bg-[#111113] flex flex-col"
     >
       {/* Logo */}
       <div className="border-b border-zinc-800 px-6 py-7">
@@ -107,7 +106,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4">
+      <div className="py-4">
         {navigation.map((section) => (
           <div key={section.title}>
             <SidebarSection title={section.title} />
@@ -129,6 +128,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="border-t border-zinc-800 p-5 space-y-3">
+        {/* Administrator */}
         <div className="flex items-center gap-3 rounded-2xl bg-zinc-900 p-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500">
             <ShieldCheck
