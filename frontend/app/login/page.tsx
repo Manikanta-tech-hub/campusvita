@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { saveSession } from "@/app/lib/auth/session";
-
+import { getFCMToken } from "@/app/firebase";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:8000";
@@ -168,7 +168,31 @@ export default function LoginPage() {
               data.user.profile_image || "",
           },
         });
+// ======================================================
+// SAVE FCM TOKEN FOR THIS REAL LOGGED-IN USER
+// ======================================================
 
+try {
+  const fcmToken = await getFCMToken();
+
+  if (fcmToken) {
+    await fetch(`${API_URL}/save-fcm-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: data.user.email,
+        fcm_token: fcmToken,
+      }),
+    });
+
+    console.log("FCM token sent to backend");
+  }
+} catch (error) {
+  // Notification setup should never break login
+  console.error("FCM setup error:", error);
+}
         // ------------------------------------------------------
         // Verify the correct namespace was created
         // ------------------------------------------------------

@@ -13,12 +13,13 @@ import hmac
 import hashlib
 import bcrypt
 import jwt
-
+import firebase_admin
+from firebase_admin import credentials, messaging
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
-
+import logging
 import socketio
 import cloudinary
 import cloudinary.uploader
@@ -77,6 +78,54 @@ from database import (
 
 load_dotenv()
 
+# =====================================
+# LOGGING CONFIGURATION
+# =====================================
+logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
+
+# =====================================
+# FIREBASE ADMIN INITIALIZATION
+# =====================================
+
+if not firebase_admin._apps:
+    cred = credentials.Certificate(
+        "firebase-service-account.json"
+    )
+
+    firebase_admin.initialize_app(cred)
+
+logger.info("🔥 Firebase Admin initialized successfully")
+
+# =====================================
+# SEND PUSH NOTIFICATION
+# =====================================
+
+def send_push_notification(token: str, title: str, body: str):
+    try:
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            token=token,
+        )
+
+        response = messaging.send(message)
+
+        logger.info(
+            f"🔔 Notification sent successfully: {response}"
+        )
+
+        return True
+
+    except Exception as e:
+        logger.error(
+            f"❌ Notification error: {e}"
+        )
+
+        return False
 # =====================================
 # LOGGING CONFIGURATION
 # =====================================
@@ -788,6 +837,9 @@ class LoginData(BaseModel):
 class RefreshTokenData(BaseModel):
     refresh_token: str
 
+class FCMTokenData(BaseModel):
+    email: EmailStr
+    fcm_token: str = Field(min_length=1)
 
 class ChangePasswordData(BaseModel):
     current_password: str
@@ -990,6 +1042,7 @@ def signup(request: Request, user: SignupData):
             "wallet_history": [],
             "favorite_foods": [],
             "notifications": True,
+            "fcm_token": "",
             "theme": "dark",
             "total_orders": 0,
             "total_spent": 0,
@@ -1039,7 +1092,46 @@ def signup(request: Request, user: SignupData):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
+# =====================================
+# SAVE FCM TOKEN
+# =====================================
 
+@fastapi_app.post("/save-fcm-token")
+def save_fcm_token(data: FCMTokenData):
+    try:
+        email = normalize_email(data.email)
+
+        result = users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "fcm_token": data.fcm_token
+                }
+            }
+        )
+
+        if result.matched_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        logger.info(f"🔔 FCM token saved for: {email}")
+
+        return {
+            "message": "FCM token saved successfully"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(f"FCM token save error: {e}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save FCM token"
+        )
 @fastapi_app.post("/login")
 @limiter.limit("5/minute")
 def login(request: Request, user: LoginData):
@@ -2590,7 +2682,37 @@ def update_order_flow(order_id):
 
         emit_order_update_sync(updated_order)
 
+# ============================================================
 
+        # SEND PUSH NOTIFICATION TO THE REAL ORDER OWNER
+
+        # ============================================================
+
+        user_email = order.get("email")
+
+        if user_email:
+
+            order_user = users_collection.find_one(
+
+                {"email": user_email}
+
+            )
+
+            if order_user:
+
+                fcm_token = order_user.get("fcm_token")
+
+                if fcm_token:
+
+                    send_push_notification(
+
+                        fcm_token,
+
+                        "CampusVita 🍔",
+
+                        f"Your order status is now: {next_status}",
+
+                    )
 # =====================================
 # RATING ROUTES
 # =====================================
