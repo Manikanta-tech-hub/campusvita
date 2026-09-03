@@ -9,14 +9,11 @@ import {
   ClipboardList,
   Layers3,
   Settings,
-  ShieldCheck,
   CreditCard,
   Users,
-  LogOut,
   Store,
 } from "lucide-react";
 
-import { clearSession } from "@/app/lib/auth/session";
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
 
@@ -81,12 +78,6 @@ const navigation = [
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const handleLogout = () => {
-    clearSession("ADMIN");
-    sessionStorage.clear();
-    window.location.replace("/login");
-  };
-
   return (
     <motion.aside
       initial={{ x: -40, opacity: 0 }}
@@ -124,42 +115,6 @@ export default function Sidebar() {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-zinc-800 p-5 space-y-3">
-        {/* Administrator */}
-        <div className="flex items-center gap-3 rounded-2xl bg-zinc-900 p-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500">
-            <ShieldCheck
-              size={22}
-              className="text-white"
-            />
-          </div>
-
-          <div>
-            <p className="font-semibold text-white">
-              Administrator
-            </p>
-
-            <p className="text-xs text-zinc-500">
-              CampusVita
-            </p>
-          </div>
-        </div>
-
-        {/* Logout */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-left text-zinc-300 transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
-        >
-          <LogOut size={20} />
-
-          <span className="font-medium">
-            Logout
-          </span>
-        </button>
       </div>
     </motion.aside>
   );
