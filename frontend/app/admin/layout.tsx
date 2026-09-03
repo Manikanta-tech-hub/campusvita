@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import Sidebar from "@/components/admin/layout/Sidebar";
@@ -11,32 +11,6 @@ import {
   clearSession,
 } from "@/app/lib/auth/session";
 
-function subscribeToSession(callback: () => void) {
-  window.addEventListener("storage", callback);
-
-  return () => {
-    window.removeEventListener("storage", callback);
-  };
-}
-
-function getAdminSessionSnapshot() {
-  const session = getSession("ADMIN");
-
-  if (!session) {
-    return "NO_SESSION";
-  }
-
-  if (session.user.role !== "ADMIN") {
-    return "INVALID_SESSION";
-  }
-
-  return "AUTHORIZED";
-}
-
-function getServerSessionSnapshot() {
-  return "CHECKING";
-}
-
 export default function AdminLayout({
   children,
 }: {
@@ -44,27 +18,35 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
 
-  const authStatus = useSyncExternalStore(
-    subscribeToSession,
-    getAdminSessionSnapshot,
-    getServerSessionSnapshot
-  );
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (
-      authStatus === "NO_SESSION" ||
-      authStatus === "INVALID_SESSION"
-    ) {
+    const session = getSession("ADMIN");
+
+    // No ADMIN session
+    if (!session) {
       clearSession("ADMIN");
       router.replace("/login");
+      return;
     }
-  }, [authStatus, router]);
 
-  if (authStatus === "CHECKING") {
+    // Make sure the stored session really belongs to ADMIN
+    if (session.user.role !== "ADMIN") {
+      clearSession("ADMIN");
+      router.replace("/login");
+      return;
+    }
+
+    setAuthorized(true);
+    setCheckingAuth(false);
+  }, [router]);
+
+  if (checkingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] text-white">
-        <div className="flex flex-col items-center justify-center">
-          <div className="mb-4 h-9 w-9 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
 
           <p className="text-sm text-zinc-400">
             Checking admin session...
@@ -74,28 +56,23 @@ export default function AdminLayout({
     );
   }
 
-  if (
-    authStatus === "NO_SESSION" ||
-    authStatus === "INVALID_SESSION"
-  ) {
+  if (!authorized) {
     return null;
   }
 
   return (
     <div className="flex min-h-screen w-full items-stretch bg-[#0a0a0f] text-white">
-      {/* Admin Sidebar */}
-      <aside className="hidden w-72 shrink-0 lg:flex">
+      {/* Sidebar */}
+      <div className="hidden w-72 shrink-0 lg:block">
         <Sidebar />
-      </aside>
+      </div>
 
-      {/* Main Admin Area */}
+      {/* Main Admin Content */}
       <div className="min-w-0 flex-1 bg-[#0a0a0f]">
         {/* Topbar */}
-        <div className="sticky top-0 z-40">
-          <Topbar />
-        </div>
+        <Topbar />
 
-        {/* Page */}
+        {/* Page Content */}
         <main className="bg-[#0a0a0f]">
           <div className="mx-auto w-full max-w-[1800px] p-4 sm:p-6 lg:p-8">
             {children}
