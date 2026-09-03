@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+
 import {
   ArrowRight,
   Eye,
@@ -11,6 +12,7 @@ import {
   LockKeyhole,
   Phone,
   User,
+  UserPlus,
   ShieldCheck,
   Zap,
   Gift,
@@ -20,9 +22,12 @@ import {
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
 type FieldProps = {
-  label: string;
-  hint: string;
+  label?: string;
   value: string;
   placeholder: string;
   type?: string;
@@ -32,11 +37,32 @@ type FieldProps = {
   disabled?: boolean;
   onChange: (value: string) => void;
   rightElement?: ReactNode;
+  mobile?: boolean;
 };
+
+type SignupFormProps = {
+  mobile?: boolean;
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  loading: boolean;
+  showPassword: boolean;
+  setName: (value: string) => void;
+  setEmail: (value: string) => void;
+  setPassword: (value: string) => void;
+  setPhone: (value: string) => void;
+  setShowPassword: (value: boolean) => void;
+  handleSignup: () => Promise<void>;
+  router: ReturnType<typeof useRouter>;
+};
+
+/* =========================================================
+   INPUT FIELD
+========================================================= */
 
 function Field({
   label,
-  hint,
   value,
   placeholder,
   type = "text",
@@ -46,42 +72,72 @@ function Field({
   disabled,
   onChange,
   rightElement,
+  mobile = false,
 }: FieldProps) {
   return (
-    <label className="group block">
-      <span className="sr-only">{label}</span>
+    <label className="group block w-full min-w-0">
+      {!mobile && label && (
+        <span className="mb-2 block text-[13px] font-semibold text-[#302d2a]">
+          {label}
+        </span>
+      )}
 
-      <div className="relative flex min-h-[76px] items-center rounded-2xl border border-white/[0.08] bg-[#111214]/90 px-4 transition duration-200 group-focus-within:border-orange-500/60 group-focus-within:bg-[#141517] group-focus-within:shadow-[0_0_0_4px_rgba(249,115,22,0.06)]">
-        <div className="mr-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.025] text-zinc-400 transition group-focus-within:border-orange-500/20 group-focus-within:text-orange-400">
-          <Icon size={20} strokeWidth={1.7} />
-        </div>
+      <div
+        className={`
+          relative flex w-full min-w-0 items-center
+          rounded-2xl
+          border border-[#dedbd6]
+          bg-white
+          shadow-[0_3px_12px_rgba(0,0,0,0.025)]
+          transition-all duration-200
+          group-focus-within:border-orange-400
+          group-focus-within:ring-4
+          group-focus-within:ring-orange-100
+          ${mobile ? "h-[62px] px-5" : "h-[64px] px-5"}
+        `}
+      >
+        <Icon
+          size={mobile ? 22 : 21}
+          strokeWidth={1.7}
+          className="
+            mr-4
+            shrink-0
+            text-[#77736f]
+            transition-colors
+            group-focus-within:text-orange-500
+          "
+        />
 
-        <div className="min-w-0 flex-1">
-          <span className="block text-[13px] font-medium text-zinc-200">
-            {label}
-          </span>
-
-          <input
-            type={type}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder={placeholder}
-            autoComplete={autoComplete}
-            inputMode={inputMode}
-            disabled={disabled}
-            className="mt-0.5 w-full bg-transparent text-[14px] text-white outline-none placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </div>
+        <input
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          inputMode={inputMode}
+          disabled={disabled}
+          className="
+            min-w-0
+            flex-1
+            bg-transparent
+            text-[16px]
+            text-[#292725]
+            outline-none
+            placeholder:text-[#77736f]
+            disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
+        />
 
         {rightElement}
       </div>
-
-      <span className="mt-1.5 block pl-1 text-[11px] leading-4 text-zinc-600">
-        {hint}
-      </span>
     </label>
   );
 }
+
+/* =========================================================
+   SIGNUP PAGE
+========================================================= */
 
 export default function SignupPage() {
   const router = useRouter();
@@ -94,33 +150,73 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
 
-  const getErrorMessage = (data: any): string => {
-    if (!data) return "Signup failed";
+  /* =========================================================
+     ERROR MESSAGE
+  ========================================================= */
 
-    if (Array.isArray(data.detail)) {
-      const messages = data.detail
-        .map((error: any) => {
-          if (typeof error === "string") return error;
-          if (error && typeof error.msg === "string") return error.msg;
-          if (error && typeof error.message === "string") return error.message;
+  const getErrorMessage = (data: unknown): string => {
+    if (!data || typeof data !== "object") {
+      return "Signup failed";
+    }
 
-          try {
-            return JSON.stringify(error);
-          } catch {
-            return "Invalid input";
+    const responseData = data as {
+      detail?: unknown;
+      message?: unknown;
+      error?: unknown;
+    };
+
+    if (Array.isArray(responseData.detail)) {
+      const messages = responseData.detail
+        .map((error: unknown) => {
+          if (typeof error === "string") {
+            return error;
           }
+
+          if (
+            error &&
+            typeof error === "object" &&
+            "msg" in error &&
+            typeof error.msg === "string"
+          ) {
+            return error.msg;
+          }
+
+          if (
+            error &&
+            typeof error === "object" &&
+            "message" in error &&
+            typeof error.message === "string"
+          ) {
+            return error.message;
+          }
+
+          return "Invalid input";
         })
         .filter(Boolean);
 
-      if (messages.length > 0) return messages.join(", ");
+      if (messages.length > 0) {
+        return messages.join(", ");
+      }
     }
 
-    if (typeof data.detail === "string") return data.detail;
-    if (typeof data.message === "string") return data.message;
-    if (typeof data.error === "string") return data.error;
+    if (typeof responseData.detail === "string") {
+      return responseData.detail;
+    }
+
+    if (typeof responseData.message === "string") {
+      return responseData.message;
+    }
+
+    if (typeof responseData.error === "string") {
+      return responseData.error;
+    }
 
     return "Signup failed";
   };
+
+  /* =========================================================
+     SIGNUP HANDLER
+  ========================================================= */
 
   const handleSignup = async () => {
     if (!name.trim() || !email.trim() || !password || !phone.trim()) {
@@ -145,7 +241,12 @@ export default function SignupPage() {
       return;
     }
 
-    if (!/^\d{10}$/.test(phone.trim()) || !/^[6789]/.test(phone.trim())) {
+    const cleanPhone = phone.trim();
+
+    if (
+      !/^\d{10}$/.test(cleanPhone) ||
+      !/^[6789]/.test(cleanPhone)
+    ) {
       toast.error("Please enter a valid 10-digit Indian mobile number");
       return;
     }
@@ -155,18 +256,20 @@ export default function SignupPage() {
 
       const response = await fetch(`${API_URL}/signup`, {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim().toLowerCase(),
           password,
-          phone: phone.trim(),
+          phone: cleanPhone,
         }),
       });
 
-      let data: any = null;
+      let data: unknown = null;
 
       try {
         data = await response.json();
@@ -174,18 +277,18 @@ export default function SignupPage() {
         data = null;
       }
 
-      console.log("Signup status:", response.status);
-      console.log("Signup response:", data);
-
       if (!response.ok) {
         toast.error(getErrorMessage(data));
         return;
       }
 
-      const successMessage =
-        typeof data?.message === "string" ? data.message : "";
+      const successData = data as {
+        message?: string;
+      } | null;
 
-      toast.success(successMessage || "Account Created Successfully 🚀");
+      toast.success(
+        successData?.message || "Account Created Successfully 🚀"
+      );
 
       window.setTimeout(() => {
         router.replace("/login");
@@ -199,180 +302,684 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#050607] text-white">
-      <div className="relative min-h-screen lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(480px,0.9fr)]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_45%,rgba(249,115,22,0.07),transparent_30%),radial-gradient(circle_at_10%_100%,rgba(249,115,22,0.05),transparent_32%)]" />
+    <main
+      className="
+        relative
+        min-h-[100dvh]
+        w-full
+        max-w-[100vw]
+        overflow-x-hidden
+        bg-[#1a1715]
+        text-[#292725]
+      "
+    >
 
-        <section className="relative hidden min-h-screen overflow-hidden border-r border-white/[0.06] lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-10 xl:px-16">
-          <div>
-            <div className="text-[21px] font-semibold tracking-[-0.03em]">
-              Campus<span className="text-orange-500">Vita</span>
+      {/* =====================================================
+          DESKTOP
+      ====================================================== */}
+
+      <div
+        className="
+          relative
+          hidden
+          h-[100dvh]
+          w-full
+          max-w-[100vw]
+          overflow-hidden
+          isolate
+          lg:block
+        "
+      >
+
+        {/* =================================================
+            FULL SCREEN BACKGROUND IMAGE
+        ================================================= */}
+
+        <div className="absolute inset-0 overflow-hidden">
+
+          <img
+            src="/cafe.jpg"
+            alt="Campus cafe"
+            className="
+              block
+              h-full
+              w-full
+              min-w-full
+              object-cover
+              object-center
+            "
+          />
+
+        </div>
+
+        {/* DARK OVERLAY */}
+
+        <div className="absolute inset-0 bg-black/35" />
+
+        {/* =================================================
+            DESKTOP CONTENT
+        ================================================= */}
+
+        <div
+          className="
+            relative
+            z-10
+            grid
+            h-full
+            w-full
+            max-w-full
+            grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)]
+            gap-8
+            overflow-hidden
+            px-8
+            py-[2.5vh]
+            xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.9fr)]
+            xl:px-12
+          "
+        >
+
+          {/* =================================================
+              LEFT SIDE
+          ================================================= */}
+
+          <section className="relative flex h-full min-w-0 flex-col">
+
+            {/* LOGO */}
+
+            <div className="pt-5 text-[28px] font-bold tracking-[-0.05em] text-white">
+              Campus
+              <span className="text-orange-500">
+                Vita
+              </span>
             </div>
 
-            <div className="mt-24 max-w-xl">
-              <h1 className="text-[48px] font-semibold leading-[1.05] tracking-[-0.045em] xl:text-[56px]">
-                Join <span className="text-orange-500">CampusVita</span>
-                <br />
-                Your Campus,
-                <br />
-                Your Way
+            {/* HERO */}
+
+            <div className="my-auto max-w-[760px] pb-10">
+
+              <div className="mb-7 h-[4px] w-12 rounded-full bg-orange-500" />
+
+              <h1
+                className="
+                  text-[50px]
+                  font-bold
+                  leading-[1.1]
+                  tracking-[-0.045em]
+                  text-white
+                  xl:text-[62px]
+                "
+              >
+                Join{" "}
+
+                <span className="text-orange-500">
+                  CampusVita
+                </span>
+
               </h1>
 
-              <p className="mt-7 max-w-md text-[16px] leading-7 text-zinc-400">
-                Create your account and enjoy seamless food ordering,
-                exciting offers, and a better campus life.
-              </p>
-
-              <div className="mt-10 space-y-5">
-                <Feature
-                  icon={ShieldCheck}
-                  title="Secure & Safe"
-                  description="Your data is encrypted and protected."
-                />
-                <Feature
-                  icon={Zap}
-                  title="Fast & Easy"
-                  description="Quick signup and get started in seconds."
-                />
-                <Feature
-                  icon={Gift}
-                  title="Exciting Offers"
-                  description="Exclusive deals and rewards for students."
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="relative h-44 overflow-hidden">
-            <div className="absolute bottom-0 left-0 h-32 w-40 rounded-t-[70px] border border-orange-500/10 bg-gradient-to-t from-[#090b0d] to-[#121518]" />
-            <div className="absolute bottom-0 left-28 h-44 w-36 rounded-t-[90px] border border-orange-500/10 bg-gradient-to-t from-[#080a0c] to-[#15191c]" />
-            <div className="absolute bottom-0 left-60 h-24 w-52 rounded-t-[50px] border border-orange-500/10 bg-gradient-to-t from-[#090b0d] to-[#121619]" />
-            <div className="absolute bottom-0 left-72 h-40 w-4 bg-orange-500/15 blur-md" />
-            <div className="absolute bottom-0 right-0 h-px w-[78%] bg-gradient-to-r from-orange-500/50 to-transparent" />
-          </div>
-
-          <p className="absolute bottom-8 left-12 text-xs leading-5 text-zinc-600 xl:left-16">
-            Your privacy is important to us.
-            <br />
-            We never share your personal data.
-          </p>
-        </section>
-
-        <section className="relative flex min-h-screen items-center justify-center px-5 py-8 sm:px-8 lg:px-10 xl:px-16">
-          <div className="w-full max-w-[540px]">
-            <div className="mb-8 lg:hidden">
-              <div className="text-[20px] font-semibold tracking-[-0.03em]">
-                Campus<span className="text-orange-500">Vita</span>
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-white/[0.10] bg-[#0d0f11]/95 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:p-8 xl:p-10">
-              <div className="mb-8">
-                <h2 className="text-[30px] font-semibold tracking-[-0.035em] sm:text-[34px]">
-                  <span className="text-orange-500">Create</span> your account
-                </h2>
-                <p className="mt-2 text-sm text-zinc-500 sm:text-[15px]">
-                  Let&apos;s get you started 🚀
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <Field
-                  label="Full Name"
-                  hint="Enter your full name"
-                  value={name}
-                  placeholder="Enter your full name"
-                  autoComplete="name"
-                  icon={User}
-                  disabled={loading}
-                  onChange={setName}
-                />
-
-                <Field
-                  label="Email Address"
-                  hint="Enter your email address"
-                  value={email}
-                  placeholder="Enter your email address"
-                  type="email"
-                  autoComplete="email"
-                  inputMode="email"
-                  icon={Mail}
-                  disabled={loading}
-                  onChange={setEmail}
-                />
-
-                <Field
-                  label="Password"
-                  hint="8+ chars · A-Z · a-z · 0-9 · special character"
-                  value={password}
-                  placeholder="Create a strong password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  icon={LockKeyhole}
-                  disabled={loading}
-                  onChange={setPassword}
-                  rightElement={
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((current) => !current)}
-                      disabled={loading}
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                      className="ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-500 transition hover:bg-white/[0.04] hover:text-zinc-200 disabled:opacity-50"
-                    >
-                      {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-                    </button>
-                  }
-                />
-
-                <Field
-                  label="Phone Number"
-                  hint="Enter your 10-digit mobile number"
-                  value={phone}
-                  placeholder="Enter your phone number"
-                  type="tel"
-                  autoComplete="tel"
-                  inputMode="tel"
-                  icon={Phone}
-                  disabled={loading}
-                  onChange={setPhone}
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSignup}
-                disabled={loading}
-                className="mt-7 flex min-h-[58px] w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 text-[16px] font-semibold text-white shadow-[0_12px_30px_rgba(249,115,22,0.18)] transition duration-200 hover:-translate-y-0.5 hover:from-orange-400 hover:to-orange-500 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              <p
+                className="
+                  mt-3
+                  text-[38px]
+                  font-semibold
+                  leading-[1.2]
+                  tracking-[-0.04em]
+                  text-white
+                  xl:text-[50px]
+                "
               >
-                {loading ? "Creating Account..." : "Create Account"}
-                {!loading && <ArrowRight size={20} />}
-              </button>
-
-              <div className="mt-7 flex items-center gap-3 text-xs text-zinc-600">
-                <span className="h-px flex-1 bg-white/[0.08]" />
-                <span>Secure account creation</span>
-                <span className="h-px flex-1 bg-white/[0.08]" />
-              </div>
-
-              <p className="mt-7 text-center text-sm text-zinc-500">
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  onClick={() => router.push("/login")}
-                  className="font-medium text-orange-500 transition hover:text-orange-400"
-                >
-                  Sign in
-                </button>
+                Made for Students.
+                <br />
+                Built for Campus Life.
               </p>
+
             </div>
-          </div>
-        </section>
+
+            {/* FEATURES */}
+
+            <div
+              className="
+                mb-5
+                flex
+                w-full
+                min-w-0
+                gap-4
+                rounded-[26px]
+                bg-black/50
+                p-5
+                backdrop-blur-md
+                xl:gap-5
+              "
+            >
+
+              <Feature
+                icon={ShieldCheck}
+                title="Secure & Safe"
+                description="Your data is encrypted and protected."
+              />
+
+              <Feature
+                icon={Zap}
+                title="Fast & Easy"
+                description="Quick signup and get started."
+              />
+
+              <Feature
+                icon={Gift}
+                title="Exciting Offers"
+                description="Exclusive deals and rewards for students."
+              />
+
+            </div>
+
+          </section>
+
+          {/* =================================================
+              RIGHT SIDE
+          ================================================= */}
+
+          <section
+            className="
+              flex
+              h-full
+              min-w-0
+              max-w-full
+              items-center
+              justify-center
+            "
+          >
+
+            <div
+              className="
+                flex
+                h-[95dvh]
+                w-full
+                max-w-[620px]
+                min-w-0
+                flex-col
+                justify-center
+                overflow-y-auto
+                overflow-x-hidden
+                rounded-[34px]
+                bg-[#fbfaf9]
+                px-8
+                py-8
+                shadow-[0_25px_80px_rgba(0,0,0,0.28)]
+                xl:px-12
+                xl:py-10
+              "
+            >
+
+              <SignupForm
+                name={name}
+                email={email}
+                password={password}
+                phone={phone}
+                loading={loading}
+                showPassword={showPassword}
+                setName={setName}
+                setEmail={setEmail}
+                setPassword={setPassword}
+                setPhone={setPhone}
+                setShowPassword={setShowPassword}
+                handleSignup={handleSignup}
+                router={router}
+              />
+
+            </div>
+
+          </section>
+
+        </div>
+
       </div>
+
+      {/* =====================================================
+          MOBILE
+      ====================================================== */}
+
+      <div
+        className="
+          relative
+          min-h-[100dvh]
+          w-full
+          max-w-[100vw]
+          overflow-x-hidden
+          isolate
+          lg:hidden
+        "
+      >
+
+        {/* =================================================
+            MOBILE BACKGROUND IMAGE
+        ================================================= */}
+
+        <div
+          className="
+            absolute
+            inset-x-0
+            top-0
+            h-[42dvh]
+            w-full
+            overflow-hidden
+          "
+        >
+
+          <img
+            src="/cafe.jpg"
+            alt="Campus cafe"
+            className="
+              block
+              h-full
+              w-full
+              min-w-full
+              object-cover
+              object-center
+            "
+          />
+
+          <div className="absolute inset-0 bg-black/30" />
+
+        </div>
+
+        {/* =================================================
+            MOBILE LOGO
+        ================================================= */}
+
+        <div
+          className="
+            absolute
+            inset-x-0
+            top-0
+            z-10
+            w-full
+            px-7
+            pt-8
+          "
+        >
+
+          <div className="text-[27px] font-bold tracking-[-0.05em] text-white">
+
+            Campus
+
+            <span className="text-orange-500">
+              Vita
+            </span>
+
+          </div>
+
+        </div>
+
+        {/* =================================================
+            MOBILE FORM AREA
+        ================================================= */}
+
+        <div
+          className="
+            relative
+            z-20
+            w-full
+            max-w-full
+            pt-[35dvh]
+          "
+        >
+
+          <section
+            className="
+              min-h-[65dvh]
+              w-full
+              max-w-full
+              overflow-x-hidden
+              rounded-t-[38px]
+              bg-[#fbfaf9]
+              px-6
+              pb-12
+              pt-5
+              shadow-[0_-12px_40px_rgba(0,0,0,0.18)]
+            "
+          >
+
+            {/* HANDLE */}
+
+            <div className="mb-6 flex justify-center">
+
+              <div className="h-1.5 w-12 rounded-full bg-[#d7d2cc]" />
+
+            </div>
+
+            {/* FORM */}
+
+            <SignupForm
+              mobile
+              name={name}
+              email={email}
+              password={password}
+              phone={phone}
+              loading={loading}
+              showPassword={showPassword}
+              setName={setName}
+              setEmail={setEmail}
+              setPassword={setPassword}
+              setPhone={setPhone}
+              setShowPassword={setShowPassword}
+              handleSignup={handleSignup}
+              router={router}
+            />
+
+          </section>
+
+        </div>
+
+      </div>
+
     </main>
   );
 }
+
+/* =========================================================
+   SIGNUP FORM
+========================================================= */
+
+function SignupForm({
+  mobile = false,
+  name,
+  email,
+  password,
+  phone,
+  loading,
+  showPassword,
+  setName,
+  setEmail,
+  setPassword,
+  setPhone,
+  setShowPassword,
+  handleSignup,
+  router,
+}: SignupFormProps) {
+  return (
+    <div className="w-full min-w-0 max-w-full">
+
+      {/* HEADER */}
+
+      <div className={`text-center ${mobile ? "mb-5" : "mb-7"}`}>
+
+        {/* ICON */}
+
+        <div className="mb-4 flex justify-center">
+
+          <div
+            className={`
+              flex items-center justify-center
+              rounded-full
+              bg-white
+              text-orange-600
+              shadow-[0_5px_20px_rgba(0,0,0,0.10)]
+              ${
+                mobile
+                  ? "h-[58px] w-[58px]"
+                  : "h-[68px] w-[68px]"
+              }
+            `}
+          >
+
+            <UserPlus
+              size={mobile ? 27 : 32}
+              strokeWidth={1.8}
+            />
+
+          </div>
+
+        </div>
+
+        {/* TITLE */}
+
+        <h2
+          className={`
+            font-bold
+            tracking-[-0.045em]
+            text-[#202020]
+            ${
+              mobile
+                ? "text-[29px]"
+                : "text-[34px] xl:text-[42px]"
+            }
+          `}
+        >
+
+          <span className="text-orange-600">
+            Create
+          </span>{" "}
+
+          your account
+
+        </h2>
+
+        {/* SUBTITLE */}
+
+        <p
+          className={`
+            mt-2
+            text-[#77736f]
+            ${mobile ? "text-[15px]" : "text-[17px]"}
+          `}
+        >
+          Let&apos;s get you started 🚀
+        </p>
+
+      </div>
+
+      {/* =====================================================
+          FIELDS
+      ====================================================== */}
+
+      <div className={mobile ? "space-y-3" : "space-y-3.5"}>
+
+        <Field
+          mobile={mobile}
+          label="Full Name"
+          value={name}
+          placeholder="Full Name"
+          autoComplete="name"
+          icon={User}
+          disabled={loading}
+          onChange={setName}
+        />
+
+        <Field
+          mobile={mobile}
+          label="Email Address"
+          value={email}
+          placeholder="Email Address"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          icon={Mail}
+          disabled={loading}
+          onChange={setEmail}
+        />
+
+        <Field
+          mobile={mobile}
+          label="Password"
+          value={password}
+          placeholder="Password"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          icon={LockKeyhole}
+          disabled={loading}
+          onChange={setPassword}
+          rightElement={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={loading}
+              aria-label={
+                showPassword
+                  ? "Hide password"
+                  : "Show password"
+              }
+              className="
+                ml-3
+                shrink-0
+                text-[#77736f]
+                transition
+                hover:text-orange-500
+                disabled:cursor-not-allowed
+              "
+            >
+              {showPassword ? (
+                <EyeOff size={21} />
+              ) : (
+                <Eye size={21} />
+              )}
+            </button>
+          }
+        />
+
+        <Field
+          mobile={mobile}
+          label="Phone Number"
+          value={phone}
+          placeholder="Phone Number"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          icon={Phone}
+          disabled={loading}
+          onChange={(value) => {
+            setPhone(
+              value.replace(/\D/g, "").slice(0, 10)
+            );
+          }}
+        />
+
+      </div>
+
+      {/* =====================================================
+          CREATE ACCOUNT
+      ====================================================== */}
+
+      <button
+        type="button"
+        onClick={handleSignup}
+        disabled={loading}
+        className={`
+          flex
+          w-full
+          items-center
+          justify-center
+          gap-3
+          rounded-2xl
+          bg-[#f04b00]
+          font-bold
+          text-white
+          shadow-[0_12px_25px_rgba(240,75,0,0.28)]
+          transition-all
+          hover:bg-[#dc4400]
+          active:scale-[0.99]
+          disabled:cursor-not-allowed
+          disabled:opacity-60
+          ${
+            mobile
+              ? "mt-5 h-[62px] text-[17px]"
+              : "mt-5 h-[64px] text-[17px]"
+          }
+        `}
+      >
+
+        {loading
+          ? "Creating Account..."
+          : "Create Account"}
+
+        {!loading && <ArrowRight size={23} />}
+
+      </button>
+
+      {/* =====================================================
+          DIVIDER
+      ====================================================== */}
+
+      <div className="my-5 flex items-center gap-4">
+
+        <div className="h-px min-w-0 flex-1 bg-[#dedad5]" />
+
+        <span className="whitespace-nowrap text-sm text-[#77736f]">
+          or continue with
+        </span>
+
+        <div className="h-px min-w-0 flex-1 bg-[#dedad5]" />
+
+      </div>
+
+      {/* =====================================================
+          GOOGLE
+      ====================================================== */}
+
+      <button
+        type="button"
+        disabled
+        className="
+          flex
+          h-[60px]
+          w-full
+          items-center
+          justify-center
+          gap-3
+          rounded-2xl
+          border
+          border-[#e2ddd7]
+          bg-white
+          text-[16px]
+          font-semibold
+          text-[#292725]
+          opacity-70
+        "
+      >
+
+        <GoogleIcon />
+
+        Google
+
+      </button>
+
+      {/* =====================================================
+          LOGIN
+      ====================================================== */}
+
+      <p
+        className={`
+          pb-2
+          text-center
+          text-[15px]
+          text-[#77736f]
+          ${mobile ? "mt-6" : "mt-5"}
+        `}
+      >
+
+        Already have an account?{" "}
+
+        <button
+          type="button"
+          onClick={() => router.push("/login")}
+          className="
+            font-bold
+            text-orange-600
+            transition
+            hover:text-orange-700
+          "
+        >
+          Sign in
+        </button>
+
+      </p>
+
+    </div>
+  );
+}
+
+/* =========================================================
+   FEATURE
+========================================================= */
 
 function Feature({
   icon: Icon,
@@ -384,17 +991,76 @@ function Feature({
   description: string;
 }) {
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-orange-500/15 bg-orange-500/[0.045] text-orange-500 shadow-[0_10px_30px_rgba(249,115,22,0.05)]">
-        <Icon size={25} strokeWidth={1.7} />
+    <div className="flex min-w-0 flex-1 items-start gap-3">
+
+      <div
+        className="
+          flex
+          h-14
+          w-14
+          shrink-0
+          items-center
+          justify-center
+          rounded-2xl
+          bg-orange-500/20
+          text-orange-400
+        "
+      >
+
+        <Icon
+          size={28}
+          strokeWidth={1.8}
+        />
+
       </div>
 
-      <div>
-        <p className="text-sm font-semibold text-zinc-100">{title}</p>
-        <p className="mt-1 max-w-xs text-xs leading-5 text-zinc-500">
+      <div className="min-w-0">
+
+        <p className="text-[15px] font-bold text-white">
+          {title}
+        </p>
+
+        <p className="mt-1 text-[13px] leading-5 text-white/80">
           {description}
         </p>
+
       </div>
+
     </div>
+  );
+}
+
+/* =========================================================
+   GOOGLE ICON
+========================================================= */
+
+function GoogleIcon() {
+  return (
+    <svg
+      width="21"
+      height="21"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        fill="#4285F4"
+        d="M21.35 12.27c0-.79-.07-1.55-.2-2.27H12v4.3h5.23a4.47 4.47 0 0 1-1.94 2.93v2.78h3.14c1.84-1.69 2.92-4.18 2.92-7.74Z"
+      />
+
+      <path
+        fill="#34A853"
+        d="M12 21.75c2.62 0 4.82-.87 6.43-2.35l-3.14-2.43c-.87.58-1.99.92-3.29.92-2.53 0-4.67-1.71-5.44-4v2.86H3.32v2.52A9.72 9.72 0 0 0 12 21.75Z"
+      />
+
+      <path
+        fill="#FBBC05"
+        d="M6.56 13.89A5.84 5.84 0 0 1 6.25 12c0-.66.11-1.3.31-1.89V7.25H3.32A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.06 1.07 4.75l3.24-2.86Z"
+      />
+
+      <path
+        fill="#EA4335"
+        d="M12 6.11c1.42 0 2.69.49 3.69 1.45l2.77-2.77C16.81 3.24 14.61 2.25 12 2.25a9.72 9.72 0 0 0-8.68 5l3.24 2.86c.77-2.29 2.91-4 5.44-4Z"
+      />
+    </svg>
   );
 }
