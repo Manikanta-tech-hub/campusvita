@@ -48,3 +48,4 @@ node_modules/
 *.before-customers
 *-backup
 *.backup
+firebase-service-account.json
