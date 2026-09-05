@@ -14,7 +14,7 @@ import hashlib
 import bcrypt
 import jwt
 import firebase_admin
-from firebase_admin import credentials, messaging
+
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
@@ -56,13 +56,17 @@ from utils.file_upload import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
+import smtplib
+import ssl
+import secrets
+import firebase_admin
+from firebase_admin import credentials, messaging, auth as firebase_auth
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-
-from firebase_admin import messaging
 import firebase_config
 from models.stall_model import StallData
 from database import (
@@ -77,7 +81,21 @@ from database import (
 )
 
 load_dotenv()
+# ============================================================
+# EMAIL / SMTP CONFIGURATION
+# ============================================================
 
+SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = 465
+
+print("SMTP Email:", os.getenv("SMTP_EMAIL"))
+print(
+    "SMTP Password Loaded:",
+    bool(os.getenv("SMTP_PASSWORD"))
+)
 # =====================================
 # LOGGING CONFIGURATION
 # =====================================
@@ -743,7 +761,254 @@ def normalize_email(email: str) -> str:
     could end up as effectively-duplicate accounts depending on insert order."""
     return email.strip().lower()
 
+# ============================================================
+# PASSWORD RESET OTP CONFIGURATION
+# ============================================================
 
+RESET_OTP_EXPIRE_MINUTES = 10
+
+
+# ============================================================
+# GENERATE SECURE OTP
+# ============================================================
+
+def generate_reset_otp() -> str:
+    """
+    Generate a cryptographically secure 6-digit OTP.
+    """
+
+    return f"{secrets.randbelow(900000) + 100000}"
+
+
+# ============================================================
+# HASH OTP
+# ============================================================
+
+def hash_reset_otp(otp: str) -> str:
+    """
+    Hash the OTP before storing it in MongoDB.
+
+    Never store the raw OTP in the database.
+    """
+
+    return hashlib.sha256(
+        otp.encode("utf-8")
+    ).hexdigest()
+
+
+# ============================================================
+# SEND PASSWORD RESET OTP EMAIL
+# ============================================================
+
+def send_password_reset_email(
+    recipient_email: str,
+    otp: str,
+) -> None:
+
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        raise RuntimeError(
+            "SMTP_EMAIL or SMTP_PASSWORD is not configured"
+        )
+
+    # --------------------------------------------------------
+    # EMAIL MESSAGE
+    # --------------------------------------------------------
+
+    message = MIMEMultipart("alternative")
+
+    message["Subject"] = (
+        "CampusVita Password Reset OTP"
+    )
+
+    message["From"] = SMTP_EMAIL
+    message["To"] = recipient_email
+
+    # --------------------------------------------------------
+    # EMAIL HTML
+    # --------------------------------------------------------
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+    </head>
+
+    <body style="
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+        font-family: Arial, sans-serif;
+    ">
+
+        <div style="
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        ">
+
+            <!-- HEADER -->
+
+            <div style="
+                background: linear-gradient(
+                    135deg,
+                    #ea580c,
+                    #dc2626
+                );
+                padding: 35px;
+                text-align: center;
+            ">
+
+                <h1 style="
+                    margin: 0;
+                    color: white;
+                    font-size: 32px;
+                ">
+                    Campus<span style="color:#fed7aa">Vita</span>
+                </h1>
+
+                <p style="
+                    color: white;
+                    margin-top: 10px;
+                    opacity: 0.9;
+                ">
+                    Password Reset Request
+                </p>
+
+            </div>
+
+
+            <!-- CONTENT -->
+
+            <div style="
+                padding: 40px;
+                text-align: center;
+            ">
+
+                <h2 style="
+                    color: #18181b;
+                ">
+                    Reset Your Password
+                </h2>
+
+                <p style="
+                    color: #52525b;
+                    font-size: 16px;
+                    line-height: 1.6;
+                ">
+                    We received a request to reset your
+                    CampusVita password.
+                </p>
+
+                <p style="
+                    color: #52525b;
+                ">
+                    Use the OTP below to continue:
+                </p>
+
+
+                <!-- OTP -->
+
+                <div style="
+                    margin: 30px auto;
+                    padding: 20px;
+                    max-width: 300px;
+                    background: #fff7ed;
+                    border: 2px dashed #ea580c;
+                    border-radius: 16px;
+                ">
+
+                    <div style="
+                        color: #ea580c;
+                        font-size: 36px;
+                        font-weight: bold;
+                        letter-spacing: 8px;
+                    ">
+                        {otp}
+                    </div>
+
+                </div>
+
+
+                <p style="
+                    color: #71717a;
+                    font-size: 14px;
+                ">
+                    This OTP will expire in
+                    <strong>{RESET_OTP_EXPIRE_MINUTES} minutes</strong>.
+                </p>
+
+                <p style="
+                    color: #71717a;
+                    font-size: 14px;
+                ">
+                    If you did not request a password reset,
+                    you can safely ignore this email.
+                </p>
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <div style="
+                padding: 20px;
+                background: #fafafa;
+                text-align: center;
+                color: #a1a1aa;
+                font-size: 12px;
+            ">
+
+                © CampusVita
+
+            </div>
+
+        </div>
+
+    </body>
+    </html>
+    """
+
+    # --------------------------------------------------------
+    # ATTACH HTML
+    # --------------------------------------------------------
+
+    message.attach(
+        MIMEText(
+            html_content,
+            "html",
+        )
+    )
+
+    # --------------------------------------------------------
+    # SEND EMAIL USING GMAIL SMTP
+    # --------------------------------------------------------
+
+    context = ssl.create_default_context()
+
+    with smtplib.SMTP_SSL(
+        SMTP_HOST,
+        SMTP_PORT,
+        context=context,
+    ) as server:
+
+        server.login(
+            SMTP_EMAIL,
+            SMTP_PASSWORD,
+        )
+
+        server.sendmail(
+            SMTP_EMAIL,
+            recipient_email,
+            message.as_string(),
+        )
+
+    logger.info(
+        f"📧 Password reset OTP sent to: {recipient_email}"
+    )
 # =====================================
 # REFRESH TOKEN HASHING
 # Refresh tokens are stored hashed (never in plaintext), same principle as
@@ -827,12 +1092,29 @@ class SignupData(BaseModel):
                 "one uppercase, one lowercase, one number, and one special character"
             )
         return v
+# ============================================================
+# FORGOT PASSWORD MODELS
+# ============================================================
 
+class ForgotPasswordData(BaseModel):
+    email: str
+
+
+class VerifyResetOTPData(BaseModel):
+    email: str
+    otp: str
+
+
+class ResetPasswordData(BaseModel):
+    email: EmailStr
+    new_password: str
 
 class LoginData(BaseModel):
     email: EmailStr
     password: str
 
+class ForgotPasswordData(BaseModel):
+    email: str
 
 class RefreshTokenData(BaseModel):
     refresh_token: str
@@ -961,7 +1243,11 @@ class StatusUpdate(BaseModel):
             raise ValueError(f"Invalid status. Must be one of: {OrderStatus.all_statuses()}")
         return v
 
+class GoogleLoginData(BaseModel):
+    id_token: str
 
+class GoogleAuthData(BaseModel):
+    id_token: str
 # =====================================
 # HOME ROUTE
 # =====================================
@@ -1021,10 +1307,10 @@ def signup(request: Request, user: SignupData):
         # ============================================================
 
         role = (
-            UserRole.ADMIN
-            if email in ADMIN_EMAILS
-            else UserRole.USER
-        )
+    UserRole.ADMIN
+    if email in ADMIN_EMAILS
+    else UserRole.USER
+)
 
         # ============================================================
         # CREATE NEW USER
@@ -1215,8 +1501,458 @@ def login(request: Request, user: LoginData):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
+    
+# ============================================================
+# GOOGLE LOGIN
+# ============================================================
 
+@fastapi_app.post("/google-login")
+@limiter.limit("5/minute")
+def google_login(
+    request: Request,
+    data: GoogleLoginData
+):
+    try:
 
+        # ========================================================
+        # VERIFY FIREBASE ID TOKEN
+        # ========================================================
+
+        decoded_token = firebase_auth.verify_id_token(
+            data.id_token
+        )
+
+        # ========================================================
+        # GET GOOGLE USER INFORMATION
+        # ========================================================
+
+        email = normalize_email(
+            decoded_token.get("email", "")
+        )
+
+        name = (
+            decoded_token.get("name")
+            or email.split("@")[0]
+        )
+
+        profile_image = (
+            decoded_token.get("picture", "")
+        )
+
+        # ========================================================
+        # VALIDATE EMAIL
+        # ========================================================
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Google account does not have an email address"
+            )
+
+        # ========================================================
+        # FIND USER
+        # ========================================================
+
+        existing_user = users_collection.find_one(
+            {"email": email}
+        )
+
+        # ========================================================
+        # CREATE USER IF NOT EXISTS
+        # ========================================================
+
+        if not existing_user:
+
+            new_user = {
+                "name": name,
+                "email": email,
+                "phone": "",
+                "department": "",
+                "year": "",
+                "wallet": 0,
+                "role": UserRole.USER,
+                "profile_image": profile_image,
+                "is_active": True,
+
+                # Mark authentication provider
+                "auth_provider": "google",
+            }
+
+            users_collection.insert_one(
+                new_user
+            )
+
+            existing_user = users_collection.find_one(
+                {"email": email}
+            )
+
+            logger.info(
+                f"✅ New Google user created: {email}"
+            )
+
+        # ========================================================
+        # CHECK ACCOUNT STATUS
+        # ========================================================
+
+        if not existing_user.get(
+            "is_active",
+            True
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is deactivated"
+            )
+
+        # ========================================================
+        # UPDATE GOOGLE PROFILE IMAGE
+        # ========================================================
+
+        if profile_image:
+
+            users_collection.update_one(
+                {"email": email},
+                {
+                    "$set": {
+                        "profile_image": profile_image
+                    }
+                }
+            )
+
+        # ========================================================
+        # PREPARE TOKEN DATA
+        # ========================================================
+
+        role = existing_user.get(
+            "role",
+            UserRole.USER
+        )
+
+        token_data = {
+            "email": email,
+            "role": role,
+            "name": existing_user.get(
+                "name",
+                name
+            ),
+        }
+
+        # ========================================================
+        # CREATE JWT TOKENS
+        # ========================================================
+
+        access_token = create_access_token(
+            token_data
+        )
+
+        refresh_token = create_refresh_token(
+            token_data
+        )
+
+        # ========================================================
+        # SAVE REFRESH TOKEN HASH
+        # ========================================================
+
+        users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "refresh_token_hash":
+                        hash_refresh_token(
+                            refresh_token
+                        )
+                }
+            }
+        )
+
+        logger.info(
+            f"🔥 Google login successful: {email}"
+        )
+
+        # ========================================================
+        # SUCCESS RESPONSE
+        # ========================================================
+
+        return {
+            "message":
+                "Google Login Successful 🚀",
+
+            "access_token":
+                access_token,
+
+            "refresh_token":
+                refresh_token,
+
+            "token_type":
+                "bearer",
+
+            "expires_in":
+                ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+
+            "user": {
+                "name":
+                    existing_user.get(
+                        "name",
+                        name
+                    ),
+
+                "email":
+                    email,
+
+                "phone":
+                    existing_user.get(
+                        "phone",
+                        ""
+                    ),
+
+                "department":
+                    existing_user.get(
+                        "department",
+                        ""
+                    ),
+
+                "year":
+                    existing_user.get(
+                        "year",
+                        ""
+                    ),
+
+                "wallet":
+                    existing_user.get(
+                        "wallet",
+                        0
+                    ),
+
+                "role":
+                    role,
+
+                "profile_image":
+                    profile_image
+                    or existing_user.get(
+                        "profile_image",
+                        ""
+                    ),
+            }
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        logger.error(
+            f"Google login error: {str(e)}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Google authentication failed"
+        )
+    
+# ============================================================
+# GOOGLE AUTHENTICATION
+# ============================================================
+
+# ============================================================
+# GOOGLE AUTHENTICATION
+# ============================================================
+
+@fastapi_app.post("/auth/google")
+@limiter.limit("10/minute")
+def google_authentication(
+    request: Request,
+    data: GoogleAuthData
+):
+    try:
+
+        # ============================================================
+        # VERIFY FIREBASE ID TOKEN
+        # ============================================================
+
+        decoded_token = firebase_auth.verify_id_token(
+            data.id_token
+        )
+
+        firebase_uid = decoded_token.get("uid")
+
+        email = normalize_email(
+            decoded_token.get("email", "")
+        )
+
+        full_name = (
+            decoded_token.get("name")
+            or "CampusVita User"
+        )
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Google account does not contain an email address"
+            )
+
+        # ============================================================
+        # FIND EXISTING USER
+        # ============================================================
+
+        user = users_collection.find_one(
+            {"email": email}
+        )
+
+        # ============================================================
+        # NEW GOOGLE USER
+        # ============================================================
+
+        if not user:
+
+            role = (
+                UserRole.ADMIN
+                if email in ADMIN_EMAILS
+                else UserRole.USER
+            )
+
+            new_user = {
+                "name": full_name,
+                "email": email,
+
+                "password": None,
+
+                "phone": "",
+                "department": "",
+                "year": "",
+
+                "profile_image": "",
+
+                "wallet": 0,
+                "wallet_history": [],
+                "favorite_foods": [],
+                "notifications": True,
+
+                "fcm_token": "",
+                "theme": "dark",
+
+                "total_orders": 0,
+                "total_spent": 0,
+
+                # Authentication
+                "firebase_uid": firebase_uid,
+                "auth_provider": "google",
+
+                # Role
+                "role": role,
+
+                "created_at": datetime.utcnow().isoformat(),
+                "is_active": True,
+            }
+
+            result = users_collection.insert_one(
+                new_user
+            )
+
+            user_id = str(result.inserted_id)
+
+            logger.info(
+                f"✅ New Google user created: "
+                f"{email} (role: {role})"
+            )
+
+        # ============================================================
+        # EXISTING USER
+        # ============================================================
+
+        else:
+
+            user_id = str(user["_id"])
+
+            # Keep existing role
+            role = user.get(
+                "role",
+                UserRole.USER
+            )
+
+            users_collection.update_one(
+                {"_id": user["_id"]},
+                {
+                    "$set": {
+                        "firebase_uid": firebase_uid,
+                        "auth_provider": "google",
+                        "is_active": True,
+                    }
+                }
+            )
+
+            logger.info(
+                f"✅ Existing Google user logged in: "
+                f"{email} (role: {role})"
+            )
+
+        # ============================================================
+        # CREATE CAMPUSVITA JWT
+        # ============================================================
+
+        access_token = create_access_token(
+            {
+                "sub": user_id,
+                "email": email,
+                "role": role,
+            }
+        )
+
+        # ============================================================
+        # SUCCESS RESPONSE
+        # ============================================================
+
+        return {
+            "success": True,
+            "message": "Google authentication successful",
+
+            "access_token": access_token,
+            "token_type": "bearer",
+
+            "role": role,
+
+            "user": {
+                "id": user_id,
+                "email": email,
+                "name": full_name,
+                "role": role,
+            }
+        }
+
+    # ============================================================
+    # FIREBASE TOKEN EXPIRED
+    # ============================================================
+
+    except firebase_auth.ExpiredIdTokenError:
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Google authentication token has expired"
+        )
+
+    # ============================================================
+    # INVALID FIREBASE TOKEN
+    # ============================================================
+
+    except firebase_auth.InvalidIdTokenError:
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google authentication token"
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        logger.error(
+            f"❌ Google authentication error: {e}",
+            exc_info=True
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google authentication failed"
+        )
 @fastapi_app.post("/refresh-token")
 def refresh_token_route(data: RefreshTokenData):
     try:
@@ -1332,8 +2068,358 @@ def change_password(data: ChangePasswordData, current_user: Dict[str, Any] = Dep
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
+    
+@fastapi_app.post("/forgot-password")
+@limiter.limit("3/minute")
+def forgot_password(
+    request: Request,
+    data: ForgotPasswordData
+):
+    try:
+        email = normalize_email(data.email)
 
+        # ============================================================
+        # CHECK USER
+        # ============================================================
 
+        user = users_collection.find_one(
+            {"email": email}
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No account found with this email address"
+            )
+
+        # ============================================================
+        # GENERATE OTP
+        # ============================================================
+
+        otp = str(
+            secrets.randbelow(900000) + 100000
+        )
+
+        # OTP EXPIRY: 10 MINUTES
+
+        otp_expiry = (
+            datetime.utcnow() +
+            timedelta(minutes=10)
+        ).isoformat()
+
+        # ============================================================
+        # SAVE OTP
+        # ============================================================
+
+        users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "reset_otp": otp,
+                    "reset_otp_expiry": otp_expiry
+                }
+            }
+        )
+
+        # ============================================================
+        # EMAIL CONTENT
+        # ============================================================
+
+        subject = "CampusVita Password Reset OTP"
+
+        body = f"""
+Hello {user.get("name", "User")},
+
+You requested to reset your CampusVita password.
+
+Your OTP is:
+
+{otp}
+
+This OTP will expire in 10 minutes.
+
+Do not share this OTP with anyone.
+
+Regards,
+CampusVita Team
+"""
+
+        message = MIMEText(body)
+
+        message["Subject"] = subject
+        message["From"] = SMTP_EMAIL
+        message["To"] = email
+
+        # ============================================================
+        # SEND EMAIL
+        # ============================================================
+
+        with smtplib.SMTP_SSL(
+            "smtp.gmail.com",
+            465
+        ) as server:
+
+            server.login(
+                SMTP_EMAIL,
+                SMTP_PASSWORD
+            )
+
+            server.sendmail(
+                SMTP_EMAIL,
+                email,
+                message.as_string()
+            )
+
+        logger.info(
+            f"📧 Password reset OTP sent to: {email}"
+        )
+
+        return {
+            "message":
+                "Password reset OTP sent successfully"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.error(
+            f"Forgot password error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send password reset OTP"
+        )
+    
+@fastapi_app.post("/verify-reset-otp")
+@limiter.limit("5/minute")
+def verify_reset_otp(
+    request: Request,
+    data: VerifyResetOTPData
+):
+    try:
+        email = normalize_email(data.email)
+
+        # ============================================================
+        # FIND USER
+        # ============================================================
+
+        user = users_collection.find_one(
+            {"email": email}
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No account found with this email address"
+            )
+
+        # ============================================================
+        # CHECK OTP EXISTS
+        # ============================================================
+
+        stored_otp = user.get("reset_otp")
+        otp_expiry = user.get("reset_otp_expiry")
+
+        if not stored_otp or not otp_expiry:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No password reset request found"
+            )
+
+        # ============================================================
+        # CHECK OTP
+        # ============================================================
+
+        if data.otp.strip() != stored_otp:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid OTP"
+            )
+
+        # ============================================================
+        # CHECK EXPIRY
+        # ============================================================
+
+        expiry_time = datetime.fromisoformat(
+            otp_expiry
+        )
+
+        if datetime.utcnow() > expiry_time:
+
+            # Remove expired OTP
+
+            users_collection.update_one(
+                {"email": email},
+                {
+                    "$unset": {
+                        "reset_otp": "",
+                        "reset_otp_expiry": ""
+                    }
+                }
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OTP has expired. Please request a new one."
+            )
+
+        # ============================================================
+        # OTP VERIFIED
+        # ============================================================
+
+        users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "reset_otp_verified": True
+                }
+            }
+        )
+
+        logger.info(
+            f"✅ Password reset OTP verified for: {email}"
+        )
+
+        return {
+            "message": "OTP verified successfully"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        logger.error(
+            f"OTP verification error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to verify OTP"
+        )
+
+# ============================================================
+# RESET PASSWORD
+# ============================================================
+
+@fastapi_app.post("/reset-password")
+@limiter.limit("5/minute")
+def reset_password(
+    request: Request,
+    data: ResetPasswordData
+):
+    try:
+
+        # ============================================================
+        # NORMALIZE EMAIL
+        # ============================================================
+
+        email = normalize_email(data.email)
+
+        # ============================================================
+        # CLEAN PASSWORD
+        # ============================================================
+
+        new_password = data.new_password.strip()
+
+        # ============================================================
+        # VALIDATE PASSWORD
+        # ============================================================
+
+        if len(new_password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must contain at least 6 characters"
+            )
+
+        # ============================================================
+        # FIND USER
+        # ============================================================
+
+        user = users_collection.find_one(
+            {"email": email}
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No account found with this email address"
+            )
+
+        # ============================================================
+        # CHECK OTP WAS VERIFIED
+        # ============================================================
+
+        if not user.get("reset_otp_verified"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please verify your OTP first"
+            )
+
+        # ============================================================
+        # HASH NEW PASSWORD
+        # ============================================================
+
+        hashed_password = hash_password(
+            new_password
+        )
+
+        # ============================================================
+        # UPDATE PASSWORD AND REMOVE RESET DATA
+        # ============================================================
+
+        result = users_collection.update_one(
+            {"email": email},
+            {
+                "$set": {
+                    "password": hashed_password
+                },
+
+                "$unset": {
+                    "reset_otp": "",
+                    "reset_otp_expiry": "",
+                    "reset_otp_verified": ""
+                }
+            }
+        )
+
+        # ============================================================
+        # CHECK DATABASE UPDATE
+        # ============================================================
+
+        if result.matched_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # ============================================================
+        # SUCCESS
+        # ============================================================
+
+        logger.info(
+            f"✅ Password reset successfully for: {email}"
+        )
+
+        return {
+            "message": "Password reset successfully"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        logger.error(
+            f"❌ Password reset error: {e}"
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to reset password"
+        )
 # ============================================================
 # GET CURRENT USER PROFILE
 # ============================================================
