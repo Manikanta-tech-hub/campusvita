@@ -1,7 +1,54 @@
 @import "tailwindcss";
 
+/* =========================================================
+   GLOBAL RESET
+========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  width: 100%;
+  min-width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  background: #1a0d07;
+}
+
+body {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  background: #1a0d07;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #171717;
+}
+
+/* =========================================================
+   PREVENT HORIZONTAL OVERFLOW
+========================================================= */
+
+body,
+main,
+section,
+div {
+  max-width: 100%;
+}
+
+/* =========================================================
+   ROOT VARIABLES
+========================================================= */
+
 :root {
-  --background: #ffffff;
+  --background: #1a0d07;
   --foreground: #171717;
 }
 
@@ -10,6 +57,10 @@
   --foreground: #fafafa;
 }
 
+/* =========================================================
+   TAILWIND THEME
+========================================================= */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -17,11 +68,41 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* =========================================================
+   MOBILE SAFARI FIXES
+========================================================= */
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  transition:
-    background-color .3s,
-    color .3s;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Prevent accidental horizontal scrolling */
+
+@supports (overflow: clip) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+}
+
+/* =========================================================
+   INPUT RESET
+========================================================= */
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* =========================================================
+   IMAGE SAFETY
+========================================================= */
+
+img,
+svg {
+  max-width: 100%;
 }

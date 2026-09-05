@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import {
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+
+import {
+  auth,
+  googleProvider,
+} from "../firebase";
+
+import {
   ArrowRight,
   Eye,
   EyeOff,
@@ -20,7 +30,8 @@ import {
 } from "lucide-react";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
 
 /* =========================================================
    TYPES
@@ -40,20 +51,34 @@ type FieldProps = {
   mobile?: boolean;
 };
 
+type UserRole =
+  | "USER"
+  | "ADMIN"
+  | "STALL_OWNER";
+
 type SignupFormProps = {
   mobile?: boolean;
+
   name: string;
   email: string;
   password: string;
   phone: string;
+
   loading: boolean;
+  googleLoading: boolean;
+
   showPassword: boolean;
+
   setName: (value: string) => void;
   setEmail: (value: string) => void;
   setPassword: (value: string) => void;
   setPhone: (value: string) => void;
+
   setShowPassword: (value: boolean) => void;
+
   handleSignup: () => Promise<void>;
+  handleGoogleSignup: () => Promise<void>;
+
   router: ReturnType<typeof useRouter>;
 };
 
@@ -111,7 +136,9 @@ function Field({
         <input
           type={type}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) =>
+            onChange(event.target.value)
+          }
           placeholder={placeholder}
           autoComplete={autoComplete}
           inputMode={inputMode}
@@ -142,19 +169,34 @@ function Field({
 export default function SignupPage() {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
+  const [googleLoading, setGoogleLoading] =
+    useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [name, setName] =
+    useState("");
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [phone, setPhone] =
+    useState("");
 
   /* =========================================================
      ERROR MESSAGE
   ========================================================= */
 
-  const getErrorMessage = (data: unknown): string => {
+  const getErrorMessage = (
+    data: unknown
+  ): string => {
     if (!data || typeof data !== "object") {
       return "Signup failed";
     }
@@ -215,19 +257,31 @@ export default function SignupPage() {
   };
 
   /* =========================================================
-     SIGNUP HANDLER
+     NORMAL SIGNUP
   ========================================================= */
 
   const handleSignup = async () => {
-    if (!name.trim() || !email.trim() || !password || !phone.trim()) {
+    if (googleLoading || loading) {
+      return;
+    }
+
+    if (
+      !name.trim() ||
+      !email.trim() ||
+      !password ||
+      !phone.trim()
+    ) {
       toast.error("Please fill all fields");
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(email.trim())) {
-      toast.error("Please enter a valid email address");
+      toast.error(
+        "Please enter a valid email address"
+      );
       return;
     }
 
@@ -247,27 +301,32 @@ export default function SignupPage() {
       !/^\d{10}$/.test(cleanPhone) ||
       !/^[6789]/.test(cleanPhone)
     ) {
-      toast.error("Please enter a valid 10-digit Indian mobile number");
+      toast.error(
+        "Please enter a valid 10-digit Indian mobile number"
+      );
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_URL}/signup`, {
-        method: "POST",
+      const response = await fetch(
+        `${API_URL}/signup`,
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          password,
-          phone: cleanPhone,
-        }),
-      });
+          body: JSON.stringify({
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password,
+            phone: cleanPhone,
+          }),
+        }
+      );
 
       let data: unknown = null;
 
@@ -287,19 +346,262 @@ export default function SignupPage() {
       } | null;
 
       toast.success(
-        successData?.message || "Account Created Successfully 🚀"
+        successData?.message ||
+          "Account Created Successfully 🚀"
       );
 
       window.setTimeout(() => {
         router.replace("/login");
       }, 700);
+
     } catch (error) {
-      console.error("Signup error:", error);
-      toast.error("Unable to connect to backend");
+      console.error(
+        "Signup error:",
+        error
+      );
+
+      toast.error(
+        "Unable to connect to backend"
+      );
+
     } finally {
       setLoading(false);
     }
   };
+
+  /* =========================================================
+     GOOGLE SIGNUP / LOGIN
+  ========================================================= */
+
+  const handleGoogleSignup = async () => {
+    if (loading || googleLoading) {
+      return;
+    }
+
+    try {
+      setGoogleLoading(true);
+
+      /* ===============================================
+         OPEN GOOGLE POPUP
+      =============================================== */
+
+      const result = await signInWithPopup(
+        auth,
+        googleProvider
+      );
+
+      const firebaseUser = result.user;
+
+      /* ===============================================
+         GET FIREBASE TOKEN
+      =============================================== */
+
+      const idToken =
+        await firebaseUser.getIdToken();
+
+      console.log(
+        "Google authentication successful:",
+        firebaseUser.email
+      );
+
+      /* ===============================================
+         SEND TOKEN TO BACKEND
+      =============================================== */
+
+      const response = await fetch(
+        `${API_URL}/auth/google`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            id_token: idToken,
+          }),
+        }
+      );
+
+      let data: unknown = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      /* ===============================================
+         BACKEND ERROR
+      =============================================== */
+
+      if (!response.ok) {
+        await signOut(auth);
+
+        toast.error(
+          getErrorMessage(data)
+        );
+
+        return;
+      }
+
+      /* ===============================================
+         BACKEND RESPONSE
+      =============================================== */
+
+      const successData = data as {
+        message?: string;
+
+        access_token?: string;
+        token?: string;
+
+        role?: UserRole;
+
+        user?: {
+          id?: string;
+          email?: string;
+          full_name?: string;
+          name?: string;
+          role?: UserRole;
+        };
+      } | null;
+
+      /* ===============================================
+         SAVE JWT TOKEN
+      =============================================== */
+
+      const accessToken =
+        successData?.access_token ||
+        successData?.token;
+
+      if (accessToken) {
+        localStorage.setItem(
+          "token",
+          accessToken
+        );
+      }
+
+      /* ===============================================
+         GET ROLE
+      =============================================== */
+
+      const role: UserRole =
+        successData?.role ||
+        successData?.user?.role ||
+        "USER";
+
+      console.log(
+        "Google user role:",
+        role
+      );
+
+      /* ===============================================
+         SUCCESS
+      =============================================== */
+
+      toast.success(
+        successData?.message ||
+          "Google sign-in successful! 🎉"
+      );
+
+      /* ===============================================
+         ROLE BASED REDIRECT
+      =============================================== */
+
+      window.setTimeout(() => {
+
+        if (role === "ADMIN") {
+          router.replace(
+            "/admin/dashboard"
+          );
+
+          return;
+        }
+
+        if (role === "STALL_OWNER") {
+          router.replace(
+            "/stall/dashboard"
+          );
+
+          return;
+        }
+
+        router.replace("/");
+
+      }, 500);
+
+    } catch (error: unknown) {
+
+      console.error(
+        "Google signup error:",
+        error
+      );
+
+      /* ===============================================
+         FIREBASE ERROR HANDLING
+      =============================================== */
+
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error
+      ) {
+
+        const firebaseError =
+          error as {
+            code?: string;
+          };
+
+        switch (firebaseError.code) {
+
+          case "auth/popup-closed-by-user":
+            toast.error(
+              "Google sign-in was cancelled"
+            );
+            break;
+
+          case "auth/popup-blocked":
+            toast.error(
+              "Google popup was blocked by your browser"
+            );
+            break;
+
+          case "auth/network-request-failed":
+            toast.error(
+              "Network error. Please check your internet connection."
+            );
+            break;
+
+          case "auth/account-exists-with-different-credential":
+            toast.error(
+              "An account already exists with a different sign-in method"
+            );
+            break;
+
+          default:
+            toast.error(
+              "Google sign-in failed. Please try again."
+            );
+        }
+
+      } else {
+
+        toast.error(
+          "Google sign-in failed. Please try again."
+        );
+
+      }
+
+    } finally {
+
+      setGoogleLoading(false);
+
+    }
+  };
+
+  /* =========================================================
+     RETURN JSX
+  ========================================================= */
 
   return (
     <main
@@ -331,9 +633,7 @@ export default function SignupPage() {
         "
       >
 
-        {/* =================================================
-            FULL SCREEN BACKGROUND IMAGE
-        ================================================= */}
+        {/* BACKGROUND IMAGE */}
 
         <div className="absolute inset-0 overflow-hidden">
 
@@ -356,9 +656,7 @@ export default function SignupPage() {
 
         <div className="absolute inset-0 bg-black/35" />
 
-        {/* =================================================
-            DESKTOP CONTENT
-        ================================================= */}
+        {/* CONTENT */}
 
         <div
           className="
@@ -378,19 +676,20 @@ export default function SignupPage() {
           "
         >
 
-          {/* =================================================
-              LEFT SIDE
-          ================================================= */}
+          {/* LEFT SIDE */}
 
           <section className="relative flex h-full min-w-0 flex-col">
 
             {/* LOGO */}
 
             <div className="pt-5 text-[28px] font-bold tracking-[-0.05em] text-white">
+
               Campus
+
               <span className="text-orange-500">
                 Vita
               </span>
+
             </div>
 
             {/* HERO */}
@@ -409,6 +708,7 @@ export default function SignupPage() {
                   xl:text-[62px]
                 "
               >
+
                 Join{" "}
 
                 <span className="text-orange-500">
@@ -428,9 +728,13 @@ export default function SignupPage() {
                   xl:text-[50px]
                 "
               >
+
                 Made for Students.
+
                 <br />
+
                 Built for Campus Life.
+
               </p>
 
             </div>
@@ -474,9 +778,7 @@ export default function SignupPage() {
 
           </section>
 
-          {/* =================================================
-              RIGHT SIDE
-          ================================================= */}
+          {/* RIGHT SIDE */}
 
           <section
             className="
@@ -516,6 +818,7 @@ export default function SignupPage() {
                 password={password}
                 phone={phone}
                 loading={loading}
+                googleLoading={googleLoading}
                 showPassword={showPassword}
                 setName={setName}
                 setEmail={setEmail}
@@ -523,6 +826,7 @@ export default function SignupPage() {
                 setPhone={setPhone}
                 setShowPassword={setShowPassword}
                 handleSignup={handleSignup}
+                handleGoogleSignup={handleGoogleSignup}
                 router={router}
               />
 
@@ -550,9 +854,7 @@ export default function SignupPage() {
         "
       >
 
-        {/* =================================================
-            MOBILE BACKGROUND IMAGE
-        ================================================= */}
+        {/* MOBILE BACKGROUND */}
 
         <div
           className="
@@ -582,9 +884,7 @@ export default function SignupPage() {
 
         </div>
 
-        {/* =================================================
-            MOBILE LOGO
-        ================================================= */}
+        {/* MOBILE LOGO */}
 
         <div
           className="
@@ -610,9 +910,7 @@ export default function SignupPage() {
 
         </div>
 
-        {/* =================================================
-            MOBILE FORM AREA
-        ================================================= */}
+        {/* MOBILE FORM */}
 
         <div
           className="
@@ -639,15 +937,11 @@ export default function SignupPage() {
             "
           >
 
-            {/* HANDLE */}
-
             <div className="mb-6 flex justify-center">
 
               <div className="h-1.5 w-12 rounded-full bg-[#d7d2cc]" />
 
             </div>
-
-            {/* FORM */}
 
             <SignupForm
               mobile
@@ -656,6 +950,7 @@ export default function SignupPage() {
               password={password}
               phone={phone}
               loading={loading}
+              googleLoading={googleLoading}
               showPassword={showPassword}
               setName={setName}
               setEmail={setEmail}
@@ -663,6 +958,7 @@ export default function SignupPage() {
               setPhone={setPhone}
               setShowPassword={setShowPassword}
               handleSignup={handleSignup}
+              handleGoogleSignup={handleGoogleSignup}
               router={router}
             />
 
@@ -687,6 +983,7 @@ function SignupForm({
   password,
   phone,
   loading,
+  googleLoading,
   showPassword,
   setName,
   setEmail,
@@ -694,16 +991,23 @@ function SignupForm({
   setPhone,
   setShowPassword,
   handleSignup,
+  handleGoogleSignup,
   router,
 }: SignupFormProps) {
+
+  const isDisabled =
+    loading || googleLoading;
+
   return (
     <div className="w-full min-w-0 max-w-full">
 
       {/* HEADER */}
 
-      <div className={`text-center ${mobile ? "mb-5" : "mb-7"}`}>
-
-        {/* ICON */}
+      <div
+        className={`text-center ${
+          mobile ? "mb-5" : "mb-7"
+        }`}
+      >
 
         <div className="mb-4 flex justify-center">
 
@@ -731,8 +1035,6 @@ function SignupForm({
 
         </div>
 
-        {/* TITLE */}
-
         <h2
           className={`
             font-bold
@@ -754,8 +1056,6 @@ function SignupForm({
 
         </h2>
 
-        {/* SUBTITLE */}
-
         <p
           className={`
             mt-2
@@ -768,11 +1068,15 @@ function SignupForm({
 
       </div>
 
-      {/* =====================================================
-          FIELDS
-      ====================================================== */}
+      {/* FIELDS */}
 
-      <div className={mobile ? "space-y-3" : "space-y-3.5"}>
+      <div
+        className={
+          mobile
+            ? "space-y-3"
+            : "space-y-3.5"
+        }
+      >
 
         <Field
           mobile={mobile}
@@ -781,7 +1085,7 @@ function SignupForm({
           placeholder="Full Name"
           autoComplete="name"
           icon={User}
-          disabled={loading}
+          disabled={isDisabled}
           onChange={setName}
         />
 
@@ -794,7 +1098,7 @@ function SignupForm({
           autoComplete="email"
           inputMode="email"
           icon={Mail}
-          disabled={loading}
+          disabled={isDisabled}
           onChange={setEmail}
         />
 
@@ -803,16 +1107,22 @@ function SignupForm({
           label="Password"
           value={password}
           placeholder="Password"
-          type={showPassword ? "text" : "password"}
+          type={
+            showPassword
+              ? "text"
+              : "password"
+          }
           autoComplete="new-password"
           icon={LockKeyhole}
-          disabled={loading}
+          disabled={isDisabled}
           onChange={setPassword}
           rightElement={
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={loading}
+              onClick={() =>
+                setShowPassword(!showPassword)
+              }
+              disabled={isDisabled}
               aria-label={
                 showPassword
                   ? "Hide password"
@@ -827,11 +1137,13 @@ function SignupForm({
                 disabled:cursor-not-allowed
               "
             >
+
               {showPassword ? (
                 <EyeOff size={21} />
               ) : (
                 <Eye size={21} />
               )}
+
             </button>
           }
         />
@@ -845,24 +1157,26 @@ function SignupForm({
           autoComplete="tel"
           inputMode="tel"
           icon={Phone}
-          disabled={loading}
+          disabled={isDisabled}
           onChange={(value) => {
+
             setPhone(
-              value.replace(/\D/g, "").slice(0, 10)
+              value
+                .replace(/\D/g, "")
+                .slice(0, 10)
             );
+
           }}
         />
 
       </div>
 
-      {/* =====================================================
-          CREATE ACCOUNT
-      ====================================================== */}
+      {/* CREATE ACCOUNT */}
 
       <button
         type="button"
         onClick={handleSignup}
-        disabled={loading}
+        disabled={isDisabled}
         className={`
           flex
           w-full
@@ -891,13 +1205,13 @@ function SignupForm({
           ? "Creating Account..."
           : "Create Account"}
 
-        {!loading && <ArrowRight size={23} />}
+        {!loading && !googleLoading && (
+          <ArrowRight size={23} />
+        )}
 
       </button>
 
-      {/* =====================================================
-          DIVIDER
-      ====================================================== */}
+      {/* DIVIDER */}
 
       <div className="my-5 flex items-center gap-4">
 
@@ -911,13 +1225,12 @@ function SignupForm({
 
       </div>
 
-      {/* =====================================================
-          GOOGLE
-      ====================================================== */}
+      {/* GOOGLE */}
 
       <button
         type="button"
-        disabled
+        onClick={handleGoogleSignup}
+        disabled={isDisabled}
         className="
           flex
           h-[60px]
@@ -932,19 +1245,26 @@ function SignupForm({
           text-[16px]
           font-semibold
           text-[#292725]
-          opacity-70
+          shadow-[0_3px_12px_rgba(0,0,0,0.03)]
+          transition-all
+          hover:border-orange-300
+          hover:bg-orange-50
+          hover:shadow-[0_8px_20px_rgba(0,0,0,0.07)]
+          active:scale-[0.99]
+          disabled:cursor-not-allowed
+          disabled:opacity-60
         "
       >
 
         <GoogleIcon />
 
-        Google
+        {googleLoading
+          ? "Connecting to Google..."
+          : "Continue with Google"}
 
       </button>
 
-      {/* =====================================================
-          LOGIN
-      ====================================================== */}
+      {/* LOGIN */}
 
       <p
         className={`
@@ -960,12 +1280,17 @@ function SignupForm({
 
         <button
           type="button"
-          onClick={() => router.push("/login")}
+          onClick={() =>
+            router.push("/login")
+          }
+          disabled={isDisabled}
           className="
             font-bold
             text-orange-600
             transition
             hover:text-orange-700
+            disabled:cursor-not-allowed
+            disabled:opacity-60
           "
         >
           Sign in
@@ -990,6 +1315,7 @@ function Feature({
   title: string;
   description: string;
 }) {
+
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">
 
@@ -1035,6 +1361,7 @@ function Feature({
 ========================================================= */
 
 function GoogleIcon() {
+
   return (
     <svg
       width="21"
@@ -1042,6 +1369,7 @@ function GoogleIcon() {
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
+
       <path
         fill="#4285F4"
         d="M21.35 12.27c0-.79-.07-1.55-.2-2.27H12v4.3h5.23a4.47 4.47 0 0 1-1.94 2.93v2.78h3.14c1.84-1.69 2.92-4.18 2.92-7.74Z"
@@ -1061,6 +1389,7 @@ function GoogleIcon() {
         fill="#EA4335"
         d="M12 6.11c1.42 0 2.69.49 3.69 1.45l2.77-2.77C16.81 3.24 14.61 2.25 12 2.25a9.72 9.72 0 0 0-8.68 5l3.24 2.86c.77-2.29 2.91-4 5.44-4Z"
       />
+
     </svg>
   );
 }
