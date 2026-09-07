@@ -1,4 +1,4 @@
-export type UserRole = "ADMIN" | "USER";
+export type UserRole = "ADMIN" | "USER" | "VENDOR";
 
 export type SessionUser = {
   name: string;
@@ -21,6 +21,7 @@ export type Session = {
 export const SESSION_KEYS: Record<UserRole, string> = {
   ADMIN: "campusvita_admin_session",
   USER: "campusvita_user_session",
+  VENDOR: "campusvita_vendor_session",
 };
 
 function getStorageKey(role: UserRole): string {
@@ -36,7 +37,7 @@ export function saveSession(session: Session): void {
 
   const role = session.user.role;
 
-  if (role !== "ADMIN" && role !== "USER") {
+  if (role !== "ADMIN" && role !== "USER" && role !== "VENDOR") {
     console.error("Invalid session role:", role);
     return;
   }

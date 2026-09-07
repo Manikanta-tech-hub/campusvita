@@ -14,7 +14,7 @@ import hashlib
 import bcrypt
 import jwt
 import firebase_admin
-
+from fastapi.encoders import jsonable_encoder
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
@@ -199,7 +199,22 @@ class OrderStatus:
     @classmethod
     def all_statuses(cls):
         return [cls.PREPARING, cls.COOKING, cls.READY_FOR_PICKUP, cls.COMPLETED]
+class StallOrderStatus:
+    PENDING = "Pending"
+    ACCEPTED = "Accepted"
+    PLACED = "Placed"
+    COOKING = "Cooking"
+    READY = "Ready For Pickup"
 
+    @classmethod
+    def all_statuses(cls):
+        return [
+            cls.PENDING,
+            cls.ACCEPTED,
+            cls.PLACED,
+            cls.COOKING,
+            cls.READY,
+        ]
 
 class PaymentStatus:
     PENDING = "Pending"
@@ -210,6 +225,7 @@ class PaymentStatus:
 class UserRole:
     ADMIN = "ADMIN"
     USER = "USER"
+    VENDOR = "VENDOR"
 
 
 ALLOWED_IMAGE_TYPES = [
@@ -497,6 +513,99 @@ def require_role(required_role: str):
     return role_checker
 
 
+def get_vendor_stall_ids(current_user: Dict[str, Any]) -> List[str]:
+    """Return active stall IDs owned by the authenticated vendor."""
+    if str(current_user.get("role", "")).upper() != UserRole.VENDOR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="VENDOR role required.",
+        )
+
+    email = normalize_email(str(current_user.get("email", "")))
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vendor email is missing.",
+        )
+
+    stalls = stalls_collection.find(
+        {
+            "owner_email": email,
+            "active": True,
+        },
+        {"_id": 1},
+    )
+
+    return [str(stall["_id"]) for stall in stalls]
+
+def get_stall_preparation_minutes(stall_id: str) -> int:
+    """Get preparation time configured for a stall."""
+    try:
+        stall = stalls_collection.find_one(
+            {"_id": ObjectId(stall_id)},
+            {"preparation_time": 1},
+        )
+    except Exception:
+        return 15
+
+    if not stall:
+        return 15
+
+    try:
+        minutes = int(stall.get("preparation_time") or 15)
+        return max(1, minutes)
+    except (TypeError, ValueError):
+        return 15
+
+
+def get_order_stall_ids(order: Dict[str, Any]) -> List[str]:
+    """Return unique stall IDs represented by the order items."""
+    stall_ids = []
+
+    for item in order.get("items", []):
+        stall_id = str(item.get("stall_id") or "").strip()
+        if stall_id and stall_id not in stall_ids:
+            stall_ids.append(stall_id)
+
+    return stall_ids
+
+
+def build_stall_orders(order: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Build independent stall-level order state for an order.
+
+    Existing orders without stall-level state are represented safely
+    without modifying the database.
+    """
+    existing = {
+        str(entry.get("stall_id")): entry
+        for entry in order.get("stall_orders", [])
+        if entry.get("stall_id")
+    }
+
+    stall_orders = []
+
+    for stall_id in get_order_stall_ids(order):
+        previous = existing.get(stall_id, {})
+
+        stall_orders.append({
+            "stall_id": stall_id,
+            "status": previous.get(
+                "status",
+                StallOrderStatus.PENDING,
+            ),
+            "estimatedPreparationMinutes": int(
+                previous.get(
+                    "estimatedPreparationMinutes",
+                    get_stall_preparation_minutes(stall_id),
+                )
+            ),
+            "cookingStartedAt": previous.get("cookingStartedAt"),
+            "readyAt": previous.get("readyAt"),
+        })
+
+    return stall_orders
 # =====================================
 # SIGNED "ORDER INTENT" HELPERS
 # Used to carry server-computed prices/amounts from order-creation time to
@@ -1035,8 +1144,33 @@ def refresh_token_matches(token: str, token_hash: Optional[str]) -> bool:
 # SOCKET HELPER
 # =====================================
 
+def make_json_safe(value):
+    if isinstance(value, ObjectId):
+        return str(value)
+
+    if isinstance(value, datetime):
+        return value.isoformat()
+
+    if isinstance(value, dict):
+        return {
+            key: make_json_safe(item)
+            for key, item in value.items()
+        }
+
+    if isinstance(value, list):
+        return [
+            make_json_safe(item)
+            for item in value
+        ]
+
+    return value
+
+
 async def safe_emit_order_update(order_data):
-    asyncio.create_task(sio.emit("order_update", order_data))
+    safe_order = make_json_safe(order_data)
+    asyncio.create_task(
+        sio.emit("order_update", safe_order)
+    )
 
 
 def emit_order_update_sync(order_data):
@@ -1242,7 +1376,231 @@ class StatusUpdate(BaseModel):
         if v not in OrderStatus.all_statuses():
             raise ValueError(f"Invalid status. Must be one of: {OrderStatus.all_statuses()}")
         return v
+    
+class VendorStallStatusUpdate(BaseModel):
+    status: str
 
+    @validator("status")
+    def validate_status(cls, value):
+        if value not in StallOrderStatus.all_statuses():
+            raise ValueError(
+                f"Invalid stall order status. "
+                f"Must be one of: {StallOrderStatus.all_statuses()}"
+            )
+        return value
+
+@fastapi_app.get("/vendor/orders")
+async def get_vendor_orders(
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.VENDOR)),
+):
+    """Return orders containing items from the authenticated vendor's stalls."""
+
+    vendor_stall_ids = set(get_vendor_stall_ids(current_user))
+
+    if not vendor_stall_ids:
+        return {"success": True, "orders": []}
+
+    orders = list(
+        orders_collection.find(
+            {"items.stall_id": {"$in": list(vendor_stall_ids)}}
+        ).sort("created_at", -1)
+    )
+
+    result = []
+
+    for order in orders:
+        vendor_items = [
+            item
+            for item in order.get("items", [])
+            if str(item.get("stall_id") or "") in vendor_stall_ids
+        ]
+
+        if not vendor_items:
+            continue
+
+        stall_orders = build_stall_orders(order)
+
+        vendor_stall_orders = [
+            stall_order
+            for stall_order in stall_orders
+            if stall_order["stall_id"] in vendor_stall_ids
+        ]
+
+        order["_id"] = str(order["_id"])
+
+        if isinstance(order.get("created_at"), datetime):
+            order["created_at"] = order["created_at"].isoformat()
+
+        if isinstance(order.get("payment_date"), datetime):
+            order["payment_date"] = order["payment_date"].isoformat()
+
+        result.append({
+            "order_id": order["_id"],
+            "token": order.get("token"),
+            "name": order.get("name"),
+            "email": order.get("email") or order.get("user_email"),
+            "phone": order.get("phone"),
+            "items": vendor_items,
+            "stall_orders": vendor_stall_orders,
+            "status": order.get("status", OrderStatus.PREPARING),
+            "total": sum(
+                float(item.get("price", 0)) * int(item.get("quantity", 0))
+                for item in vendor_items
+            ),
+            "created_at": order.get("created_at"),
+            "date": order.get("date"),
+        })
+
+    return {"success": True, "orders": result}
+
+@fastapi_app.put("/vendor/orders/{token}/status")
+async def update_vendor_stall_order_status(
+    token: int,
+    stall_id: str,
+    data: VendorStallStatusUpdate,
+    current_user: Dict[str, Any] = Depends(
+        require_role(UserRole.VENDOR)
+    ),
+):
+    """Update one vendor-owned stall within an order."""
+
+    vendor_stall_ids = set(get_vendor_stall_ids(current_user))
+
+    if stall_id not in vendor_stall_ids:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not own this stall.",
+        )
+
+    order = orders_collection.find_one({"token": token})
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    if stall_id not in set(get_order_stall_ids(order)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This stall is not part of the order.",
+        )
+
+    stall_orders = build_stall_orders(order)
+
+    target = next(
+        (
+            stall_order
+            for stall_order in stall_orders
+            if stall_order["stall_id"] == stall_id
+        ),
+        None,
+    )
+
+    if target is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Stall order state not found.",
+        )
+
+    current_status = target["status"]
+    requested_status = data.status
+
+    allowed_transitions = {
+        StallOrderStatus.PENDING: {
+            StallOrderStatus.ACCEPTED,
+        },
+        StallOrderStatus.ACCEPTED: {
+            StallOrderStatus.PLACED,
+        },
+        StallOrderStatus.PLACED: {
+            StallOrderStatus.COOKING,
+        },
+        StallOrderStatus.COOKING: {
+            StallOrderStatus.READY,
+        },
+        StallOrderStatus.READY: set(),
+    }
+
+    if requested_status not in allowed_transitions.get(
+        current_status,
+        set(),
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Invalid status transition: "
+                f"{current_status} -> {requested_status}"
+            ),
+        )
+
+    now = datetime.now()
+
+    for stall_order in stall_orders:
+        if stall_order["stall_id"] != stall_id:
+            continue
+
+        stall_order["status"] = requested_status
+
+        if requested_status == StallOrderStatus.COOKING:
+            stall_order["cookingStartedAt"] = now.isoformat()
+
+        elif requested_status == StallOrderStatus.READY:
+            stall_order["readyAt"] = now.isoformat()
+
+        break
+
+    orders_collection.update_one(
+        {"_id": order["_id"]},
+        {
+            "$set": {
+                "stall_orders": stall_orders,
+            }
+        },
+    )
+
+    updated_order = orders_collection.find_one(
+        {"_id": order["_id"]}
+    )
+
+    if not updated_order:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Updated order could not be loaded.",
+        )
+
+    # Keep the original MongoDB document for realtime emission.
+    await safe_emit_order_update(updated_order)
+
+    # Build a JSON-safe response without leaving MongoDB ObjectIds.
+    def make_json_safe(value):
+        if isinstance(value, ObjectId):
+            return str(value)
+
+        if isinstance(value, datetime):
+            return value.isoformat()
+
+        if isinstance(value, dict):
+            return {
+                key: make_json_safe(item)
+                for key, item in value.items()
+            }
+
+        if isinstance(value, list):
+            return [
+                make_json_safe(item)
+                for item in value
+            ]
+
+        return value
+
+    response_order = make_json_safe(updated_order)
+
+    return {
+        "success": True,
+        "message": "Stall order status updated successfully.",
+        "order": response_order,
+    }
 class GoogleLoginData(BaseModel):
     id_token: str
 
@@ -4151,6 +4509,8 @@ def create_stall(
             "description": stall.description.strip(),
             "is_open": stall.is_open,
             "active": stall.active,
+            "owner_email": stall.owner_email,
+            "preparation_time": stall.preparation_time,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
         }
@@ -4285,6 +4645,8 @@ def update_stall(
             "description": stall.description.strip(),
             "is_open": stall.is_open,
             "active": stall.active,
+            "owner_email": stall.owner_email,
+            "preparation_time": stall.preparation_time,
             "updated_at": datetime.utcnow(),
         }
 
@@ -7579,7 +7941,7 @@ def get_admin_users(
 @fastapi_app.put("/admin/users/{email}/role")
 def update_user_role(email: str, role: str, _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN))):
     try:
-        if role not in [UserRole.ADMIN, UserRole.USER]:
+        if role not in [UserRole.ADMIN, UserRole.USER, UserRole.VENDOR]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid role"
