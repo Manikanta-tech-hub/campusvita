@@ -350,3 +350,38 @@ export async function getCustomers(
 
   return res.json();
 }
+export async function updateUserRole(
+  email: string,
+  role: "ADMIN" | "USER" | "VENDOR"
+) {
+  const token = getAccessToken("ADMIN");
+
+  if (!token) {
+    throw new Error("No admin access token found");
+  }
+
+  const params = new URLSearchParams({
+    role,
+  });
+
+  const res = await fetch(
+    `${API_URL}/admin/users/${encodeURIComponent(email)}/role?${params.toString()}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      data?.detail || "Failed to update user role"
+    );
+  }
+
+  return data;
+}

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getImageUrl } from "@/app/lib/getImageUrl";
+
 type Stall = {
   _id: string;
   name: string;
@@ -20,6 +21,8 @@ type Stall = {
   description: string;
   is_open: boolean;
   active: boolean;
+  owner_email?: string | null;
+  preparation_time?: string | null;
 };
 
 type StallForm = {
@@ -28,6 +31,13 @@ type StallForm = {
   description: string;
   is_open: boolean;
   active: boolean;
+  owner_email: string;
+  preparation_time: string;
+};
+
+type Vendor = {
+  email: string;
+  name: string;
 };
 
 const API_URL =
@@ -39,10 +49,14 @@ const emptyForm: StallForm = {
   description: "",
   is_open: true,
   active: true,
+  owner_email: "",
+  preparation_time: "15",
 };
 
 export default function StallsPage() {
   const [stalls, setStalls] = useState<Stall[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
@@ -66,11 +80,15 @@ export default function StallsPage() {
     }
   };
 
-  const getHeaders = () => ({
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    Authorization: `Bearer ${getToken()}`,
-  });
+  const getHeaders = () => {
+    const token = getToken();
+
+    return {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
 
   const loadStalls = async () => {
     try {
@@ -112,13 +130,53 @@ export default function StallsPage() {
     }
   };
 
+  const loadVendors = async () => {
+    try {
+      const response = await fetch(`${API_URL}/admin/users`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.detail || "Failed to load vendors");
+      }
+
+      const vendorUsers: Vendor[] = (data?.users || [])
+        .filter(
+          (user: { role?: string }) => user.role === "VENDOR"
+        )
+        .map(
+          (user: {
+            email: string;
+            name?: string;
+          }) => ({
+            email: user.email,
+            name: user.name || user.email,
+          })
+        );
+
+      setVendors(vendorUsers);
+    } catch (error) {
+      console.error("Load vendors error:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to load vendors"
+      );
+    }
+  };
+
   useEffect(() => {
     loadStalls();
+    loadVendors();
   }, [statusFilter]);
 
   const openCreateModal = () => {
     setEditingStall(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
     setShowModal(true);
   };
 
@@ -126,11 +184,13 @@ export default function StallsPage() {
     setEditingStall(stall);
 
     setForm({
-      name: stall.name,
+      name: stall.name || "",
       image: stall.image || "",
       description: stall.description || "",
       is_open: stall.is_open,
       active: stall.active,
+      owner_email: stall.owner_email || "",
+      preparation_time: stall.preparation_time || "",
     });
 
     setShowModal(true);
@@ -141,7 +201,7 @@ export default function StallsPage() {
 
     setShowModal(false);
     setEditingStall(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
   };
 
   const saveStall = async () => {
@@ -166,6 +226,8 @@ export default function StallsPage() {
           description: form.description.trim(),
           is_open: form.is_open,
           active: form.active,
+          owner_email: form.owner_email.trim() || null,
+          preparation_time: form.preparation_time.trim() || null,
         }),
       });
 
@@ -186,7 +248,10 @@ export default function StallsPage() {
           : "Stall created successfully"
       );
 
-      closeModal();
+      setShowModal(false);
+      setEditingStall(null);
+      setForm({ ...emptyForm });
+
       await loadStalls();
     } catch (error) {
       console.error("Save stall error:", error);
@@ -252,6 +317,7 @@ export default function StallsPage() {
             description: stall.description || "",
             is_open: !stall.is_open,
             active: stall.active,
+            owner_email: stall.owner_email || null,
           }),
         }
       );
@@ -288,21 +354,22 @@ export default function StallsPage() {
     <div className="min-h-full bg-[#0b0c10] p-6 text-white lg:p-8">
       {/* Header */}
       <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/15">
-              <Store className="text-orange-500" size={25} />
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/15">
+            <Store
+              className="text-orange-500"
+              size={25}
+            />
+          </div>
 
-            <div>
-              <h1 className="text-3xl font-bold">
-                Stall Management
-              </h1>
+          <div>
+            <h1 className="text-3xl font-bold">
+              Stall Management
+            </h1>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Manage campus food stalls and their availability
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-zinc-500">
+              Manage campus food stalls and their availability
+            </p>
           </div>
         </div>
 
@@ -364,25 +431,39 @@ export default function StallsPage() {
       {/* Stats */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-3xl border border-zinc-800 bg-[#12131a] p-5">
-          <p className="text-sm text-zinc-500">Total Stalls</p>
+          <p className="text-sm text-zinc-500">
+            Total Stalls
+          </p>
+
           <p className="mt-2 text-3xl font-bold">
             {stalls.length}
           </p>
         </div>
 
         <div className="rounded-3xl border border-zinc-800 bg-[#12131a] p-5">
-          <p className="text-sm text-zinc-500">Active Stalls</p>
+          <p className="text-sm text-zinc-500">
+            Active Stalls
+          </p>
+
           <p className="mt-2 text-3xl font-bold text-green-400">
-            {stalls.filter((stall) => stall.active).length}
+            {
+              stalls.filter(
+                (stall) => stall.active
+              ).length
+            }
           </p>
         </div>
 
         <div className="rounded-3xl border border-zinc-800 bg-[#12131a] p-5">
-          <p className="text-sm text-zinc-500">Currently Open</p>
+          <p className="text-sm text-zinc-500">
+            Currently Open
+          </p>
+
           <p className="mt-2 text-3xl font-bold text-orange-400">
             {
               stalls.filter(
-                (stall) => stall.active && stall.is_open
+                (stall) =>
+                  stall.active && stall.is_open
               ).length
             }
           </p>
@@ -398,15 +479,18 @@ export default function StallsPage() {
         </div>
       ) : filteredStalls.length === 0 ? (
         <div className="flex min-h-[350px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-700 bg-[#12131a] text-center">
-          <Store size={50} className="mb-4 text-zinc-700" />
+          <Store
+            size={50}
+            className="mb-4 text-zinc-700"
+          />
 
           <h2 className="text-xl font-semibold">
             No stalls found
           </h2>
 
           <p className="mt-2 max-w-md text-sm text-zinc-500">
-            Create your first campus food stall to start managing
-            stall availability.
+            Create your first campus food stall to
+            start managing stall availability.
           </p>
 
           <button
@@ -424,11 +508,10 @@ export default function StallsPage() {
               key={stall._id}
               className="overflow-hidden rounded-3xl border border-zinc-800 bg-[#12131a]"
             >
-              {/* Image */}
               <div className="relative h-48 bg-zinc-900">
                 {stall.image ? (
                   <img
-                  src={getImageUrl(stall.image)}
+                    src={getImageUrl(stall.image)}
                     alt={stall.name}
                     className="h-full w-full object-cover"
                   />
@@ -449,27 +532,35 @@ export default function StallsPage() {
                         : "bg-red-500/20 text-red-400"
                     }`}
                   >
-                    {stall.active ? "Active" : "Inactive"}
+                    {stall.active
+                      ? "Active"
+                      : "Inactive"}
                   </span>
                 </div>
               </div>
 
-              {/* Content */}
               <div className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-semibold">
-                      {stall.name}
-                    </h3>
+                <h3 className="text-xl font-semibold">
+                  {stall.name}
+                </h3>
 
-                    <p className="mt-2 min-h-[40px] text-sm text-zinc-500">
-                      {stall.description ||
-                        "No description available"}
+                <p className="mt-2 min-h-[40px] text-sm text-zinc-500">
+                  {stall.description ||
+                    "No description available"}
+                </p>
+
+                {stall.owner_email && (
+                  <div className="mt-3 rounded-xl bg-zinc-900 px-3 py-2">
+                    <p className="text-xs text-zinc-500">
+                      Vendor
+                    </p>
+
+                    <p className="mt-1 truncate text-sm text-zinc-300">
+                      {stall.owner_email}
                     </p>
                   </div>
-                </div>
+                )}
 
-                {/* Open status */}
                 <div className="mt-5 flex items-center justify-between rounded-2xl bg-zinc-900 p-3">
                   <div className="flex items-center gap-2">
                     <DoorOpen
@@ -493,29 +584,30 @@ export default function StallsPage() {
                         : "text-red-400"
                     }`}
                   >
-                    {stall.is_open ? "Open" : "Closed"}
+                    {stall.is_open
+                      ? "Open"
+                      : "Closed"}
                   </span>
                 </div>
 
-                {/* Actions */}
                 <div className="mt-4 grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => toggleOpen(stall)}
                     className="flex items-center justify-center gap-2 rounded-xl bg-zinc-900 px-3 py-2.5 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
-                    title={
-                      stall.is_open
-                        ? "Close stall"
-                        : "Open stall"
-                    }
                   >
                     <Power size={16} />
-                    {stall.is_open ? "Close" : "Open"}
+
+                    {stall.is_open
+                      ? "Close"
+                      : "Open"}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => openEditModal(stall)}
+                    onClick={() =>
+                      openEditModal(stall)
+                    }
                     className="flex items-center justify-center gap-2 rounded-xl bg-blue-500/10 px-3 py-2.5 text-sm text-blue-400 transition hover:bg-blue-500/20"
                   >
                     <Pencil size={16} />
@@ -524,7 +616,9 @@ export default function StallsPage() {
 
                   <button
                     type="button"
-                    onClick={() => deleteStall(stall)}
+                    onClick={() =>
+                      deleteStall(stall)
+                    }
                     className="flex items-center justify-center gap-2 rounded-xl bg-red-500/10 px-3 py-2.5 text-sm text-red-400 transition hover:bg-red-500/20"
                   >
                     <Trash2 size={16} />
@@ -541,6 +635,7 @@ export default function StallsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-3xl border border-zinc-800 bg-[#12131a] shadow-2xl">
+            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-zinc-800 p-6">
               <div>
                 <h2 className="text-xl font-bold">
@@ -565,7 +660,9 @@ export default function StallsPage() {
               </button>
             </div>
 
+            {/* Modal Body */}
             <div className="space-y-5 p-6">
+              {/* Stall Name */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
                   Stall Name
@@ -584,6 +681,69 @@ export default function StallsPage() {
                 />
               </div>
 
+              {/* Stall Vendor */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">
+                  Stall Vendor
+                </label>
+
+                <select
+                  value={form.owner_email}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      owner_email: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none focus:border-orange-500"
+                >
+                  <option value="">
+                    Select a vendor
+                  </option>
+
+                  {vendors.map((vendor) => (
+                    <option
+                      key={vendor.email}
+                      value={vendor.email}
+                    >
+                      {vendor.name} — {vendor.email}
+                    </option>
+                  ))}
+                </select>
+
+                {vendors.length === 0 && (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    No VENDOR users available. Create
+                    or assign a vendor account first.
+                  </p>
+                )}
+              </div>
+              {/* Preparation Time */}
+<div>
+  <label className="mb-2 block text-sm font-medium text-zinc-300">
+    Preparation Time (minutes)
+  </label>
+
+  <input
+    type="number"
+    min="1"
+    value={form.preparation_time}
+    onChange={(e) =>
+      setForm({
+        ...form,
+        preparation_time: e.target.value,
+      })
+    }
+    placeholder="Example: 15"
+    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+  />
+
+  <p className="mt-2 text-xs text-zinc-500">
+    Estimated time this stall needs to prepare an order.
+  </p>
+</div>
+
+              {/* Image URL */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
                   Image URL
@@ -602,6 +762,7 @@ export default function StallsPage() {
                 />
               </div>
 
+              {/* Description */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
                   Description
@@ -621,12 +782,14 @@ export default function StallsPage() {
                 />
               </div>
 
+              {/* Toggles */}
               <div className="grid grid-cols-2 gap-4">
                 <label className="flex cursor-pointer items-center justify-between rounded-2xl bg-zinc-900 p-4">
                   <div>
                     <p className="font-medium">
                       Stall Open
                     </p>
+
                     <p className="text-xs text-zinc-500">
                       Accept orders
                     </p>
@@ -650,6 +813,7 @@ export default function StallsPage() {
                     <p className="font-medium">
                       Active
                     </p>
+
                     <p className="text-xs text-zinc-500">
                       Show in system
                     </p>
@@ -670,12 +834,13 @@ export default function StallsPage() {
               </div>
             </div>
 
+            {/* Modal Footer */}
             <div className="flex justify-end gap-3 border-t border-zinc-800 p-6">
               <button
                 type="button"
                 onClick={closeModal}
                 disabled={saving}
-                className="rounded-xl bg-zinc-800 px-5 py-2.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700"
+                className="rounded-xl bg-zinc-800 px-5 py-2.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700 disabled:opacity-50"
               >
                 Cancel
               </button>
