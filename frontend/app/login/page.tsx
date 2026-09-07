@@ -128,7 +128,8 @@ if (response.ok) {
 
   if (
     role !== "ADMIN" &&
-    role !== "USER"
+    role !== "USER" &&
+    role !== "VENDOR"
   ) {
     console.error(
       "❌ Invalid role returned by backend:",
@@ -272,6 +273,8 @@ if (response.ok) {
 
   if (role === "ADMIN") {
     router.replace("/admin/dashboard");
+  } else if (role === "VENDOR") {
+    router.replace("/vendor/dashboard");
   } else {
     router.replace("/");
   }
@@ -380,7 +383,8 @@ if (response.ok) {
 
         if (
           role !== "ADMIN" &&
-          role !== "USER"
+          role !== "USER" &&
+          role !== "VENDOR"
         ) {
           console.error(
             "Invalid role returned by backend:",
@@ -503,9 +507,9 @@ if (response.ok) {
         );
 
         if (role === "ADMIN") {
-          router.replace(
-            "/admin/dashboard"
-          );
+          router.replace("/admin/dashboard");
+        } else if (role === "VENDOR") {
+          router.replace("/vendor/dashboard");
         } else {
           router.replace("/");
         }

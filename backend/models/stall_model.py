@@ -13,7 +13,8 @@ class StallData(BaseModel):
     description: str = ""
     is_open: bool = True
     active: bool = True
-
+    owner_email: Optional[str] = None
+    
     rating: Optional[float] = None
     opening_time: Optional[str] = None
     closing_time: Optional[str] = None
