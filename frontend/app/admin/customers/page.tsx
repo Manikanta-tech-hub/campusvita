@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 
-import { getCustomers } from "@/app/lib/api";
+import { getCustomers, updateUserRole } from "@/app/lib/api";
 
 type RecentOrder = {
   order_id: string;
@@ -43,6 +43,7 @@ type Customer = {
   status: string;
   joined_at?: string;
   recent_orders?: RecentOrder[];
+  role?: "ADMIN" | "USER" | "VENDOR";
 };
 
 type Statistics = {
@@ -646,23 +647,38 @@ export default function CustomerManagementPage() {
                           />
                         </button>
 
-                        {openMenu ===
-                          customer.id && (
-                          <div className="absolute right-4 top-12 z-20 w-40 rounded-xl border border-zinc-700 bg-[#181c25] p-1 shadow-2xl">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedCustomer(
-                                  customer
-                                );
-                                setOpenMenu(null);
-                              }}
-                              className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        )}
+                        {openMenu === customer.id && (
+  <div className="absolute right-4 top-12 z-20 w-44 rounded-xl border border-zinc-700 bg-[#181c25] p-1 shadow-2xl">
+    <button
+      type="button"
+      onClick={() => {
+        setSelectedCustomer(customer);
+        setOpenMenu(null);
+      }}
+      className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
+    >
+      View Details
+    </button>
+
+    {customer.role !== "VENDOR" && (
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await updateUserRole(customer.email, "VENDOR");
+            setOpenMenu(null);
+            await loadCustomers();
+          } catch (error) {
+            console.error("Failed to make vendor:", error);
+          }
+        }}
+        className="w-full rounded-lg px-3 py-2 text-left text-sm text-orange-400 hover:bg-zinc-800 hover:text-orange-300"
+      >
+        Make Vendor
+      </button>
+    )}
+  </div>
+)}
                       </td>
                     </tr>
                   ))
