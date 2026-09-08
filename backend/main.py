@@ -205,6 +205,7 @@ class StallOrderStatus:
     PLACED = "Placed"
     COOKING = "Cooking"
     READY = "Ready For Pickup"
+    CANCELLED = "Cancelled"
 
     @classmethod
     def all_statuses(cls):
@@ -214,6 +215,7 @@ class StallOrderStatus:
             cls.PLACED,
             cls.COOKING,
             cls.READY,
+            cls.CANCELLED,
         ]
 
 class PaymentStatus:
@@ -590,20 +592,23 @@ def build_stall_orders(order: Dict[str, Any]) -> List[Dict[str, Any]]:
         previous = existing.get(stall_id, {})
 
         stall_orders.append({
-            "stall_id": stall_id,
-            "status": previous.get(
-                "status",
-                StallOrderStatus.PENDING,
-            ),
-            "estimatedPreparationMinutes": int(
-                previous.get(
-                    "estimatedPreparationMinutes",
-                    get_stall_preparation_minutes(stall_id),
-                )
-            ),
-            "cookingStartedAt": previous.get("cookingStartedAt"),
-            "readyAt": previous.get("readyAt"),
-        })
+    "stall_id": stall_id,
+    "status": previous.get(
+        "status",
+        StallOrderStatus.PENDING,
+    ),
+    "estimatedPreparationMinutes": int(
+        previous.get(
+            "estimatedPreparationMinutes",
+            get_stall_preparation_minutes(stall_id),
+        )
+    ),
+    "cookingStartedAt": previous.get("cookingStartedAt"),
+    "readyAt": previous.get("readyAt"),
+    "cancelled": bool(previous.get("cancelled", False)),
+    "cancelledAt": previous.get("cancelledAt"),
+    "cancellationReason": previous.get("cancellationReason"),
+})
 
     return stall_orders
 # =====================================
@@ -1377,6 +1382,10 @@ class StatusUpdate(BaseModel):
             raise ValueError(f"Invalid status. Must be one of: {OrderStatus.all_statuses()}")
         return v
     
+class VendorCancellationRequest(BaseModel):
+    reason: str = "Cancelled by vendor"
+
+
 class VendorStallStatusUpdate(BaseModel):
     status: str
 
@@ -1388,6 +1397,281 @@ class VendorStallStatusUpdate(BaseModel):
                 f"Must be one of: {StallOrderStatus.all_statuses()}"
             )
         return value
+
+@fastapi_app.post("/vendor/orders/{token}/cancel")
+async def cancel_vendor_complete_order(
+    token: str,
+    stall_id: str = Query(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Cancel only the selected stall's portion of a multi-stall order.
+
+    Important:
+    - Items belonging to other stalls are NOT cancelled.
+    - The selected stall order is marked CANCELLED.
+    - The global order is cancelled only when no active items remain.
+    - A WebSocket update is emitted after the change.
+    """
+
+    # ---------------------------------------------------------
+    # 1. Verify vendor/admin authentication
+    # ---------------------------------------------------------
+    role = str(current_user.get("role", "")).upper()
+
+    if role not in {"VENDOR", "ADMIN"}:
+        raise HTTPException(
+            status_code=403,
+            detail="Vendor access required",
+        )
+
+    # ---------------------------------------------------------
+    # 2. Convert token to the same type used in MongoDB
+    # ---------------------------------------------------------
+    try:
+        token_value = int(token)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid order token",
+        )
+
+    # ---------------------------------------------------------
+    # 3. Find the order
+    # ---------------------------------------------------------
+    order = orders_collection.find_one(
+        {"token": token_value}
+    )
+
+    if not order:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found",
+        )
+
+    items = order.get("items", [])
+
+    if not items:
+        raise HTTPException(
+            status_code=400,
+            detail="Order has no items",
+        )
+
+    # ---------------------------------------------------------
+    # 4. Get vendor's allowed stalls
+    # ---------------------------------------------------------
+    vendor_stall_ids = get_vendor_stall_ids(current_user)
+
+    vendor_stall_ids = {
+        str(value)
+        for value in (vendor_stall_ids or [])
+        if value is not None
+    }
+
+    requested_stall_id = str(stall_id)
+
+    # ---------------------------------------------------------
+    # 5. Verify vendor owns the requested stall
+    # ---------------------------------------------------------
+    if role != "ADMIN" and requested_stall_id not in vendor_stall_ids:
+        raise HTTPException(
+            status_code=403,
+            detail="You do not have access to this stall",
+        )
+
+    # ---------------------------------------------------------
+    # 6. Find items belonging ONLY to this stall
+    # ---------------------------------------------------------
+    target_items = []
+
+    for index, item in enumerate(items):
+        item_stall_id = str(item.get("stall_id", ""))
+
+        if item_stall_id == requested_stall_id:
+            target_items.append((index, item))
+
+    if not target_items:
+        raise HTTPException(
+            status_code=404,
+            detail="No items found for this stall in the order",
+        )
+
+    # ---------------------------------------------------------
+    # 7. Cancel ONLY this stall's items
+    # ---------------------------------------------------------
+    cancelled_count = 0
+    cancellation_time = datetime.utcnow()
+
+    for index, item in target_items:
+        if str(item.get("stall_id", "")) != requested_stall_id:
+            continue
+
+        if item.get("cancelled") is True:
+            continue
+
+        item["cancelled"] = True
+        item["cancelled_at"] = cancellation_time.isoformat()
+        item["cancellation_reason"] = "Cancelled by vendor"
+        item["status"] = "Cancelled"
+
+        cancelled_count += 1
+
+    if cancelled_count == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="All items for this stall are already cancelled",
+        )
+
+    # ---------------------------------------------------------
+    # 8. Update ONLY the matching stall order
+    # ---------------------------------------------------------
+    stall_orders = build_stall_orders(order)
+
+    target_stall_found = False
+
+    for stall_order in stall_orders:
+        current_stall_id = str(
+            stall_order.get("stall_id", "")
+        )
+
+        if current_stall_id != requested_stall_id:
+            continue
+
+        target_stall_found = True
+
+        stall_order["status"] = StallOrderStatus.CANCELLED
+        stall_order["cancelledAt"] = (
+            cancellation_time.isoformat()
+        )
+        stall_order["cancellationReason"] = (
+            "Cancelled by vendor"
+        )
+
+    if not target_stall_found:
+        raise HTTPException(
+            status_code=404,
+            detail="Stall order not found",
+        )
+
+    # ---------------------------------------------------------
+    # 9. Save updated stall orders
+    # ---------------------------------------------------------
+    order["stall_orders"] = stall_orders
+
+    # ---------------------------------------------------------
+    # 10. Determine global order status
+    # ---------------------------------------------------------
+    remaining_active_items = [
+        item
+        for item in items
+        if item.get("cancelled") is not True
+    ]
+
+    if not remaining_active_items:
+        # All items from all stalls are cancelled.
+        order["status"] = "Cancelled"
+        order["cancelled"] = True
+        order["cancelled_at"] = (
+            cancellation_time.isoformat()
+        )
+        order["cancellation_reason"] = (
+            "All stall orders cancelled"
+        )
+    else:
+        # Other stall(s) still have active items.
+        order["cancelled"] = False
+
+        if str(order.get("status", "")).lower() in {
+            "cancelled",
+            "canceled",
+        }:
+            order["status"] = "Confirmed"
+
+    # ---------------------------------------------------------
+    # 11. Persist updated order
+    # ---------------------------------------------------------
+    orders_collection.update_one(
+        {"_id": order["_id"]},
+        {
+            "$set": {
+                "items": items,
+                "stall_orders": order["stall_orders"],
+                "status": order.get("status"),
+                "cancelled": order.get("cancelled", False),
+                "cancelled_at": order.get("cancelled_at"),
+                "cancellation_reason": order.get(
+                    "cancellation_reason"
+                ),
+            }
+        },
+    )
+
+    # ---------------------------------------------------------
+    # 12. Re-fetch latest order
+    # ---------------------------------------------------------
+    updated_order = orders_collection.find_one(
+        {"_id": order["_id"]}
+    )
+
+    if updated_order:
+        updated_order["_id"] = str(
+            updated_order["_id"]
+        )
+
+        # -----------------------------------------------------
+        # 13. Send real-time WebSocket update
+        # -----------------------------------------------------
+        await safe_emit_order_update(updated_order)
+
+        # -----------------------------------------------------
+        # 14. Send push notification to order owner
+        # -----------------------------------------------------
+        user_email = (
+            order.get("email")
+            or order.get("user_email")
+        )
+
+        if user_email:
+            normalized_email = normalize_email(
+                str(user_email)
+            )
+
+            order_user = users_collection.find_one(
+                {"email": normalized_email}
+            )
+
+            if order_user:
+                fcm_token = order_user.get("fcm_token")
+
+                if fcm_token:
+                    send_push_notification(
+                        fcm_token,
+                        "CampusVita 🍔",
+                        "Your order from this stall was cancelled by the vendor.",
+                    )
+
+    # ---------------------------------------------------------
+    # 15. Return stall-specific result
+    # ---------------------------------------------------------
+    return {
+        "success": True,
+        "message": "Stall order cancelled successfully",
+        "token": token,
+        "stall_id": requested_stall_id,
+        "cancelled_items": cancelled_count,
+        "global_order_cancelled": (
+            len(remaining_active_items) == 0
+        ),
+        "stall_orders": order.get(
+            "stall_orders",
+            [],
+        ),
+        "items": order.get(
+            "items",
+            [],
+        ),
+    }
+
 
 @fastapi_app.get("/vendor/orders")
 async def get_vendor_orders(
@@ -1452,6 +1736,184 @@ async def get_vendor_orders(
         })
 
     return {"success": True, "orders": result}
+
+@fastapi_app.post("/vendor/orders/{token}/items/cancel")
+async def cancel_vendor_order_item(
+    token: int,
+    stall_id: str,
+    item_index: int,
+    data: VendorCancellationRequest,
+    current_user: Dict[str, Any] = Depends(
+        require_role(UserRole.VENDOR)
+    ),
+):
+    """Cancel one vendor-owned order item."""
+
+    vendor_stall_ids = set(get_vendor_stall_ids(current_user))
+
+    if stall_id not in vendor_stall_ids:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not own this stall.",
+        )
+
+    order = orders_collection.find_one({"token": token})
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    items = order.get("items", [])
+
+    if item_index < 0 or item_index >= len(items):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order item not found.",
+        )
+
+    item = items[item_index]
+
+    if str(item.get("stall_id") or "") != stall_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not own this order item.",
+        )
+
+    if item.get("cancelled"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This item is already cancelled.",
+        )
+
+    if order.get("cancelled"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The complete order is already cancelled.",
+        )
+
+    reason = (
+        (data.reason or "Cancelled by vendor").strip()
+        or "Cancelled by vendor"
+    )
+
+    now = datetime.now().isoformat()
+
+    # -----------------------------------------------------
+    # Cancel only this specific item
+    # -----------------------------------------------------
+    item["cancelled"] = True
+    item["cancelledAt"] = now
+    item["cancellationReason"] = reason
+
+    # -----------------------------------------------------
+    # Rebuild stall-specific order states
+    # -----------------------------------------------------
+    stall_orders = build_stall_orders(order)
+
+    stall_has_active_items = any(
+        str(order_item.get("stall_id") or "") == stall_id
+        and not order_item.get("cancelled")
+        for order_item in items
+    )
+
+    for stall_order in stall_orders:
+        if stall_order["stall_id"] != stall_id:
+            continue
+
+        if not stall_has_active_items:
+            stall_order["status"] = StallOrderStatus.CANCELLED
+            stall_order["cancelled"] = True
+            stall_order["cancelledAt"] = now
+            stall_order["cancellationReason"] = reason
+
+        break
+
+    # -----------------------------------------------------
+    # Check whether every item in the complete order
+    # has been cancelled
+    # -----------------------------------------------------
+    all_items_cancelled = all(
+        order_item.get("cancelled") is True
+        for order_item in items
+    )
+
+    update_fields = {
+        "items": items,
+        "stall_orders": stall_orders,
+    }
+
+    # Only mark the complete order cancelled when
+    # every item from every stall has been cancelled.
+    if all_items_cancelled:
+        update_fields.update({
+            "cancelled": True,
+            "cancelledAt": now,
+            "cancellationReason": reason,
+            "status": "Cancelled",
+        })
+
+    orders_collection.update_one(
+        {"_id": order["_id"]},
+        {"$set": update_fields},
+    )
+
+    # -----------------------------------------------------
+    # Reload updated order
+    # -----------------------------------------------------
+    updated_order = orders_collection.find_one(
+        {"_id": order["_id"]}
+    )
+
+    if not updated_order:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Updated order could not be loaded.",
+        )
+
+    # -----------------------------------------------------
+    # Send realtime WebSocket update
+    # -----------------------------------------------------
+    await safe_emit_order_update(updated_order)
+
+    # -----------------------------------------------------
+    # Send FCM push notification to the order owner
+    # -----------------------------------------------------
+    user_email = order.get("email") or order.get("user_email")
+
+    if user_email:
+        normalized_email = normalize_email(str(user_email))
+
+        order_user = users_collection.find_one(
+            {"email": normalized_email}
+        )
+
+        if order_user:
+            fcm_token = order_user.get("fcm_token")
+
+            if fcm_token:
+                item_name = str(
+                    item.get("name")
+                    or item.get("food_name")
+                    or item.get("title")
+                    or "an item"
+                )
+
+                send_push_notification(
+                    fcm_token,
+                    "CampusVita 🍔",
+                    f"Your item '{item_name}' was cancelled by the vendor.",
+                )
+
+    # -----------------------------------------------------
+    # Return success response
+    # -----------------------------------------------------
+    return {
+        "success": True,
+        "message": "Order item cancelled successfully.",
+        "order": make_json_safe(updated_order),
+    }
 
 @fastapi_app.put("/vendor/orders/{token}/status")
 async def update_vendor_stall_order_status(
