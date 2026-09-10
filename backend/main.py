@@ -254,9 +254,9 @@ razorpay_client = razorpay.Client(
 # =====================================
 
 cloudinary.config(
-    cloud_name="campusvita",
-    api_key="REDACTED_CLOUDINARY_API_KEY",
-    api_secret="REDACTED_CLOUDINARY_SECRET",
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET,
     secure=True
 )
 
