@@ -22,9 +22,7 @@ import {
   googleProvider,
 } from "@/app/firebase";
 
-import {
-  signInWithPopup,
-} from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -70,12 +68,9 @@ export default function LoginPage() {
         `${API_URL}/login`,
         {
           method: "POST",
-
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             email: email.trim(),
             password,
@@ -101,195 +96,200 @@ export default function LoginPage() {
       }
 
       // ========================================================
-      // LOGIN SUCCESS
-      // ========================================================
-
-      // ========================================================
-// GOOGLE LOGIN SUCCESS
-// ========================================================
-
-if (response.ok) {
-
-  console.log(
-    "🔥 GOOGLE BACKEND RESPONSE:",
-    data
-  );
-
-  const role = data?.user?.role;
-
-  console.log(
-    "🔥 GOOGLE USER ROLE:",
-    role
-  );
-
-  // ======================================================
-  // VALIDATE ROLE
-  // ======================================================
-
-  if (
-    role !== "ADMIN" &&
-    role !== "USER" &&
-    role !== "VENDOR"
-  ) {
-    console.error(
-      "❌ Invalid role returned by backend:",
-      role
-    );
-
-    toast.error(
-      "Invalid user role returned by server"
-    );
-
-    return;
-  }
-
-  // ======================================================
-  // VALIDATE ACCESS TOKEN
-  // ======================================================
-
-  if (!data.access_token) {
-    console.error(
-      "❌ Google login response does not contain access_token"
-    );
-
-    toast.error(
-      "Google login failed: access token missing"
-    );
-
-    return;
-  }
-
-  // ======================================================
-  // SAVE SESSION
-  // ======================================================
-
-  saveSession({
-    accessToken: data.access_token,
-
-    refreshToken:
-      data.refresh_token || "",
-
-    tokenType:
-      data.token_type || "bearer",
-
-    expiresIn:
-      Number(data.expires_in || 0),
-
-    user: {
-      name:
-        data.user.name || "",
-
-      email:
-        data.user.email || "",
-
-      role,
-
-      phone:
-        data.user.phone || "",
-
-      department:
-        data.user.department || "",
-
-      year:
-        data.user.year || "",
-
-      profile_image:
-        data.user.profile_image || "",
-    },
-  });
-
-  // ======================================================
-  // DEBUG SAVED SESSION
-  // ======================================================
-
-  console.log(
-    "🔥 SAVED USER SESSION:",
-    localStorage.getItem(
-      "campusvita_user_session"
-    )
-  );
-
-  console.log(
-    "🔥 SAVED ADMIN SESSION:",
-    localStorage.getItem(
-      "campusvita_admin_session"
-    )
-  );
-
-  // ======================================================
-  // SAVE FCM TOKEN
-  // ======================================================
-
-  try {
-    const fcmToken =
-      await getFCMToken();
-
-    if (fcmToken) {
-      await fetch(
-        `${API_URL}/save-fcm-token`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            email: data.user.email,
-            fcm_token: fcmToken,
-          }),
-        }
-      );
-
-      console.log(
-        "✅ FCM token sent to backend"
-      );
-    }
-  } catch (error) {
-    console.error(
-      "FCM setup error:",
-      error
-    );
-  }
-
-  // ======================================================
-  // SUCCESS
-  // ======================================================
-
-  toast.success(
-    data.message ||
-      "Google Login Successful 🚀"
-  );
-
-  console.log(
-    "🚀 REDIRECTING WITH ROLE:",
-    role
-  );
-
-  // ======================================================
-  // REDIRECT
-  // ======================================================
-
-  if (role === "ADMIN") {
-    router.replace("/admin/dashboard");
-  } else if (role === "VENDOR") {
-    router.replace("/vendor/dashboard");
-  } else {
-    router.replace("/");
-  }
-
-  return;
-}
-      // ========================================================
       // LOGIN FAILED
       // ========================================================
 
-      toast.error(
-        data?.message ||
-          data?.detail ||
-          "Login failed. Please try again."
+      if (!response.ok) {
+        toast.error(
+          data?.message ||
+            data?.detail ||
+            "Login failed. Please try again."
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // GET ROLE
+      // ========================================================
+
+      const role = data?.user?.role;
+
+      console.log(
+        "✅ NORMAL LOGIN USER:",
+        data?.user?.email
       );
+
+      console.log(
+        "✅ NORMAL LOGIN ROLE:",
+        role
+      );
+
+      // ========================================================
+      // VALIDATE ROLE
+      // ========================================================
+
+      if (
+        role !== "ADMIN" &&
+        role !== "USER" &&
+        role !== "VENDOR"
+      ) {
+        console.error(
+          "Invalid role returned by backend:",
+          role
+        );
+
+        toast.error(
+          "Invalid user role returned by server"
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // VALIDATE ACCESS TOKEN
+      // ========================================================
+
+      if (!data?.access_token) {
+        console.error(
+          "Login response does not contain access_token"
+        );
+
+        toast.error(
+          "Login failed: access token missing"
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // VALIDATE USER
+      // ========================================================
+
+      if (!data?.user?.email) {
+        console.error(
+          "Login response does not contain user email"
+        );
+
+        toast.error(
+          "Login failed: user information missing"
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // SAVE SESSION
+      //
+      // ADMIN  -> localStorage
+      // USER   -> localStorage
+      // VENDOR -> sessionStorage
+      //
+      // This behavior is controlled by saveSession()
+      // ========================================================
+
+      saveSession({
+        accessToken:
+          data.access_token,
+
+        refreshToken:
+          data.refresh_token || "",
+
+        tokenType:
+          data.token_type || "bearer",
+
+        expiresIn:
+          Number(data.expires_in || 0),
+
+        user: {
+          name:
+            data.user.name || "",
+
+          email:
+            data.user.email || "",
+
+          role,
+
+          phone:
+            data.user.phone || "",
+
+          department:
+            data.user.department || "",
+
+          year:
+            data.user.year || "",
+
+          profile_image:
+            data.user.profile_image || "",
+        },
+      });
+
+      // ========================================================
+      // FCM TOKEN
+      // ========================================================
+
+      try {
+        const fcmToken =
+          await getFCMToken();
+
+        if (fcmToken) {
+          await fetch(
+            `${API_URL}/save-fcm-token`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                email:
+                  data.user.email,
+
+                fcm_token:
+                  fcmToken,
+              }),
+            }
+          );
+
+          console.log(
+            "✅ FCM token sent to backend"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "FCM setup error:",
+          error
+        );
+
+        // FCM failure should not prevent login.
+      }
+
+      // ========================================================
+      // SUCCESS MESSAGE
+      // ========================================================
+
+      toast.success(
+        data.message ||
+          "Login Successful 🚀"
+      );
+
+      // ========================================================
+      // REDIRECT BY ROLE
+      // ========================================================
+
+      if (role === "ADMIN") {
+        router.replace(
+          "/admin/dashboard"
+        );
+      } else if (role === "VENDOR") {
+        router.replace(
+          "/vendor/dashboard"
+        );
+      } else {
+        router.replace("/");
+      }
 
     } catch (error) {
       console.error(
@@ -355,7 +355,6 @@ if (response.ok) {
 
       try {
         data = await response.json();
-
       } catch (error) {
         console.error(
           "Google login response JSON error:",
@@ -370,162 +369,200 @@ if (response.ok) {
       }
 
       // ========================================================
-      // GOOGLE LOGIN SUCCESS
+      // GOOGLE LOGIN FAILED
       // ========================================================
 
-      if (response.ok) {
-        const role =
-          data?.user?.role;
-
-        // ======================================================
-        // VALIDATE ROLE
-        // ======================================================
-
-        if (
-          role !== "ADMIN" &&
-          role !== "USER" &&
-          role !== "VENDOR"
-        ) {
-          console.error(
-            "Invalid role returned by backend:",
-            role
-          );
-
-          toast.error(
-            "Invalid user role returned by server"
-          );
-
-          return;
-        }
-
-        // ======================================================
-        // VALIDATE ACCESS TOKEN
-        // ======================================================
-
-        if (!data.access_token) {
-          console.error(
-            "Google login response does not contain access_token"
-          );
-
-          toast.error(
-            "Google login failed: access token missing"
-          );
-
-          return;
-        }
-
-        // ======================================================
-        // SAVE SESSION
-        // ======================================================
-
-        saveSession({
-          accessToken:
-            data.access_token,
-
-          refreshToken:
-            data.refresh_token || "",
-
-          tokenType:
-            data.token_type || "bearer",
-
-          expiresIn:
-            Number(
-              data.expires_in || 0
-            ),
-
-          user: {
-            name:
-              data.user.name || "",
-
-            email:
-              data.user.email || "",
-
-            role,
-
-            phone:
-              data.user.phone || "",
-
-            department:
-              data.user.department || "",
-
-            year:
-              data.user.year || "",
-
-            profile_image:
-              data.user.profile_image || "",
-          },
-        });
-
-        // ======================================================
-        // SAVE FCM TOKEN
-        // ======================================================
-
-        try {
-          const fcmToken =
-            await getFCMToken();
-
-          if (fcmToken) {
-            await fetch(
-              `${API_URL}/save-fcm-token`,
-              {
-                method: "POST",
-
-                headers: {
-                  "Content-Type":
-                    "application/json",
-                },
-
-                body: JSON.stringify({
-                  email:
-                    data.user.email,
-
-                  fcm_token:
-                    fcmToken,
-                }),
-              }
-            );
-
-            console.log(
-              "FCM token sent to backend"
-            );
-          }
-
-        } catch (error) {
-          console.error(
-            "FCM setup error:",
-            error
-          );
-        }
-
-        // ======================================================
-        // SUCCESS
-        // ======================================================
-
-        toast.success(
-          data.message ||
-            "Google Login Successful 🚀"
+      if (!response.ok) {
+        toast.error(
+          data?.message ||
+            data?.detail ||
+            "Google login failed. Please try again."
         );
-
-        if (role === "ADMIN") {
-          router.replace("/admin/dashboard");
-        } else if (role === "VENDOR") {
-          router.replace("/vendor/dashboard");
-        } else {
-          router.replace("/");
-        }
 
         return;
       }
 
       // ========================================================
-      // GOOGLE LOGIN FAILED
+      // GET ROLE
       // ========================================================
 
-      toast.error(
-        data?.message ||
-          data?.detail ||
-          "Google login failed. Please try again."
+      const role =
+        data?.user?.role;
+
+      // ========================================================
+      // VALIDATE ROLE
+      // ========================================================
+
+      if (
+        role !== "ADMIN" &&
+        role !== "USER" &&
+        role !== "VENDOR"
+      ) {
+        console.error(
+          "Invalid role returned by backend:",
+          role
+        );
+
+        toast.error(
+          "Invalid user role returned by server"
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // VALIDATE ACCESS TOKEN
+      // ========================================================
+
+      if (!data?.access_token) {
+        console.error(
+          "Google login response does not contain access_token"
+        );
+
+        toast.error(
+          "Google login failed: access token missing"
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // VALIDATE USER
+      // ========================================================
+
+      if (!data?.user?.email) {
+        console.error(
+          "Google login response does not contain user email"
+        );
+
+        toast.error(
+          "Google login failed: user information missing"
+        );
+
+        return;
+      }
+
+      // ========================================================
+      // SAVE GOOGLE SESSION
+      //
+      // Vendor sessions are automatically stored in
+      // sessionStorage by saveSession().
+      // ========================================================
+
+      saveSession({
+        accessToken:
+          data.access_token,
+
+        refreshToken:
+          data.refresh_token || "",
+
+        tokenType:
+          data.token_type || "bearer",
+
+        expiresIn:
+          Number(
+            data.expires_in || 0
+          ),
+
+        user: {
+          name:
+            data.user.name || "",
+
+          email:
+            data.user.email || "",
+
+          role,
+
+          phone:
+            data.user.phone || "",
+
+          department:
+            data.user.department || "",
+
+          year:
+            data.user.year || "",
+
+          profile_image:
+            data.user.profile_image || "",
+        },
+      });
+
+      console.log(
+        "✅ GOOGLE LOGIN USER:",
+        data.user.email
       );
+
+      console.log(
+        "✅ GOOGLE LOGIN ROLE:",
+        role
+      );
+
+      // ========================================================
+      // FCM TOKEN
+      // ========================================================
+
+      try {
+        const fcmToken =
+          await getFCMToken();
+
+        if (fcmToken) {
+          await fetch(
+            `${API_URL}/save-fcm-token`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                email:
+                  data.user.email,
+
+                fcm_token:
+                  fcmToken,
+              }),
+            }
+          );
+
+          console.log(
+            "✅ FCM token sent to backend"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "FCM setup error:",
+          error
+        );
+
+        // FCM failure should not prevent login.
+      }
+
+      // ========================================================
+      // SUCCESS MESSAGE
+      // ========================================================
+
+      toast.success(
+        data.message ||
+          "Google Login Successful 🚀"
+      );
+
+      // ========================================================
+      // REDIRECT BY ROLE
+      // ========================================================
+
+      if (role === "ADMIN") {
+        router.replace(
+          "/admin/dashboard"
+        );
+      } else if (role === "VENDOR") {
+        router.replace(
+          "/vendor/dashboard"
+        );
+      } else {
+        router.replace("/");
+      }
 
     } catch (error: any) {
       console.error(
@@ -737,7 +774,8 @@ if (response.ok) {
                   type="button"
                   onClick={() =>
                     setShowPassword(
-                      (previous) => !previous
+                      (previous) =>
+                        !previous
                     )
                   }
                   aria-label={
@@ -789,11 +827,11 @@ if (response.ok) {
                 </label>
 
                 <Link
-  href="/forgot-password"
-  className="text-sm font-medium text-orange-700 transition-colors hover:text-orange-900"
->
-  Forgot Password?
-</Link>
+                  href="/forgot-password"
+                  className="text-sm font-medium text-orange-700 transition-colors hover:text-orange-900"
+                >
+                  Forgot Password?
+                </Link>
 
               </div>
 
@@ -1040,7 +1078,8 @@ if (response.ok) {
                 type="button"
                 onClick={() =>
                   setShowPassword(
-                    (previous) => !previous
+                    (previous) =>
+                      !previous
                   )
                 }
                 aria-label={
@@ -1092,11 +1131,11 @@ if (response.ok) {
               </label>
 
               <Link
-  href="/forgot-password"
-  className="text-xs font-medium text-orange-700"
->
-  Forgot Password?
-</Link>
+                href="/forgot-password"
+                className="text-xs font-medium text-orange-700"
+              >
+                Forgot Password?
+              </Link>
 
             </div>
 
@@ -1194,7 +1233,6 @@ function GoogleIcon() {
       aria-hidden="true"
       className="shrink-0"
     >
-
       <path
         fill="#4285F4"
         d="M21.35 12.27c0-.79-.07-1.55-.2-2.27H12v4.3h5.23a4.47 4.47 0 0 1-1.94 2.93v2.78h3.14c1.84-1.7 2.92-4.2 2.92-7.74Z"
@@ -1214,7 +1252,6 @@ function GoogleIcon() {
         fill="#EA4335"
         d="M12 6.47c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.81 3.54 14.62 2.25 12 2.25a9.72 9.72 0 0 0-8.68 5.36l3.24 2.86c.77-2.3 2.91-4 5.44-4Z"
       />
-
     </svg>
   );
 }

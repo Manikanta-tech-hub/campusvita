@@ -24,6 +24,35 @@ export const SESSION_KEYS: Record<UserRole, string> = {
   VENDOR: "campusvita_vendor_session",
 };
 
+/**
+ * Get the correct browser storage for each role.
+ *
+ * ADMIN and USER:
+ * - Use localStorage.
+ * - Their existing behavior remains unchanged.
+ *
+ * VENDOR:
+ * - Use sessionStorage.
+ * - sessionStorage is isolated per browser tab.
+ * - This prevents Vendor 2 from overwriting Vendor 1
+ *   when both vendors are logged in in different tabs.
+ */
+function getStorage(role: UserRole): Storage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  // USER and VENDOR sessions are isolated per browser tab.
+  // This prevents one customer/vendor login from
+  // overwriting another login in a different tab.
+  if (role === "USER" || role === "VENDOR") {
+    return window.sessionStorage;
+  }
+
+  // ADMIN remains in localStorage.
+  return window.localStorage;
+}
+
 function getStorageKey(role: UserRole): string {
   return SESSION_KEYS[role];
 }
@@ -33,16 +62,28 @@ function getStorageKey(role: UserRole): string {
  * belonging to that session's role.
  */
 export function saveSession(session: Session): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    return;
+  }
 
   const role = session.user.role;
 
-  if (role !== "ADMIN" && role !== "USER" && role !== "VENDOR") {
+  if (
+    role !== "ADMIN" &&
+    role !== "USER" &&
+    role !== "VENDOR"
+  ) {
     console.error("Invalid session role:", role);
     return;
   }
 
-  localStorage.setItem(
+  const storage = getStorage(role);
+
+  if (!storage) {
+    return;
+  }
+
+  storage.setItem(
     getStorageKey(role),
     JSON.stringify(session)
   );
@@ -51,12 +92,22 @@ export function saveSession(session: Session): void {
 /**
  * Read ONLY the requested role's session.
  */
-export function getSession(role: UserRole): Session | null {
+export function getSession(
+  role: UserRole
+): Session | null {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const raw = localStorage.getItem(getStorageKey(role));
+  const storage = getStorage(role);
+
+  if (!storage) {
+    return null;
+  }
+
+  const raw = storage.getItem(
+    getStorageKey(role)
+  );
 
   if (!raw) {
     return null;
@@ -70,7 +121,10 @@ export function getSession(role: UserRole): Session | null {
       !session.accessToken ||
       !session.user
     ) {
-      localStorage.removeItem(getStorageKey(role));
+      storage.removeItem(
+        getStorageKey(role)
+      );
+
       return null;
     }
 
@@ -79,7 +133,10 @@ export function getSession(role: UserRole): Session | null {
         `Invalid ${role} session: stored role is ${session.user.role}`
       );
 
-      localStorage.removeItem(getStorageKey(role));
+      storage.removeItem(
+        getStorageKey(role)
+      );
+
       return null;
     }
 
@@ -90,23 +147,35 @@ export function getSession(role: UserRole): Session | null {
       error
     );
 
-    localStorage.removeItem(getStorageKey(role));
+    storage.removeItem(
+      getStorageKey(role)
+    );
+
     return null;
   }
 }
 
+/**
+ * Get the access token for a specific role.
+ */
 export function getAccessToken(
   role: UserRole
 ): string | null {
   return getSession(role)?.accessToken ?? null;
 }
 
+/**
+ * Get the logged-in user for a specific role.
+ */
 export function getSessionUser(
   role: UserRole
 ): SessionUser | null {
   return getSession(role)?.user ?? null;
 }
 
+/**
+ * Check whether a specific role is logged in.
+ */
 export function isLoggedIn(
   role: UserRole
 ): boolean {
@@ -123,45 +192,95 @@ export function isLoggedIn(
 export function getSessionForPath(
   pathname: string
 ): Session | null {
-  return pathname.startsWith("/admin")
-    ? getSession("ADMIN")
-    : getSession("USER");
+  if (pathname.startsWith("/admin")) {
+    return getSession("ADMIN");
+  }
+
+  if (pathname.startsWith("/vendor")) {
+    return getSession("VENDOR");
+  }
+
+  return getSession("USER");
 }
 
+/**
+ * Determine which role is required for a pathname.
+ */
 export function getRoleForPath(
   pathname: string
 ): UserRole {
-  return pathname.startsWith("/admin")
-    ? "ADMIN"
-    : "USER";
+  if (pathname.startsWith("/admin")) {
+    return "ADMIN";
+  }
+
+  if (pathname.startsWith("/vendor")) {
+    return "VENDOR";
+  }
+
+  return "USER";
 }
 
 /**
  * Clear ONLY one role's session.
+ *
+ * For Vendor:
+ * - Removes the Vendor session from sessionStorage.
+ * - Does NOT affect another browser tab.
  */
 export function clearSession(
   role: UserRole
 ): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    return;
+  }
 
-  localStorage.removeItem(getStorageKey(role));
+  const storage = getStorage(role);
+
+  if (!storage) {
+    return;
+  }
+
+  storage.removeItem(
+    getStorageKey(role)
+  );
 }
 
 /**
- * Clear both role sessions.
+ * Clear all application sessions.
  *
- * Use this ONLY when intentionally signing out
- * of the entire application.
+ * ADMIN + USER sessions are stored in localStorage.
+ * VENDOR session is stored in sessionStorage.
  */
 export function clearAllSessions(): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    return;
+  }
 
+  // ADMIN session
   localStorage.removeItem(
     SESSION_KEYS.ADMIN
   );
 
+  // USER session
+sessionStorage.removeItem(
+  SESSION_KEYS.USER
+);
+
+// Remove any old USER session that may have
+// been created by the previous localStorage implementation.
+localStorage.removeItem(
+  SESSION_KEYS.USER
+);
+
+  // VENDOR session
+  sessionStorage.removeItem(
+    SESSION_KEYS.VENDOR
+  );
+
+  // Remove an old Vendor session that may have
+  // been created by the previous implementation.
   localStorage.removeItem(
-    SESSION_KEYS.USER
+    SESSION_KEYS.VENDOR
   );
 
   // Remove legacy authentication keys.
