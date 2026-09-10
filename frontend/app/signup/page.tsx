@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";   
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-
+import { saveSession } from "@/app/lib/auth/session";
 import {
   signInWithPopup,
   signOut,
@@ -51,10 +51,15 @@ type FieldProps = {
   mobile?: boolean;
 };
 
-type UserRole =
+type BackendUserRole =
   | "USER"
   | "ADMIN"
   | "STALL_OWNER";
+
+type SessionRole =
+  | "USER"
+  | "ADMIN"
+  | "VENDOR";
 
 type SignupFormProps = {
   mobile?: boolean;
@@ -241,15 +246,21 @@ export default function SignupPage() {
       }
     }
 
-    if (typeof responseData.detail === "string") {
+    if (
+      typeof responseData.detail === "string"
+    ) {
       return responseData.detail;
     }
 
-    if (typeof responseData.message === "string") {
+    if (
+      typeof responseData.message === "string"
+    ) {
       return responseData.message;
     }
 
-    if (typeof responseData.error === "string") {
+    if (
+      typeof responseData.error === "string"
+    ) {
       return responseData.error;
     }
 
@@ -321,7 +332,9 @@ export default function SignupPage() {
 
           body: JSON.stringify({
             name: name.trim(),
-            email: email.trim().toLowerCase(),
+            email: email
+              .trim()
+              .toLowerCase(),
             password,
             phone: cleanPhone,
           }),
@@ -337,7 +350,9 @@ export default function SignupPage() {
       }
 
       if (!response.ok) {
-        toast.error(getErrorMessage(data));
+        toast.error(
+          getErrorMessage(data)
+        );
         return;
       }
 
@@ -353,7 +368,6 @@ export default function SignupPage() {
       window.setTimeout(() => {
         router.replace("/login");
       }, 700);
-
     } catch (error) {
       console.error(
         "Signup error:",
@@ -363,7 +377,6 @@ export default function SignupPage() {
       toast.error(
         "Unable to connect to backend"
       );
-
     } finally {
       setLoading(false);
     }
@@ -385,12 +398,14 @@ export default function SignupPage() {
          OPEN GOOGLE POPUP
       =============================================== */
 
-      const result = await signInWithPopup(
-        auth,
-        googleProvider
-      );
+      const result =
+        await signInWithPopup(
+          auth,
+          googleProvider
+        );
 
-      const firebaseUser = result.user;
+      const firebaseUser =
+        result.user;
 
       /* ===============================================
          GET FIREBASE TOKEN
@@ -455,45 +470,101 @@ export default function SignupPage() {
         access_token?: string;
         token?: string;
 
-        role?: UserRole;
+        role?: BackendUserRole;
 
         user?: {
           id?: string;
           email?: string;
           full_name?: string;
           name?: string;
-          role?: UserRole;
+          role?: BackendUserRole;
         };
       } | null;
 
       /* ===============================================
-         SAVE JWT TOKEN
+         GET ROLE FIRST
+         IMPORTANT:
+         role must be declared BEFORE saveSession()
+      =============================================== */
+
+      const backendRole: BackendUserRole =
+        successData?.role ||
+        successData?.user?.role ||
+        "USER";
+
+      console.log(
+        "Google backend role:",
+        backendRole
+      );
+
+      /* ===============================================
+         CONVERT BACKEND ROLE
+         
+         Backend:
+         STALL_OWNER
+
+         Frontend session:
+         VENDOR
+      =============================================== */
+
+      const sessionRole: SessionRole =
+        backendRole === "STALL_OWNER"
+          ? "VENDOR"
+          : backendRole;
+
+      console.log(
+        "Google session role:",
+        sessionRole
+      );
+
+      /* ===============================================
+         GET ACCESS TOKEN
       =============================================== */
 
       const accessToken =
         successData?.access_token ||
         successData?.token;
 
-      if (accessToken) {
-        localStorage.setItem(
-          "token",
-          accessToken
+      if (!accessToken) {
+        toast.error(
+          "Google signup failed: access token missing"
         );
+
+        return;
       }
 
       /* ===============================================
-         GET ROLE
+         SAVE SESSION
+         
+         USER and VENDOR are stored in
+         sessionStorage by session.ts.
+
+         This keeps each browser tab
+         independent.
       =============================================== */
 
-      const role: UserRole =
-        successData?.role ||
-        successData?.user?.role ||
-        "USER";
+      saveSession({
+        accessToken,
+        refreshToken: "",
+        tokenType: "bearer",
+        expiresIn: 0,
 
-      console.log(
-        "Google user role:",
-        role
-      );
+        user: {
+          name:
+            successData?.user
+              ?.full_name ||
+            successData?.user?.name ||
+            firebaseUser.displayName ||
+            "",
+
+          email:
+            successData?.user?.email ||
+            firebaseUser.email ||
+            "",
+
+          role: sessionRole,
+        },
+      });
 
       /* ===============================================
          SUCCESS
@@ -509,8 +580,7 @@ export default function SignupPage() {
       =============================================== */
 
       window.setTimeout(() => {
-
-        if (role === "ADMIN") {
+        if (backendRole === "ADMIN") {
           router.replace(
             "/admin/dashboard"
           );
@@ -518,7 +588,9 @@ export default function SignupPage() {
           return;
         }
 
-        if (role === "STALL_OWNER") {
+        if (
+          backendRole === "STALL_OWNER"
+        ) {
           router.replace(
             "/stall/dashboard"
           );
@@ -527,11 +599,8 @@ export default function SignupPage() {
         }
 
         router.replace("/");
-
       }, 500);
-
     } catch (error: unknown) {
-
       console.error(
         "Google signup error:",
         error
@@ -546,14 +615,14 @@ export default function SignupPage() {
         typeof error === "object" &&
         "code" in error
       ) {
-
         const firebaseError =
           error as {
             code?: string;
           };
 
-        switch (firebaseError.code) {
-
+        switch (
+          firebaseError.code
+        ) {
           case "auth/popup-closed-by-user":
             toast.error(
               "Google sign-in was cancelled"
@@ -583,19 +652,13 @@ export default function SignupPage() {
               "Google sign-in failed. Please try again."
             );
         }
-
       } else {
-
         toast.error(
           "Google sign-in failed. Please try again."
         );
-
       }
-
     } finally {
-
       setGoogleLoading(false);
-
     }
   };
 
@@ -615,7 +678,6 @@ export default function SignupPage() {
         text-[#292725]
       "
     >
-
       {/* =====================================================
           DESKTOP
       ====================================================== */}
@@ -632,11 +694,9 @@ export default function SignupPage() {
           lg:block
         "
       >
-
         {/* BACKGROUND IMAGE */}
 
         <div className="absolute inset-0 overflow-hidden">
-
           <img
             src="/cafe.jpg"
             alt="Campus cafe"
@@ -649,7 +709,6 @@ export default function SignupPage() {
               object-center
             "
           />
-
         </div>
 
         {/* DARK OVERLAY */}
@@ -675,27 +734,21 @@ export default function SignupPage() {
             xl:px-12
           "
         >
-
           {/* LEFT SIDE */}
 
           <section className="relative flex h-full min-w-0 flex-col">
-
             {/* LOGO */}
 
             <div className="pt-5 text-[28px] font-bold tracking-[-0.05em] text-white">
-
               Campus
-
               <span className="text-orange-500">
                 Vita
               </span>
-
             </div>
 
             {/* HERO */}
 
             <div className="my-auto max-w-[760px] pb-10">
-
               <div className="mb-7 h-[4px] w-12 rounded-full bg-orange-500" />
 
               <h1
@@ -708,13 +761,10 @@ export default function SignupPage() {
                   xl:text-[62px]
                 "
               >
-
                 Join{" "}
-
                 <span className="text-orange-500">
                   CampusVita
                 </span>
-
               </h1>
 
               <p
@@ -728,15 +778,10 @@ export default function SignupPage() {
                   xl:text-[50px]
                 "
               >
-
                 Made for Students.
-
                 <br />
-
                 Built for Campus Life.
-
               </p>
-
             </div>
 
             {/* FEATURES */}
@@ -755,7 +800,6 @@ export default function SignupPage() {
                 xl:gap-5
               "
             >
-
               <Feature
                 icon={ShieldCheck}
                 title="Secure & Safe"
@@ -773,9 +817,7 @@ export default function SignupPage() {
                 title="Exciting Offers"
                 description="Exclusive deals and rewards for students."
               />
-
             </div>
-
           </section>
 
           {/* RIGHT SIDE */}
@@ -790,7 +832,6 @@ export default function SignupPage() {
               justify-center
             "
           >
-
             <div
               className="
                 flex
@@ -811,7 +852,6 @@ export default function SignupPage() {
                 xl:py-10
               "
             >
-
               <SignupForm
                 name={name}
                 email={email}
@@ -824,18 +864,18 @@ export default function SignupPage() {
                 setEmail={setEmail}
                 setPassword={setPassword}
                 setPhone={setPhone}
-                setShowPassword={setShowPassword}
+                setShowPassword={
+                  setShowPassword
+                }
                 handleSignup={handleSignup}
-                handleGoogleSignup={handleGoogleSignup}
+                handleGoogleSignup={
+                  handleGoogleSignup
+                }
                 router={router}
               />
-
             </div>
-
           </section>
-
         </div>
-
       </div>
 
       {/* =====================================================
@@ -853,7 +893,6 @@ export default function SignupPage() {
           lg:hidden
         "
       >
-
         {/* MOBILE BACKGROUND */}
 
         <div
@@ -866,7 +905,6 @@ export default function SignupPage() {
             overflow-hidden
           "
         >
-
           <img
             src="/cafe.jpg"
             alt="Campus cafe"
@@ -881,7 +919,6 @@ export default function SignupPage() {
           />
 
           <div className="absolute inset-0 bg-black/30" />
-
         </div>
 
         {/* MOBILE LOGO */}
@@ -897,17 +934,12 @@ export default function SignupPage() {
             pt-8
           "
         >
-
           <div className="text-[27px] font-bold tracking-[-0.05em] text-white">
-
             Campus
-
             <span className="text-orange-500">
               Vita
             </span>
-
           </div>
-
         </div>
 
         {/* MOBILE FORM */}
@@ -921,7 +953,6 @@ export default function SignupPage() {
             pt-[35dvh]
           "
         >
-
           <section
             className="
               min-h-[65dvh]
@@ -936,11 +967,8 @@ export default function SignupPage() {
               shadow-[0_-12px_40px_rgba(0,0,0,0.18)]
             "
           >
-
             <div className="mb-6 flex justify-center">
-
               <div className="h-1.5 w-12 rounded-full bg-[#d7d2cc]" />
-
             </div>
 
             <SignupForm
@@ -956,18 +984,18 @@ export default function SignupPage() {
               setEmail={setEmail}
               setPassword={setPassword}
               setPhone={setPhone}
-              setShowPassword={setShowPassword}
+              setShowPassword={
+                setShowPassword
+              }
               handleSignup={handleSignup}
-              handleGoogleSignup={handleGoogleSignup}
+              handleGoogleSignup={
+                handleGoogleSignup
+              }
               router={router}
             />
-
           </section>
-
         </div>
-
       </div>
-
     </main>
   );
 }
@@ -994,13 +1022,11 @@ function SignupForm({
   handleGoogleSignup,
   router,
 }: SignupFormProps) {
-
   const isDisabled =
     loading || googleLoading;
 
   return (
     <div className="w-full min-w-0 max-w-full">
-
       {/* HEADER */}
 
       <div
@@ -1008,9 +1034,7 @@ function SignupForm({
           mobile ? "mb-5" : "mb-7"
         }`}
       >
-
         <div className="mb-4 flex justify-center">
-
           <div
             className={`
               flex items-center justify-center
@@ -1025,14 +1049,11 @@ function SignupForm({
               }
             `}
           >
-
             <UserPlus
               size={mobile ? 27 : 32}
               strokeWidth={1.8}
             />
-
           </div>
-
         </div>
 
         <h2
@@ -1047,13 +1068,10 @@ function SignupForm({
             }
           `}
         >
-
           <span className="text-orange-600">
             Create
           </span>{" "}
-
           your account
-
         </h2>
 
         <p
@@ -1065,7 +1083,6 @@ function SignupForm({
         >
           Let&apos;s get you started 🚀
         </p>
-
       </div>
 
       {/* FIELDS */}
@@ -1077,7 +1094,6 @@ function SignupForm({
             : "space-y-3.5"
         }
       >
-
         <Field
           mobile={mobile}
           label="Full Name"
@@ -1120,7 +1136,9 @@ function SignupForm({
             <button
               type="button"
               onClick={() =>
-                setShowPassword(!showPassword)
+                setShowPassword(
+                  !showPassword
+                )
               }
               disabled={isDisabled}
               aria-label={
@@ -1137,13 +1155,11 @@ function SignupForm({
                 disabled:cursor-not-allowed
               "
             >
-
               {showPassword ? (
                 <EyeOff size={21} />
               ) : (
                 <Eye size={21} />
               )}
-
             </button>
           }
         />
@@ -1159,16 +1175,13 @@ function SignupForm({
           icon={Phone}
           disabled={isDisabled}
           onChange={(value) => {
-
             setPhone(
               value
                 .replace(/\D/g, "")
                 .slice(0, 10)
             );
-
           }}
         />
-
       </div>
 
       {/* CREATE ACCOUNT */}
@@ -1200,21 +1213,19 @@ function SignupForm({
           }
         `}
       >
-
         {loading
           ? "Creating Account..."
           : "Create Account"}
 
-        {!loading && !googleLoading && (
-          <ArrowRight size={23} />
-        )}
-
+        {!loading &&
+          !googleLoading && (
+            <ArrowRight size={23} />
+          )}
       </button>
 
       {/* DIVIDER */}
 
       <div className="my-5 flex items-center gap-4">
-
         <div className="h-px min-w-0 flex-1 bg-[#dedad5]" />
 
         <span className="whitespace-nowrap text-sm text-[#77736f]">
@@ -1222,7 +1233,6 @@ function SignupForm({
         </span>
 
         <div className="h-px min-w-0 flex-1 bg-[#dedad5]" />
-
       </div>
 
       {/* GOOGLE */}
@@ -1255,13 +1265,11 @@ function SignupForm({
           disabled:opacity-60
         "
       >
-
         <GoogleIcon />
 
         {googleLoading
           ? "Connecting to Google..."
           : "Continue with Google"}
-
       </button>
 
       {/* LOGIN */}
@@ -1275,7 +1283,6 @@ function SignupForm({
           ${mobile ? "mt-6" : "mt-5"}
         `}
       >
-
         Already have an account?{" "}
 
         <button
@@ -1295,9 +1302,7 @@ function SignupForm({
         >
           Sign in
         </button>
-
       </p>
-
     </div>
   );
 }
@@ -1315,10 +1320,8 @@ function Feature({
   title: string;
   description: string;
 }) {
-
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">
-
       <div
         className="
           flex
@@ -1332,16 +1335,13 @@ function Feature({
           text-orange-400
         "
       >
-
         <Icon
           size={28}
           strokeWidth={1.8}
         />
-
       </div>
 
       <div className="min-w-0">
-
         <p className="text-[15px] font-bold text-white">
           {title}
         </p>
@@ -1349,9 +1349,7 @@ function Feature({
         <p className="mt-1 text-[13px] leading-5 text-white/80">
           {description}
         </p>
-
       </div>
-
     </div>
   );
 }
@@ -1361,7 +1359,6 @@ function Feature({
 ========================================================= */
 
 function GoogleIcon() {
-
   return (
     <svg
       width="21"
@@ -1369,7 +1366,6 @@ function GoogleIcon() {
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
-
       <path
         fill="#4285F4"
         d="M21.35 12.27c0-.79-.07-1.55-.2-2.27H12v4.3h5.23a4.47 4.47 0 0 1-1.94 2.93v2.78h3.14c1.84-1.69 2.92-4.18 2.92-7.74Z"
@@ -1389,7 +1385,6 @@ function GoogleIcon() {
         fill="#EA4335"
         d="M12 6.11c1.42 0 2.69.49 3.69 1.45l2.77-2.77C16.81 3.24 14.61 2.25 12 2.25a9.72 9.72 0 0 0-8.68 5l3.24 2.86c.77-2.29 2.91-4 5.44-4Z"
       />
-
     </svg>
   );
 }
