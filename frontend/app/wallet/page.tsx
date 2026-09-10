@@ -3,6 +3,7 @@
 import {
   getAccessToken,
 } from "@/app/lib/auth/session";
+
 import {
   loadRazorpay,
 } from "@/app/lib/payment/razorpay";
@@ -73,14 +74,6 @@ export default function WalletPage() {
     return getAccessToken("USER");
   };
 
-  const getAuthHeaders = () => {
-    const token = getToken();
-
-    return {
-      Authorization: `Bearer ${token}`,
-    };
-  };
-
   // ============================================================
   // LOAD REAL WALLET DATA
   // ============================================================
@@ -100,8 +93,7 @@ export default function WalletPage() {
         `${API_URL}/wallet/balance`,
         {
           headers: {
-            Authorization:
-              `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -188,8 +180,7 @@ export default function WalletPage() {
         },
         {
           headers: {
-            Authorization:
-              `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -204,10 +195,6 @@ export default function WalletPage() {
         );
       }
 
-      // ========================================================
-      // PAYMENT SUCCESS
-      // ========================================================
-
       toast.success(
         `₹${Number(
           data.amount_added || 0
@@ -216,7 +203,6 @@ export default function WalletPage() {
 
       setAmount("");
 
-      // Reload the real backend balance/history.
       await fetchWallet();
     } catch (error: any) {
       console.error(
@@ -243,10 +229,6 @@ export default function WalletPage() {
     const numericAmount =
       Number(amount);
 
-    // ----------------------------------------------------------
-    // VALIDATION
-    // ----------------------------------------------------------
-
     if (!amount.trim()) {
       toast.error(
         "Enter amount"
@@ -272,10 +254,6 @@ export default function WalletPage() {
       return;
     }
 
-    // ----------------------------------------------------------
-    // MINIMUM AMOUNT
-    // ----------------------------------------------------------
-
     if (numericAmount < 1) {
       toast.error(
         "Minimum wallet amount is ₹1"
@@ -288,7 +266,7 @@ export default function WalletPage() {
       setProcessing(true);
 
       // ========================================================
-      // 1. AUTHENTICATION
+      // AUTHENTICATION
       // ========================================================
 
       const token =
@@ -307,15 +285,8 @@ export default function WalletPage() {
       }
 
       // ========================================================
-      // 2. LOAD RAZORPAY
+      // LOAD RAZORPAY
       // ========================================================
-      //
-      // IMPORTANT:
-      // We do not depend on <Script onLoad>.
-      //
-      // loadRazorpay() dynamically loads the SDK and waits
-      // until window.Razorpay is actually available.
-      //
 
       const razorpayReady =
         await loadRazorpay();
@@ -330,7 +301,7 @@ export default function WalletPage() {
       }
 
       // ========================================================
-      // 3. CREATE BACKEND RAZORPAY ORDER
+      // CREATE BACKEND RAZORPAY ORDER
       // ========================================================
 
       const response =
@@ -360,7 +331,7 @@ export default function WalletPage() {
       );
 
       // ========================================================
-      // 4. VALIDATE BACKEND RESPONSE
+      // VALIDATE BACKEND RESPONSE
       // ========================================================
 
       if (
@@ -397,7 +368,7 @@ export default function WalletPage() {
       }
 
       // ========================================================
-      // 5. RAZORPAY CHECKOUT OPTIONS
+      // RAZORPAY CHECKOUT OPTIONS
       // ========================================================
 
       const options = {
@@ -478,7 +449,7 @@ export default function WalletPage() {
       };
 
       // ========================================================
-      // 6. CREATE RAZORPAY INSTANCE
+      // CREATE RAZORPAY INSTANCE
       // ========================================================
 
       const razorpay =
@@ -511,7 +482,7 @@ export default function WalletPage() {
       );
 
       // ========================================================
-      // 7. OPEN RAZORPAY
+      // OPEN RAZORPAY
       // ========================================================
 
       razorpay.open();
@@ -564,7 +535,7 @@ export default function WalletPage() {
   }
 
   // ============================================================
-  // REAL TRANSACTIONS
+  // RECENT TRANSACTIONS
   // ============================================================
 
   const recentTransactions =
@@ -576,6 +547,10 @@ export default function WalletPage() {
 
   return (
     <>
+      {/* ========================================================
+          NAVBAR
+          ======================================================== */}
+
       <Navbar />
 
       <main className="min-h-screen bg-black px-4 pb-24 pt-5 text-white md:px-6 md:pt-8">
@@ -608,24 +583,20 @@ export default function WalletPage() {
 
             <div className="relative">
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
 
-                <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
 
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-
-                    <Wallet
-                      size={19}
-                      strokeWidth={2.3}
-                    />
-
-                  </div>
-
-                  <span className="text-sm font-medium text-orange-50">
-                    Wallet Balance
-                  </span>
+                  <Wallet
+                    size={19}
+                    strokeWidth={2.3}
+                  />
 
                 </div>
+
+                <span className="text-sm font-medium text-orange-50">
+                  Wallet Balance
+                </span>
 
               </div>
 
@@ -744,9 +715,7 @@ export default function WalletPage() {
                     }`}
                   >
                     + ₹
-                    {
-                      quickAmount
-                    }
+                    {quickAmount}
                   </button>
                 )
               )}
@@ -794,14 +763,10 @@ export default function WalletPage() {
 
               </div>
 
-              {history.length >
-                0 && (
+              {history.length > 0 && (
                 <span className="text-xs text-zinc-500">
-                  {
-                    history.length
-                  }{" "}
-                  {history.length ===
-                  1
+                  {history.length}{" "}
+                  {history.length === 1
                     ? "transaction"
                     : "transactions"}
                 </span>
@@ -811,16 +776,13 @@ export default function WalletPage() {
 
             <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900">
 
-              {recentTransactions.length ===
-              0 ? (
+              {recentTransactions.length === 0 ? (
 
                 <div className="px-5 py-8 text-center">
 
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-800 text-zinc-500">
 
-                    <Wallet
-                      size={21}
-                    />
+                    <Wallet size={21} />
 
                   </div>
 
@@ -859,8 +821,7 @@ export default function WalletPage() {
                           }
                           className={`flex items-center justify-between gap-3 px-4 py-4 ${
                             index !==
-                            recentTransactions.length -
-                              1
+                            recentTransactions.length - 1
                               ? "border-b border-zinc-800"
                               : ""
                           }`}
@@ -876,25 +837,12 @@ export default function WalletPage() {
                               }`}
                             >
 
-                              {item.type ===
-                              "refund" ? (
-                                <Gift
-                                  size={
-                                    18
-                                  }
-                                />
+                              {item.type === "refund" ? (
+                                <Gift size={18} />
                               ) : isCredit ? (
-                                <ArrowDownLeft
-                                  size={
-                                    18
-                                  }
-                                />
+                                <ArrowDownLeft size={18} />
                               ) : (
-                                <ArrowUpRight
-                                  size={
-                                    18
-                                  }
-                                />
+                                <ArrowUpRight size={18} />
                               )}
 
                             </div>
@@ -907,9 +855,7 @@ export default function WalletPage() {
                               </p>
 
                               <p className="mt-1 truncate text-[11px] text-zinc-500">
-                                {
-                                  item.date
-                                }
+                                {item.date}
                               </p>
 
                             </div>
@@ -923,15 +869,11 @@ export default function WalletPage() {
                                 : "text-red-400"
                             }`}
                           >
-                            {isCredit
-                              ? "+"
-                              : "-"}
+                            {isCredit ? "+" : "-"}
                             ₹
                             {Number(
                               item.amount
-                            ).toFixed(
-                              2
-                            )}
+                            ).toFixed(2)}
                           </p>
 
                         </div>
@@ -949,8 +891,7 @@ export default function WalletPage() {
                 VIEW ALL TRANSACTIONS
                 ================================================== */}
 
-            {history.length >
-              0 && (
+            {history.length > 0 && (
               <button
                 type="button"
                 onClick={() =>

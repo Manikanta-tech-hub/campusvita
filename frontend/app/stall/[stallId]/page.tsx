@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   Clock3,
   Search,
+  ShoppingCart,
   Star,
   Store,
 } from "lucide-react";
@@ -53,6 +55,17 @@ export default function StallPage() {
 
   const stallId = String(params?.stallId ?? "");
 
+  /*
+   * ============================================================
+   * LIVE CART
+   * ============================================================
+   *
+   * Everything here comes directly from CartContext.
+   *
+   * There is no separate cart state on this page.
+   * ============================================================
+   */
+
   const {
     cartItems,
     addToCart,
@@ -77,6 +90,12 @@ export default function StallPage() {
 
   const [selectedFoodType, setSelectedFoodType] =
     useState<"ALL" | "VEG" | "NON_VEG">("ALL");
+
+  /*
+   * ============================================================
+   * LOAD STALL
+   * ============================================================
+   */
 
   useEffect(() => {
     if (!stallId) return;
@@ -139,6 +158,12 @@ export default function StallPage() {
     void loadStall();
   }, [stallId]);
 
+  /*
+   * ============================================================
+   * CATEGORIES
+   * ============================================================
+   */
+
   const categories = useMemo(() => {
     if (!data) return [];
 
@@ -152,6 +177,12 @@ export default function StallPage() {
       )
     );
   }, [data]);
+
+  /*
+   * ============================================================
+   * FILTER FOODS
+   * ============================================================
+   */
 
   const filteredFoods = useMemo(() => {
     if (!data) return [];
@@ -194,14 +225,11 @@ export default function StallPage() {
   ]);
 
   /*
-   * IMPORTANT:
-   * Cart identity is now:
-   *
-   * food name + stall_id
-   *
-   * This prevents two foods with the same name
-   * from different stalls being treated as one item.
+   * ============================================================
+   * GET LIVE FOOD QUANTITY
+   * ============================================================
    */
+
   const getQuantity = (
     foodName: string,
     foodStallId: string
@@ -214,6 +242,12 @@ export default function StallPage() {
       )?.quantity ?? 0
     );
   };
+
+  /*
+   * ============================================================
+   * CART ACTIONS
+   * ============================================================
+   */
 
   const handleAddToCart = (
     food: Food
@@ -246,6 +280,41 @@ export default function StallPage() {
     );
   };
 
+  /*
+   * ============================================================
+   * LIVE CART ITEM COUNT
+   * ============================================================
+   *
+   * This is calculated from the actual CartContext.
+   *
+   * Example:
+   *
+   * Mango Juice x1
+   * Strawberry Juice x2
+   *
+   * Cart = 3 items
+   * ============================================================
+   */
+
+  const cartItemCount = useMemo(() => {
+    return cartItems.reduce(
+      (total, item) =>
+        total + Number(item.quantity || 0),
+      0
+    );
+  }, [cartItems]);
+
+  const cartLabel =
+    cartItemCount === 1
+      ? "item"
+      : "items";
+
+  /*
+   * ============================================================
+   * LOADING
+   * ============================================================
+   */
+
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white">
@@ -261,6 +330,12 @@ export default function StallPage() {
       </main>
     );
   }
+
+  /*
+   * ============================================================
+   * ERROR
+   * ============================================================
+   */
 
   if (error || !data) {
     return (
@@ -298,8 +373,11 @@ export default function StallPage() {
   const stall = data.stall;
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      {/* HEADER */}
+    <main className="min-h-screen bg-black text-white pb-24">
+      {/* ========================================================
+          STALL HEADER
+          ======================================================== */}
+
       <section className="border-b border-zinc-800 bg-zinc-950">
         <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <button
@@ -381,7 +459,10 @@ export default function StallPage() {
         </div>
       </section>
 
-      {/* MENU */}
+      {/* ========================================================
+          MENU
+          ======================================================== */}
+
       <section className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -398,6 +479,7 @@ export default function StallPage() {
           </div>
 
           {/* SEARCH */}
+
           <div className="relative w-full sm:max-w-sm">
             <Search
               size={18}
@@ -418,7 +500,10 @@ export default function StallPage() {
           </div>
         </div>
 
-        {/* FOOD TYPE FILTERS */}
+        {/* ======================================================
+            FOOD TYPE FILTERS
+            ====================================================== */}
+
         <div className="mb-5">
           <div className="flex gap-2 overflow-x-auto pb-2">
             <button
@@ -465,7 +550,10 @@ export default function StallPage() {
           </div>
         </div>
 
-        {/* CATEGORIES */}
+        {/* ======================================================
+            CATEGORIES
+            ====================================================== */}
+
         {categories.length > 0 && (
           <div className="mb-7 flex gap-2 overflow-x-auto pb-2">
             <button
@@ -506,7 +594,10 @@ export default function StallPage() {
           </div>
         )}
 
-        {/* FOOD GRID */}
+        {/* ======================================================
+            FOOD GRID
+            ====================================================== */}
+
         {filteredFoods.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-zinc-800 bg-zinc-950 p-12 text-center">
             <div className="text-5xl">
@@ -551,14 +642,19 @@ export default function StallPage() {
                         handleAddToCart(food)
                       }
                       onIncrease={() =>
-                        handleIncreaseQuantity(food)
+                        handleIncreaseQuantity(
+                          food
+                        )
                       }
                       onDecrease={() =>
-                        handleDecreaseQuantity(food)
+                        handleDecreaseQuantity(
+                          food
+                        )
                       }
                     />
 
                     {/* OUT OF STOCK */}
+
                     {!food.available && (
                       <div className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/80 px-3 py-1 text-xs font-semibold text-red-400">
                         Out of stock
@@ -571,6 +667,108 @@ export default function StallPage() {
           </div>
         )}
       </section>
+
+      {/* ========================================================
+          COMPACT FLOATING CART
+          ========================================================
+
+          Matches the Home Page style:
+
+          ┌─────────────────────────┐
+          │ 🛒  Cart             →  │
+          │     1 item              │
+          └─────────────────────────┘
+
+          The values are completely LIVE from CartContext.
+          ======================================================== */}
+
+      {cartItemCount > 0 && (
+        <div className="fixed bottom-5 right-4 z-50 sm:bottom-6 sm:right-6">
+          <button
+            type="button"
+            onClick={() =>
+              router.push("/cart")
+            }
+            aria-label={`Open cart with ${cartItemCount} ${cartLabel}`}
+            className="
+              group
+              flex
+              h-[58px]
+              w-[142px]
+              items-center
+              rounded-[16px]
+              bg-orange-500
+              px-3
+              text-white
+              shadow-lg
+              shadow-orange-500/25
+              transition-all
+              duration-200
+              hover:bg-orange-400
+              active:scale-[0.97]
+            "
+          >
+            {/* ==================================================
+                CART ICON
+                ================================================== */}
+
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+              <ShoppingCart
+                size={22}
+                strokeWidth={2.2}
+              />
+
+              {/* LIVE ITEM COUNT BADGE */}
+
+              <span
+                className="
+                  absolute
+                  -right-1
+                  -top-1
+                  flex
+                  h-[17px]
+                  min-w-[17px]
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                  px-1
+                  text-[9px]
+                  font-bold
+                  leading-none
+                  text-orange-500
+                "
+              >
+                {cartItemCount}
+              </span>
+            </div>
+
+            {/* ==================================================
+                CART TEXT
+                ================================================== */}
+
+            <div className="ml-1 flex min-w-0 flex-1 flex-col items-start justify-center leading-none">
+              <span className="text-[13px] font-bold">
+                Cart
+              </span>
+
+              <span className="mt-[5px] text-[10px] font-medium text-white/80">
+                {cartItemCount} {cartLabel}
+              </span>
+            </div>
+
+            {/* ==================================================
+                ARROW
+                ================================================== */}
+
+            <ArrowRight
+              size={18}
+              strokeWidth={2.5}
+              className="ml-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </button>
+        </div>
+      )}
     </main>
   );
 }

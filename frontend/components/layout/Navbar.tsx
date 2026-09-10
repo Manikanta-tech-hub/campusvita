@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useTheme } from "next-themes";
-import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { usePathname } from "next/navigation";
+
 import {
   Home,
   ShoppingCart,
@@ -11,13 +11,14 @@ import {
   User,
   Wallet,
   ChefHat,
-  LogOut,
-  Moon,
-  Sun,
   ArrowRight,
 } from "lucide-react";
-import { clearSession } from "@/app/lib/auth/session";
+
 import { useCart } from "../../context/CartContext";
+
+// ============================================================
+// NAVIGATION ITEMS
+// ============================================================
 
 const navItems = [
   {
@@ -42,12 +43,22 @@ const navItems = [
   },
 ];
 
-export default function Navbar() {
-  const pathname = usePathname();
-  const router = useRouter();
+// ============================================================
+// NAVBAR PROPS
+// ============================================================
 
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+type NavbarProps = {
+  showCart?: boolean;
+};
+
+// ============================================================
+// NAVBAR
+// ============================================================
+
+export default function Navbar({
+  showCart = true,
+}: NavbarProps) {
+  const pathname = usePathname();
 
   // ============================================================
   // CART
@@ -57,44 +68,13 @@ export default function Navbar() {
 
   const cartCount = useMemo(() => {
     return cartItems.reduce(
-      (total, item) => total + Number(item.quantity || 0),
+      (total, item) =>
+        total + Number(item.quantity || 0),
       0
     );
   }, [cartItems]);
 
   const hasItemsInCart = cartCount > 0;
-
-  // ============================================================
-  // MOUNT
-  // ============================================================
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // ============================================================
-  // USER LOGOUT
-  // ============================================================
-
-  const handleLogout = () => {
-    /*
-     * IMPORTANT:
-     * Only clear the USER session.
-     *
-     * Do NOT manually remove:
-     * - access_token
-     * - refresh_token
-     * - userRole
-     * - userEmail
-     * - userName
-     *
-     * Those are legacy shared keys and can cause
-     * ADMIN <-> USER session collisions.
-     */
-    clearSession("USER");
-
-    router.replace("/login");
-  };
 
   // ============================================================
   // ACTIVE NAV ITEM
@@ -103,20 +83,21 @@ export default function Navbar() {
   const isActive = (href: string) => {
     return (
       pathname === href ||
-      (href !== "/" && pathname.startsWith(href))
+      (href !== "/" &&
+        pathname.startsWith(href))
     );
   };
 
   // ============================================================
-  // HOME PAGE CHECK
+  // RENDER
   // ============================================================
-
-  const isHomePage = pathname === "/";
 
   return (
     <>
       {/* ========================================================
-          DESKTOP NAVBAR
+          DESKTOP / TOP NAVBAR
+
+          Theme and Logout buttons have been removed.
           ======================================================== */}
 
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950">
@@ -162,132 +143,98 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* ====================================================
-              THEME + LOGOUT
-
-              Hidden on Home.
-              ==================================================== */}
-
-          {!isHomePage && (
-            <div className="ml-4 flex items-center gap-3">
-
-              {/* ==================================================
-                  THEME
-                  ================================================== */}
-
-              {mounted && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newTheme =
-                      theme === "dark" ? "light" : "dark";
-
-                    setTheme(newTheme);
-                  }}
-                  className="rounded-xl bg-zinc-800 p-2 transition hover:bg-orange-500 dark:bg-zinc-700"
-                  aria-label="Toggle theme"
-                >
-                  {theme === "dark" ? (
-                    <Sun
-                      size={20}
-                      className="text-yellow-400"
-                    />
-                  ) : (
-                    <Moon
-                      size={20}
-                      className="text-white"
-                    />
-                  )}
-                </button>
-              )}
-
-              {/* ==================================================
-                  LOGOUT
-                  ================================================== */}
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 font-medium text-white transition hover:bg-red-600"
-              >
-                <LogOut size={18} />
-
-                <span className="hidden lg:inline">
-                  Logout
-                </span>
-              </button>
-            </div>
-          )}
         </div>
       </header>
 
       {/* ========================================================
           MOBILE FLOATING CART
+
+          IMPORTANT:
+          This entire cart button is controlled by showCart.
+
+          showCart = false
+          → Cart button does not render.
+
+          showCart = true
+          → Cart button behaves normally.
           ======================================================== */}
 
-      <div
-        className={`fixed bottom-[76px] right-4 z-[60] transition-all duration-300 ease-out md:hidden ${
-          hasItemsInCart
-            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-            : "pointer-events-none translate-y-4 scale-90 opacity-0"
-        }`}
-      >
-        <Link
-          href="/cart"
-          aria-label={`Open cart with ${cartCount} ${
-            cartCount === 1 ? "item" : "items"
-          }`}
-          className="group flex items-center gap-3 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 py-3 text-white shadow-2xl shadow-black/40 transition-all duration-300 hover:bg-orange-600 active:scale-95"
-        >
-          {/* Cart Icon */}
+      {showCart && hasItemsInCart && (
+        <div className="fixed bottom-[76px] right-4 z-[60] md:hidden">
 
-          <div className="relative flex items-center justify-center">
-            <ShoppingCart
-              size={22}
+          <Link
+            href="/cart"
+            aria-label={`Open cart with ${cartCount} ${
+              cartCount === 1
+                ? "item"
+                : "items"
+            }`}
+            className="group flex items-center gap-3 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 py-3 text-white shadow-2xl shadow-black/40 transition-all duration-300 hover:bg-orange-600 active:scale-95"
+          >
+
+            {/* ==================================================
+                CART ICON
+                ================================================== */}
+
+            <div className="relative flex items-center justify-center">
+
+              <ShoppingCart
+                size={22}
+                strokeWidth={2.5}
+              />
+
+              {/* CART COUNT */}
+
+              <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 shadow-sm">
+                {cartCount}
+              </span>
+
+            </div>
+
+            {/* ==================================================
+                CART TEXT
+                ================================================== */}
+
+            <div className="flex flex-col leading-none">
+
+              <span className="text-sm font-bold">
+                Cart
+              </span>
+
+              <span className="mt-1 text-[11px] text-orange-100">
+                {cartCount}{" "}
+                {cartCount === 1
+                  ? "item"
+                  : "items"}
+              </span>
+
+            </div>
+
+            {/* ==================================================
+                ARROW
+                ================================================== */}
+
+            <ArrowRight
+              size={20}
               strokeWidth={2.5}
+              className="transition-transform duration-300 group-hover:translate-x-1"
             />
 
-            {/* Cart Count */}
+          </Link>
 
-            <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 shadow-sm">
-              {cartCount}
-            </span>
-          </div>
-
-          {/* Cart Text */}
-
-          <div className="flex flex-col leading-none">
-            <span className="text-sm font-bold">
-              Cart
-            </span>
-
-            <span className="mt-1 text-[11px] text-orange-100">
-              {cartCount}{" "}
-              {cartCount === 1 ? "item" : "items"}
-            </span>
-          </div>
-
-          {/* Arrow */}
-
-          <ArrowRight
-            size={20}
-            strokeWidth={2.5}
-            className="transition-transform duration-300 group-hover:translate-x-1"
-          />
-        </Link>
-      </div>
+        </div>
+      )}
 
       {/* ========================================================
           MOBILE BOTTOM NAVIGATION
 
-          Home
-          Orders
-          Wallet
-          Profile
+          Home | Orders | Wallet | Profile
           ======================================================== */}
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
+
         <div className="grid h-16 grid-cols-4">
+
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -302,15 +249,18 @@ export default function Navbar() {
                     : "text-gray-500 hover:text-orange-500"
                 }`}
               >
+
                 <Icon size={20} />
 
                 <span className="mt-1">
                   {item.label}
                 </span>
+
               </Link>
             );
           })}
         </div>
+
       </nav>
     </>
   );
