@@ -447,14 +447,7 @@ def get_current_user(
                 UserRole.USER
             ),
             "phone": user.get("phone", ""),
-            "department": user.get(
-                "department",
-                ""
-            ),
-            "year": user.get(
-                "year",
-                ""
-            ),
+            
             "profile_image": user.get(
                 "profile_image",
                 ""
@@ -1194,8 +1187,6 @@ class SignupData(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     phone: str = Field(min_length=10, max_length=10)
-    department: str = ""
-    year: str = ""
 
     @validator("phone")
     def validate_phone(cls, v):
@@ -1321,8 +1312,6 @@ class FoodData(BaseModel):
 class ProfileData(BaseModel):
     name: str
     phone: str
-    department: str
-    year: str
     profile_image: str
 
     notifications: bool
@@ -2083,17 +2072,56 @@ def home():
 
 @fastapi_app.post("/signup")
 @limiter.limit("5/minute")
-def signup(request: Request, user: SignupData):
+def signup(
+    request: Request,
+    user: SignupData
+):
     try:
+        # ============================================================
+        # NORMALIZE USER DATA
+        # ============================================================
+
+        name = user.name.strip()
         email = normalize_email(user.email)
         phone = user.phone.strip()
+
+        # ============================================================
+        # VALIDATE NAME
+        # ============================================================
+
+        if not name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Name is required"
+            )
+
+        # ============================================================
+        # VALIDATE PHONE
+        # ============================================================
+
+        if not phone:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number is required"
+            )
+
+        if not re.fullmatch(
+            r"[6789]\d{9}",
+            phone
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Enter a valid 10-digit Indian mobile number"
+            )
 
         # ============================================================
         # CHECK DUPLICATE EMAIL
         # ============================================================
 
         existing_user = users_collection.find_one(
-            {"email": email}
+            {
+                "email": email
+            }
         )
 
         if existing_user:
@@ -2107,7 +2135,9 @@ def signup(request: Request, user: SignupData):
         # ============================================================
 
         existing_phone = users_collection.find_one(
-            {"phone": phone}
+            {
+                "phone": phone
+            }
         )
 
         if existing_phone:
@@ -2120,51 +2150,69 @@ def signup(request: Request, user: SignupData):
         # HASH PASSWORD
         # ============================================================
 
-        hashed_password = hash_password(user.password)
+        hashed_password = hash_password(
+            user.password
+        )
 
         # ============================================================
         # DETERMINE USER ROLE
         # ============================================================
 
         role = (
-    UserRole.ADMIN
-    if email in ADMIN_EMAILS
-    else UserRole.USER
-)
+            UserRole.ADMIN
+            if email in ADMIN_EMAILS
+            else UserRole.USER
+        )
 
         # ============================================================
         # CREATE NEW USER
+        #
+        # IMPORTANT:
+        # department and year DO NOT EXIST HERE.
         # ============================================================
 
         new_user = {
-            "name": user.name.strip(),
+            "name": name,
             "email": email,
             "password": hashed_password,
             "phone": phone,
-            "department": user.department.strip(),
-            "year": user.year,
+
             "profile_image": "",
+
             "wallet": 0,
             "wallet_history": [],
+
             "favorite_foods": [],
+
             "notifications": True,
+
             "fcm_token": "",
+
             "theme": "dark",
+
             "total_orders": 0,
             "total_spent": 0,
+
             "role": role,
+
+            "auth_provider": "password",
+
             "created_at": datetime.utcnow().isoformat(),
+
             "is_active": True,
         }
 
         # ============================================================
-        # SAVE USER TO DATABASE
+        # SAVE USER
         # ============================================================
 
-        users_collection.insert_one(new_user)
+        result = users_collection.insert_one(
+            new_user
+        )
 
         logger.info(
-            f"✅ New user signed up: {email} (role: {role})"
+            f"✅ New user signed up: "
+            f"{email} (role: {role})"
         )
 
         # ============================================================
@@ -2172,27 +2220,28 @@ def signup(request: Request, user: SignupData):
         # ============================================================
 
         return {
-            "message": "Signup Successful 🚀",
+            "success": True,
+
+            "message":
+                "Signup Successful 🚀",
+
             "user": {
+                "id": str(result.inserted_id),
+                "name": name,
                 "email": email,
-                "name": user.name,
-                "role": role
+                "phone": phone,
+                "role": role,
             }
         }
-
-    # ================================================================
-    # HANDLE EXPECTED ERRORS
-    # ================================================================
 
     except HTTPException:
         raise
 
-    # ================================================================
-    # HANDLE UNEXPECTED ERRORS
-    # ================================================================
-
     except Exception as e:
-        logger.error(f"Signup error: {e}")
+
+        logger.error(
+            f"Signup error: {e}"
+        )
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -2240,10 +2289,22 @@ def save_fcm_token(data: FCMTokenData):
         )
 @fastapi_app.post("/login")
 @limiter.limit("5/minute")
-def login(request: Request, user: LoginData):
+def login(
+    request: Request,
+    user: LoginData
+):
     try:
         email = normalize_email(user.email)
-        existing_user = users_collection.find_one({"email": email})
+
+        existing_user = users_collection.find_one(
+            {
+                "email": email
+            }
+        )
+
+        # ============================================================
+        # USER EXISTS?
+        # ============================================================
 
         if not existing_user:
             raise HTTPException(
@@ -2251,72 +2312,201 @@ def login(request: Request, user: LoginData):
                 detail="Invalid email or password"
             )
 
-        if not existing_user.get("is_active", True):
+        # ============================================================
+        # ACCOUNT ACTIVE?
+        # ============================================================
+
+        if not existing_user.get(
+            "is_active",
+            True
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account is deactivated"
             )
 
-        stored_password = existing_user["password"]
+        # ============================================================
+        # VERIFY PASSWORD
+        # ============================================================
+
+        stored_password = existing_user.get(
+            "password"
+        )
+
+        if not stored_password:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=(
+                    "This account uses Google sign-in. "
+                    "Please continue with Google."
+                )
+            )
 
         if is_password_hashed(stored_password):
-            if not verify_password(user.password, stored_password):
+
+            if not verify_password(
+                user.password,
+                stored_password
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid email or password"
                 )
+
         else:
-            # Temporary migration for old users
+            # ========================================================
+            # TEMPORARY PASSWORD MIGRATION
+            # ========================================================
+
             if user.password != stored_password:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid email or password"
                 )
-            hashed_password = hash_password(user.password)
-            users_collection.update_one(
-                {"email": email},
-                {"$set": {"password": hashed_password}}
+
+            hashed_password = hash_password(
+                user.password
             )
 
-        token_data = {
-            "email": existing_user["email"],
-            "role": existing_user.get("role", UserRole.USER),
-            "name": existing_user["name"],
-        }
+            users_collection.update_one(
+                {
+                    "_id":
+                    existing_user["_id"]
+                },
+                {
+                    "$set": {
+                        "password":
+                        hashed_password
+                    }
+                }
+            )
 
-        access_token = create_access_token(token_data)
-        refresh_token = create_refresh_token(token_data)
+        # ============================================================
+        # USER ROLE
+        # ============================================================
 
-        # Store only the hash of the refresh token, never the raw value.
-        users_collection.update_one(
-            {"email": email},
-            {"$set": {"refresh_token_hash": hash_refresh_token(refresh_token)}}
+        role = existing_user.get(
+            "role",
+            UserRole.USER
         )
 
-        logger.info(f"✅ User logged in: {email}")
+        # ============================================================
+        # CREATE TOKEN DATA
+        # ============================================================
+
+        token_data = {
+            "email":
+                existing_user["email"],
+
+            "role":
+                role,
+
+            "name":
+                existing_user.get(
+                    "name",
+                    ""
+                ),
+        }
+
+        access_token = create_access_token(
+            token_data
+        )
+
+        refresh_token = create_refresh_token(
+            token_data
+        )
+
+        # ============================================================
+        # STORE HASHED REFRESH TOKEN
+        # ============================================================
+
+        users_collection.update_one(
+            {
+                "_id":
+                existing_user["_id"]
+            },
+            {
+                "$set": {
+                    "refresh_token_hash":
+                    hash_refresh_token(
+                        refresh_token
+                    )
+                }
+            }
+        )
+
+        logger.info(
+            f"✅ User logged in: {email}"
+        )
+
+        # ============================================================
+        # SUCCESS RESPONSE
+        #
+        # NO department
+        # NO year
+        # ============================================================
 
         return {
-            "message": "Login Successful 🚀",
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "message":
+                "Login Successful 🚀",
+
+            "access_token":
+                access_token,
+
+            "refresh_token":
+                refresh_token,
+
+            "token_type":
+                "bearer",
+
+            "expires_in":
+                ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+
             "user": {
-                "name": existing_user["name"],
-                "email": existing_user["email"],
-                "phone": existing_user.get("phone", ""),
-                "department": existing_user.get("department", ""),
-                "year": existing_user.get("year", ""),
-                "wallet": existing_user.get("wallet", 0),
-                "role": existing_user.get("role", UserRole.USER),
-                "profile_image": existing_user.get("profile_image", ""),
+                "name":
+                    existing_user.get(
+                        "name",
+                        ""
+                    ),
+
+                "email":
+                    existing_user.get(
+                        "email",
+                        ""
+                    ),
+
+                "phone":
+                    existing_user.get(
+                        "phone",
+                        ""
+                    ),
+
+                "wallet":
+                    existing_user.get(
+                        "wallet",
+                        0
+                    ),
+
+                "role":
+                    role,
+
+                "profile_image":
+                    existing_user.get(
+                        "profile_image",
+                        ""
+                    ),
             }
         }
 
     except HTTPException:
         raise
+
     except Exception as e:
-        logger.error(f"Login error: {e}")
+
+        logger.error(
+            f"Login error: {e}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
@@ -2387,8 +2577,6 @@ def google_login(
                 "name": name,
                 "email": email,
                 "phone": "",
-                "department": "",
-                "year": "",
                 "wallet": 0,
                 "role": UserRole.USER,
                 "profile_image": profile_image,
@@ -2524,18 +2712,6 @@ def google_login(
                         ""
                     ),
 
-                "department":
-                    existing_user.get(
-                        "department",
-                        ""
-                    ),
-
-                "year":
-                    existing_user.get(
-                        "year",
-                        ""
-                    ),
-
                 "wallet":
                     existing_user.get(
                         "wallet",
@@ -2636,8 +2812,6 @@ def google_authentication(
                 "password": None,
 
                 "phone": "",
-                "department": "",
-                "year": "",
 
                 "profile_image": "",
 
@@ -3246,15 +3420,24 @@ def reset_password(
 
 @fastapi_app.get("/profile")
 def get_profile(
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(
+        get_current_user
+    )
 ):
     try:
+
+        # ============================================================
+        # GET ONLY AUTHENTICATED USER
+        # ============================================================
+
         user = users_collection.find_one(
             {
-                "email": current_user["email"]
+                "email":
+                current_user["email"]
             },
             {
-                "password": 0
+                "password": 0,
+                "refresh_token_hash": 0,
             }
         )
 
@@ -3264,44 +3447,76 @@ def get_profile(
                 detail="User not found"
             )
 
+        # ============================================================
+        # RETURN REAL DATABASE DATA
+        #
+        # NO department
+        # NO year
+        # ============================================================
+
         return {
-            "id": str(user.get("_id")),
-            "email": user.get("email", ""),
-            "name": user.get("name", ""),
-            "phone": user.get("phone", ""),
-            "department": user.get("department", ""),
-            "year": user.get("year", ""),
-            
-            # IMPORTANT
-            "profile_image": user.get(
-                "profile_image",
-                ""
-            ),
+            "id":
+                str(user.get("_id")),
 
-            "notifications": user.get(
-                "notifications",
-                True
-            ),
+            "email":
+                user.get(
+                    "email",
+                    ""
+                ),
 
-            "theme": user.get(
-                "theme",
-                "dark"
-            ),
+            "name":
+                user.get(
+                    "name",
+                    ""
+                ),
 
-            "wallet": user.get(
-                "wallet",
-                0
-            ),
+            "phone":
+                user.get(
+                    "phone",
+                    ""
+                ),
 
-            "total_orders": user.get(
-                "total_orders",
-                0
-            ),
+            "profile_image":
+                user.get(
+                    "profile_image",
+                    ""
+                ),
 
-            "total_spent": user.get(
-                "total_spent",
-                0
-            ),
+            "notifications":
+                user.get(
+                    "notifications",
+                    True
+                ),
+
+            "theme":
+                user.get(
+                    "theme",
+                    "dark"
+                ),
+
+            "wallet":
+                user.get(
+                    "wallet",
+                    0
+                ),
+
+            "total_orders":
+                user.get(
+                    "total_orders",
+                    0
+                ),
+
+            "total_spent":
+                user.get(
+                    "total_spent",
+                    0
+                ),
+
+            "is_verified":
+                user.get(
+                    "is_verified",
+                    False
+                ),
         }
 
     except HTTPException:
@@ -3314,10 +3529,12 @@ def get_profile(
         )
 
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to load profile"
-        )
+            status_code=
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
 
+            detail=
+                "Failed to load profile"
+        )
 # ============================================================
 # UPDATE CURRENT USER PROFILE
 # ============================================================
@@ -3342,8 +3559,6 @@ def update_profile(
                 "$set": {
                     "name": profile.name,
                     "phone": profile.phone,
-                    "department": profile.department,
-                    "year": profile.year,
 
                     # IMPORTANT:
                     # This must contain the permanent backend
@@ -3423,18 +3638,6 @@ def update_profile(
             "phone":
                 updated_user.get(
                     "phone",
-                    ""
-                ),
-
-            "department":
-                updated_user.get(
-                    "department",
-                    ""
-                ),
-
-            "year":
-                updated_user.get(
-                    "year",
                     ""
                 ),
 
@@ -7780,8 +7983,6 @@ def get_admin_customers(
                     "email": 1,
                     "phone": 1,
                     "profile_image": 1,
-                    "department": 1,
-                    "year": 1,
                     "role": 1,
                     "created_at": 1,
                 },
@@ -8033,16 +8234,6 @@ def get_admin_customers(
 
                     "profile_image": user.get(
                         "profile_image",
-                        ""
-                    ),
-
-                    "department": user.get(
-                        "department",
-                        ""
-                    ),
-
-                    "year": user.get(
-                        "year",
                         ""
                     ),
 

@@ -9,11 +9,11 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
+
 import {
   Camera,
   CheckCircle2,
   ChevronRight,
-  GraduationCap,
   Heart,
   HelpCircle,
   Home,
@@ -28,10 +28,11 @@ import {
   Share2,
   ShoppingBag,
   User,
-  Building2,
   X,
 } from "lucide-react";
+
 import { getImageUrl } from "@/app/lib/getImageUrl";
+
 import {
   getAccessToken,
   clearSession,
@@ -40,48 +41,69 @@ import {
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
+/* ============================================================
+   PROFILE TYPE
+============================================================ */
+
 type Profile = {
   name: string;
   email: string;
   phone: string;
-  department: string;
-  year: string;
+
   profile_image: string;
+
   total_orders: number;
   total_spent: number;
+
   is_verified: boolean;
   notifications: boolean;
   theme: string;
 };
 
+/* ============================================================
+   EMPTY PROFILE
+============================================================ */
+
 const EMPTY: Profile = {
   name: "",
   email: "",
   phone: "",
-  department: "",
-  year: "",
+
   profile_image: "",
+
   total_orders: 0,
   total_spent: 0,
+
   is_verified: false,
   notifications: true,
   theme: "dark",
 };
 
+/* ============================================================
+   API ERROR HELPER
+============================================================ */
+
 function apiError(value: unknown, fallback: string) {
-  if (typeof value === "string" && value) return value;
+  if (typeof value === "string" && value) {
+    return value;
+  }
 
   if (Array.isArray(value)) {
     return (
       value
         .map((x) => {
-          if (typeof x === "string") return x;
+          if (typeof x === "string") {
+            return x;
+          }
 
           if (x && typeof x === "object") {
             const o = x as Record<string, unknown>;
 
             return String(
-              o.msg || o.message || o.detail || ""
+              o.msg ||
+                o.message ||
+                o.detail ||
+                ""
             );
           }
 
@@ -96,14 +118,25 @@ function apiError(value: unknown, fallback: string) {
     const o = value as Record<string, unknown>;
 
     return String(
-      o.detail || o.message || o.error || fallback
+      o.detail ||
+        o.message ||
+        o.error ||
+        fallback
     );
   }
 
   return fallback;
 }
 
-function Skeleton({ className }: { className: string }) {
+/* ============================================================
+   SKELETON
+============================================================ */
+
+function Skeleton({
+  className,
+}: {
+  className: string;
+}) {
   return (
     <div
       className={`animate-pulse rounded-xl bg-zinc-800/80 ${className}`}
@@ -111,58 +144,72 @@ function Skeleton({ className }: { className: string }) {
   );
 }
 
+/* ============================================================
+   PROFILE PAGE
+============================================================ */
+
 export default function ProfilePage() {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const [profile, setProfile] = useState<Profile>(EMPTY);
-  const [draft, setDraft] = useState<Profile>(EMPTY);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const fileRef =
+    useRef<HTMLInputElement>(null);
 
-  const [editField, setEditField] = useState<
-    keyof Pick<
-      Profile,
-      "name" | "email" | "phone" | "department" | "year"
-    > | null
-  >(null);
+  const [profile, setProfile] =
+    useState<Profile>(EMPTY);
 
-  const [logoutOpen, setLogoutOpen] = useState(false);
-  const [version, setVersion] = useState<any>(null);
-  const [versionError, setVersionError] = useState("");
-  const [shareBusy, setShareBusy] = useState(false);
+  const [draft, setDraft] =
+    useState<Profile>(EMPTY);
 
-  /*
-   * ============================================================
-   * USER AUTH
-   * ============================================================
-   *
-   * This page is USER-only.
-   *
-   * Never read:
-   *   localStorage.getItem("access_token")
-   *
-   * Always use:
-   *   getAccessToken("USER")
-   *
-   * This prevents an ADMIN token from being used here.
-   */
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [uploading, setUploading] =
+    useState(false);
+
+  const [editOpen, setEditOpen] =
+    useState(false);
+
+  const [editField, setEditField] =
+    useState<
+      keyof Pick<
+        Profile,
+        "name" | "email" | "phone"
+      > | null
+    >(null);
+
+  const [logoutOpen, setLogoutOpen] =
+    useState(false);
+
+  const [version, setVersion] =
+    useState<any>(null);
+
+  const [versionError, setVersionError] =
+    useState("");
+
+  const [shareBusy, setShareBusy] =
+    useState(false);
+
+  /* ============================================================
+     CLEAR USER AUTH
+  ============================================================ */
 
   const clearAuth = useCallback(() => {
     clearSession("USER");
   }, []);
 
-  /*
-   * ============================================================
-   * LOAD USER PROFILE
-   * ============================================================
-   */
+  /* ============================================================
+     LOAD REAL USER PROFILE
+  ============================================================ */
 
   const loadProfile = useCallback(async () => {
-    const token = getAccessToken("USER");
+    const token =
+      getAccessToken("USER");
 
     if (!token) {
       router.replace("/login");
@@ -173,14 +220,18 @@ export default function ProfilePage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: "no-store",
-      });
+      const res = await fetch(
+        `${API_URL}/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        }
+      );
 
-      const data = await res.json().catch(() => null);
+      const data =
+        await res.json().catch(() => null);
 
       if (res.status === 401) {
         clearAuth();
@@ -190,7 +241,10 @@ export default function ProfilePage() {
 
       if (!res.ok) {
         throw new Error(
-          apiError(data, "Unable to load profile")
+          apiError(
+            data,
+            "Unable to load profile"
+          )
         );
       }
 
@@ -204,16 +258,31 @@ export default function ProfilePage() {
         name: String(s?.name ?? ""),
         email: String(s?.email ?? ""),
         phone: String(s?.phone ?? ""),
-        department: String(s?.department ?? ""),
-        year: String(s?.year ?? ""),
-        profile_image: String(s?.profile_image ?? ""),
-        total_orders: Number(s?.total_orders ?? 0),
-        total_spent: Number(s?.total_spent ?? 0),
-        is_verified: Boolean(
-          s?.is_verified ?? s?.verified ?? false
+
+        profile_image: String(
+          s?.profile_image ?? ""
         ),
-        notifications: s?.notifications !== false,
-        theme: String(s?.theme ?? "dark"),
+
+        total_orders: Number(
+          s?.total_orders ?? 0
+        ),
+
+        total_spent: Number(
+          s?.total_spent ?? 0
+        ),
+
+        is_verified: Boolean(
+          s?.is_verified ??
+            s?.verified ??
+            false
+        ),
+
+        notifications:
+          s?.notifications !== false,
+
+        theme: String(
+          s?.theme ?? "dark"
+        ),
       };
 
       setProfile(next);
@@ -233,76 +302,75 @@ export default function ProfilePage() {
     void loadProfile();
   }, [loadProfile]);
 
-  /*
-   * ============================================================
-   * APP VERSION
-   * ============================================================
-   */
+  /* ============================================================
+     APP VERSION
+  ============================================================ */
 
   useEffect(() => {
     fetch("/api/app-version", {
       cache: "no-store",
     })
       .then(async (r) => {
-        const d = await r.json().catch(() => null);
+        const d =
+          await r.json().catch(() => null);
 
         if (!r.ok) {
           throw new Error(
-            apiError(d, "Unable to check for updates")
+            apiError(
+              d,
+              "Unable to check for updates"
+            )
           );
         }
 
         setVersion(d);
       })
-      .catch((e) =>
+      .catch((e) => {
         setVersionError(
           e instanceof Error
             ? e.message
             : "Unable to check for updates"
-        )
-      );
+        );
+      });
   }, []);
 
-  /*
-   * ============================================================
-   * INITIALS
-   * ============================================================
-   */
+  /* ============================================================
+     PROFILE INITIALS
+  ============================================================ */
 
   const initials = useMemo(() => {
-    const p = profile.name
+    const parts = profile.name
       .trim()
       .split(/\s+/)
       .filter(Boolean);
 
     return (
-      p
+      parts
         .slice(0, 2)
         .map((x) => x[0])
         .join("") || "CV"
     ).toUpperCase();
   }, [profile.name]);
 
-  /*
-   * ============================================================
-   * EDIT PROFILE
-   * ============================================================
-   */
+  /* ============================================================
+     OPEN EDIT
+  ============================================================ */
 
-  const openEdit = (field?: typeof editField) => {
+  const openEdit = (
+    field?: typeof editField
+  ) => {
     setDraft(profile);
     setEditField(field ?? null);
     setEditOpen(true);
   };
 
-  /*
-   * ============================================================
-   * SAVE USER PROFILE
-   * ============================================================
-   */
+  /* ============================================================
+     SAVE PROFILE
+  ============================================================ */
 
   const saveProfile = async () => {
-    const token = getAccessToken("USER");
+    const token =
+      getAccessToken("USER");
 
     if (!token) {
       router.replace("/login");
@@ -316,7 +384,9 @@ export default function ProfilePage() {
 
     if (
       draft.phone &&
-      !/^[6789]\d{9}$/.test(draft.phone.trim())
+      !/^[6789]\d{9}$/.test(
+        draft.phone.trim()
+      )
     ) {
       toast.error(
         "Enter a valid 10-digit Indian mobile number."
@@ -327,24 +397,34 @@ export default function ProfilePage() {
     setSaving(true);
 
     try {
-      const res = await fetch(`${API_URL}/profile`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: draft.name.trim(),
-          phone: draft.phone.trim(),
-          department: draft.department.trim(),
-          year: draft.year,
-          profile_image: profile.profile_image,
-          notifications: profile.notifications,
-          theme: profile.theme,
-        }),
-      });
+      const res = await fetch(
+        `${API_URL}/profile`,
+        {
+          method: "PUT",
 
-      const data = await res.json().catch(() => null);
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            name: draft.name.trim(),
+            phone: draft.phone.trim(),
+
+            profile_image:
+              profile.profile_image,
+
+            notifications:
+              profile.notifications,
+
+            theme: profile.theme,
+          }),
+        }
+      );
+
+      const data =
+        await res.json().catch(() => null);
 
       if (res.status === 401) {
         clearAuth();
@@ -354,7 +434,10 @@ export default function ProfilePage() {
 
       if (!res.ok) {
         throw new Error(
-          apiError(data, "Failed to update profile")
+          apiError(
+            data,
+            "Failed to update profile"
+          )
         );
       }
 
@@ -366,35 +449,37 @@ export default function ProfilePage() {
 
       const next: Profile = {
         ...profile,
+
         name: String(
           s?.name ?? draft.name
         ),
+
         email: String(
           s?.email ?? profile.email
         ),
+
         phone: String(
           s?.phone ?? draft.phone
         ),
-        department: String(
-          s?.department ?? draft.department
-        ),
-        year: String(
-          s?.year ?? draft.year
-        ),
+
         profile_image: String(
           s?.profile_image ??
             profile.profile_image
         ),
+
         notifications:
           s?.notifications ??
           profile.notifications,
+
         theme: String(
-          s?.theme ?? profile.theme
+          s?.theme ??
+            profile.theme
         ),
       };
 
       setProfile(next);
       setDraft(next);
+
       setEditOpen(false);
       setEditField(null);
 
@@ -412,11 +497,9 @@ export default function ProfilePage() {
     }
   };
 
-  /*
-   * ============================================================
-   * PROFILE IMAGE UPLOAD
-   * ============================================================
-   */
+  /* ============================================================
+     PROFILE IMAGE UPLOAD
+  ============================================================ */
 
   const uploadImage = async (
     e: React.ChangeEvent<HTMLInputElement>
@@ -427,19 +510,27 @@ export default function ProfilePage() {
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image.");
+    if (
+      !file.type.startsWith("image/")
+    ) {
+      toast.error(
+        "Please choose an image."
+      );
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
       toast.error(
         "Image must be smaller than 5 MB."
       );
       return;
     }
 
-    const token = getAccessToken("USER");
+    const token =
+      getAccessToken("USER");
 
     if (!token) {
       router.replace("/login");
@@ -457,14 +548,17 @@ export default function ProfilePage() {
         `${API_URL}/profile/upload-image`,
         {
           method: "POST",
+
           headers: {
             Authorization: `Bearer ${token}`,
           },
+
           body: fd,
         }
       );
 
-      const data = await res.json().catch(() => null);
+      const data =
+        await res.json().catch(() => null);
 
       if (res.status === 401) {
         clearAuth();
@@ -518,11 +612,9 @@ export default function ProfilePage() {
     }
   };
 
-  /*
-   * ============================================================
-   * SHARE APP
-   * ============================================================
-   */
+  /* ============================================================
+     SHARE APP
+  ============================================================ */
 
   const shareApp = async () => {
     if (shareBusy) return;
@@ -530,17 +622,19 @@ export default function ProfilePage() {
     setShareBusy(true);
 
     try {
-      const data = {
+      const shareData = {
         title: "CampusVita",
         text: "Smart Campus Food Ordering App",
         url: window.location.origin,
       };
 
       if (navigator.share) {
-        await navigator.share(data);
+        await navigator.share(
+          shareData
+        );
       } else {
         await navigator.clipboard.writeText(
-          data.url
+          shareData.url
         );
 
         toast.success(
@@ -563,56 +657,70 @@ export default function ProfilePage() {
     }
   };
 
-  /*
-   * ============================================================
-   * USER LOGOUT
-   * ============================================================
-   */
+  /* ============================================================
+     LOGOUT
+  ============================================================ */
 
   const logout = () => {
     clearSession("USER");
+
     setLogoutOpen(false);
+
     router.replace("/login");
   };
 
-  /*
-   * ============================================================
-   * LOADING
-   * ============================================================
-   */
+  /* ============================================================
+     LOADING SCREEN
+  ============================================================ */
 
   if (loading) {
     return (
       <main className="min-h-screen bg-[#090a0a] px-4 pt-6 text-white">
         <div className="mx-auto max-w-md space-y-4">
+
           <div className="flex justify-between">
             <Skeleton className="h-8 w-32" />
+
             <Skeleton className="h-10 w-10 rounded-full" />
           </div>
 
           <Skeleton className="h-36" />
+
           <Skeleton className="h-5 w-36" />
 
           <div className="grid grid-cols-2 gap-3">
             <Skeleton className="h-28" />
+
             <Skeleton className="h-28" />
           </div>
 
           <Skeleton className="h-20" />
+
           <Skeleton className="h-64" />
+
           <Skeleton className="h-56" />
+
         </div>
       </main>
     );
   }
 
+  /* ============================================================
+     PAGE UI
+  ============================================================ */
+
   return (
     <main className="min-h-screen bg-[#090a0a] px-3 pb-[96px] pt-5 text-white sm:px-5">
+
       <div className="mx-auto max-w-md">
 
+        {/* HEADER */}
+
         <header className="relative mb-4 flex h-9 items-center justify-center">
+
           <div className="text-[29px] font-extrabold">
             <span>Campus</span>
+
             <span className="text-orange-500">
               Vita
             </span>
@@ -627,10 +735,14 @@ export default function ProfilePage() {
           >
             <Settings size={24} />
           </button>
+
         </header>
+
+        {/* ERROR */}
 
         {error && (
           <div className="mb-4 rounded-2xl border border-red-900/60 bg-[#171919] p-4 text-center">
+
             <p className="font-semibold">
               Unable to load profile
             </p>
@@ -646,16 +758,23 @@ export default function ProfilePage() {
               className="mt-3 inline-flex items-center gap-2 rounded-xl border border-orange-500 px-4 py-2 text-sm text-orange-400"
             >
               <RefreshCw size={15} />
+
               Retry
             </button>
+
           </div>
         )}
 
+        {/* PROFILE CARD */}
+
         <section className="rounded-[24px] border border-zinc-800 bg-[#171919] p-4 shadow-xl">
+
           <div className="flex gap-4">
 
             <div className="relative shrink-0">
+
               <div className="h-[116px] w-[116px] rounded-full border-2 border-orange-500 p-1">
+
                 {profile.profile_image ? (
                   <img
                     src={getImageUrl(
@@ -669,6 +788,7 @@ export default function ProfilePage() {
                     {initials}
                   </div>
                 )}
+
               </div>
 
               <button
@@ -697,10 +817,13 @@ export default function ProfilePage() {
                 onChange={uploadImage}
                 className="hidden"
               />
+
             </div>
 
             <div className="min-w-0 flex-1">
+
               <div className="flex items-center gap-2">
+
                 <h1 className="truncate text-[22px] font-bold">
                   {profile.name || "Not added"}
                 </h1>
@@ -712,41 +835,42 @@ export default function ProfilePage() {
                     fill="currentColor"
                   />
                 )}
+
               </div>
 
-              <p className="mt-2 truncate text-sm text-zinc-300">
-                {profile.department ||
-                  "Not added"}
-              </p>
-
-              <p className="mt-2 flex items-center gap-2 text-sm text-zinc-300">
+              <p className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
                 <Phone size={17} />
-                {profile.phone || "Not added"}
-              </p>
 
-              <p className="mt-2 flex items-center gap-2 text-sm text-zinc-300">
-                <GraduationCap size={18} />
-                {profile.year || "Not added"}
+                {profile.phone || "Not added"}
               </p>
 
               <button
                 onClick={() => openEdit()}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl border border-orange-500 px-3.5 py-2 text-xs font-semibold text-orange-400 active:scale-95"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-orange-500 px-3.5 py-2 text-xs font-semibold text-orange-400 active:scale-95"
               >
                 <Pencil size={14} />
+
                 Edit Profile
               </button>
+
             </div>
+
           </div>
+
         </section>
 
+        {/* ACTIVITY */}
+
         <section className="mt-4">
+
           <h2 className="mb-2 px-1 text-lg font-bold">
             Your Activity
           </h2>
 
           <div className="grid grid-cols-2 gap-3">
+
             <div className="rounded-[22px] border border-zinc-800 bg-[#171919] p-4 text-center">
+
               <ShoppingBag
                 className="mx-auto text-orange-500"
                 size={27}
@@ -759,9 +883,11 @@ export default function ProfilePage() {
               <p className="mt-1 text-sm text-zinc-300">
                 Total Orders
               </p>
+
             </div>
 
             <div className="rounded-[22px] border border-zinc-800 bg-[#171919] p-4 text-center">
+
               <IndianRupee
                 className="mx-auto text-orange-500"
                 size={27}
@@ -777,9 +903,14 @@ export default function ProfilePage() {
               <p className="mt-1 text-sm text-zinc-300">
                 Total Spent
               </p>
+
             </div>
+
           </div>
+
         </section>
+
+        {/* APP VERSION */}
 
         <button
           onClick={() =>
@@ -794,11 +925,13 @@ export default function ProfilePage() {
           }
           className="mt-4 flex w-full items-center gap-3 rounded-[22px] border border-zinc-800 bg-[#171919] p-3.5 text-left"
         >
+
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
             <RefreshCw size={22} />
           </div>
 
           <div className="min-w-0 flex-1">
+
             <p className="text-sm font-bold">
               {version?.updateAvailable
                 ? "App update available"
@@ -816,20 +949,26 @@ export default function ProfilePage() {
                       "Not available"
                     }`)}
             </p>
+
           </div>
 
           <ChevronRight
             size={21}
             className="text-zinc-400"
           />
+
         </button>
 
+        {/* ABOUT YOU */}
+
         <section className="mt-5">
+
           <h2 className="mb-2 px-1 text-lg font-bold">
             About You
           </h2>
 
           <div className="overflow-hidden rounded-[22px] border border-zinc-800 bg-[#171919]">
+
             <InfoRow
               icon={<User size={21} />}
               label="Full Name"
@@ -855,35 +994,23 @@ export default function ProfilePage() {
               onClick={() =>
                 openEdit("phone")
               }
-            />
-
-            <InfoRow
-              icon={<Building2 size={21} />}
-              label="Department / Branch"
-              value={profile.department}
-              onClick={() =>
-                openEdit("department")
-              }
-            />
-
-            <InfoRow
-              icon={<GraduationCap size={21} />}
-              label="Academic Year"
-              value={profile.year}
-              onClick={() =>
-                openEdit("year")
-              }
               last
             />
+
           </div>
+
         </section>
 
+        {/* ACCOUNT */}
+
         <section className="mt-5">
+
           <h2 className="mb-2 px-1 text-lg font-bold">
             Account
           </h2>
 
           <div className="overflow-hidden rounded-[22px] border border-zinc-800 bg-[#171919]">
+
             <AccountRow
               icon={<Heart size={22} />}
               title="Favorites"
@@ -910,7 +1037,9 @@ export default function ProfilePage() {
               disabled={shareBusy}
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-zinc-900 disabled:opacity-60"
             >
+
               <span className="text-orange-500">
+
                 {shareBusy ? (
                   <RefreshCw
                     size={22}
@@ -919,9 +1048,11 @@ export default function ProfilePage() {
                 ) : (
                   <Share2 size={22} />
                 )}
+
               </span>
 
               <span className="min-w-0 flex-1">
+
                 <span className="block text-sm font-semibold">
                   Share the App
                 </span>
@@ -929,15 +1060,21 @@ export default function ProfilePage() {
                 <span className="mt-0.5 block text-xs text-zinc-400">
                   Invite your friends to CampusVita
                 </span>
+
               </span>
 
               <ChevronRight
                 size={21}
                 className="text-zinc-400"
               />
+
             </button>
+
           </div>
+
         </section>
+
+        {/* LOGOUT */}
 
         <button
           onClick={() =>
@@ -946,11 +1083,16 @@ export default function ProfilePage() {
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[20px] border border-zinc-800 bg-[#171919] py-3.5 font-semibold text-orange-500 active:scale-[0.99]"
         >
           <LogOut size={21} />
+
           Logout
         </button>
 
+        {/* BOTTOM NAVIGATION */}
+
         <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-800 bg-[#0c0d0d]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
+
           <div className="mx-auto grid h-[68px] max-w-md grid-cols-3">
+
             <Bottom
               href="/"
               icon={<Home size={23} />}
@@ -969,8 +1111,12 @@ export default function ProfilePage() {
               label="Profile"
               active
             />
+
           </div>
+
         </nav>
+
+        {/* EDIT PROFILE MODAL */}
 
         {editOpen && (
           <Modal
@@ -979,8 +1125,11 @@ export default function ProfilePage() {
               setEditOpen(false)
             }
           >
+
             <div className="flex items-center justify-between border-b border-zinc-800 p-5">
+
               <div>
+
                 <h2 className="text-lg font-bold">
                   Edit Profile
                 </h2>
@@ -988,6 +1137,7 @@ export default function ProfilePage() {
                 <p className="mt-1 text-xs text-zinc-400">
                   Saved to your authenticated account.
                 </p>
+
               </div>
 
               <button
@@ -995,12 +1145,15 @@ export default function ProfilePage() {
                   setEditOpen(false)
                 }
                 aria-label="Close"
+                disabled={saving}
               >
                 <X size={21} />
               </button>
+
             </div>
 
             <div className="space-y-4 p-5">
+
               <Field
                 label="Full Name"
                 value={draft.name}
@@ -1044,37 +1197,8 @@ export default function ProfilePage() {
                 }
               />
 
-              <Field
-                label="Department / Branch"
-                value={draft.department}
-                onChange={(v) =>
-                  setDraft({
-                    ...draft,
-                    department: v,
-                  })
-                }
-                show={
-                  editField === null ||
-                  editField === "department"
-                }
-              />
-
-              <Field
-                label="Academic Year"
-                value={draft.year}
-                onChange={(v) =>
-                  setDraft({
-                    ...draft,
-                    year: v,
-                  })
-                }
-                show={
-                  editField === null ||
-                  editField === "year"
-                }
-              />
-
               <div className="flex gap-3 pt-2">
+
                 <button
                   onClick={() =>
                     setEditOpen(false)
@@ -1101,10 +1225,15 @@ export default function ProfilePage() {
                     ? "Email cannot be changed"
                     : "Save changes"}
                 </button>
+
               </div>
+
             </div>
+
           </Modal>
         )}
+
+        {/* LOGOUT MODAL */}
 
         {logoutOpen && (
           <Modal
@@ -1112,7 +1241,9 @@ export default function ProfilePage() {
               setLogoutOpen(false)
             }
           >
+
             <div className="p-5 text-center">
+
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/10 text-orange-500">
                 <LogOut size={24} />
               </div>
@@ -1126,6 +1257,7 @@ export default function ProfilePage() {
               </p>
 
               <div className="mt-5 flex gap-3">
+
                 <button
                   onClick={() =>
                     setLogoutOpen(false)
@@ -1141,14 +1273,22 @@ export default function ProfilePage() {
                 >
                   Logout
                 </button>
+
               </div>
+
             </div>
+
           </Modal>
         )}
+
       </div>
     </main>
   );
 }
+
+/* ============================================================
+   INFO ROW
+============================================================ */
 
 function InfoRow({
   icon,
@@ -1167,7 +1307,9 @@ function InfoRow({
     <button
       onClick={onClick}
       className={`flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-zinc-900 ${
-        last ? "" : "border-b border-zinc-800"
+        last
+          ? ""
+          : "border-b border-zinc-800"
       }`}
     >
       <span className="text-zinc-300">
@@ -1175,6 +1317,7 @@ function InfoRow({
       </span>
 
       <span className="min-w-0 flex-1">
+
         <span className="block text-sm text-zinc-200">
           {label}
         </span>
@@ -1188,6 +1331,7 @@ function InfoRow({
         >
           {value || "Not added"}
         </span>
+
       </span>
 
       <ChevronRight
@@ -1197,6 +1341,10 @@ function InfoRow({
     </button>
   );
 }
+
+/* ============================================================
+   ACCOUNT ROW
+============================================================ */
 
 function AccountRow({
   icon,
@@ -1221,6 +1369,7 @@ function AccountRow({
       </span>
 
       <span className="min-w-0 flex-1">
+
         <span className="block text-sm font-semibold">
           {title}
         </span>
@@ -1228,6 +1377,7 @@ function AccountRow({
         <span className="mt-0.5 block text-xs text-zinc-400">
           {subtitle}
         </span>
+
       </span>
 
       <ChevronRight
@@ -1237,6 +1387,10 @@ function AccountRow({
     </button>
   );
 }
+
+/* ============================================================
+   BOTTOM NAVIGATION
+============================================================ */
 
 function Bottom({
   href,
@@ -1261,10 +1415,15 @@ function Bottom({
       }`}
     >
       {icon}
+
       <span>{label}</span>
     </button>
   );
 }
+
+/* ============================================================
+   FORM FIELD
+============================================================ */
 
 function Field({
   label,
@@ -1285,6 +1444,7 @@ function Field({
 
   return (
     <label className="block">
+
       <span className="mb-1.5 block text-xs font-semibold text-zinc-300">
         {label}
       </span>
@@ -1303,9 +1463,14 @@ function Field({
           {hint}
         </span>
       )}
+
     </label>
   );
 }
+
+/* ============================================================
+   MODAL
+============================================================ */
 
 function Modal({
   children,
@@ -1316,6 +1481,7 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center">
+
       <button
         aria-label="Close dialog"
         onClick={onClose}
@@ -1325,6 +1491,7 @@ function Modal({
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-[26px] border border-zinc-800 bg-[#151717] shadow-2xl">
         {children}
       </div>
+
     </div>
   );
 }

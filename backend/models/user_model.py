@@ -23,10 +23,6 @@ def create_user_document(
 
         "phone": phone,
 
-        "department": department,
-
-        "year": year,
-
         "profile_image": "",
 
         "wallet": 0,

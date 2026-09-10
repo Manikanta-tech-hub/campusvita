@@ -521,26 +521,6 @@ export default function AdminSettingsPage() {
                 inputMode="tel"
               />
 
-              <Field
-                label="Department"
-                value={profile.department}
-                onChange={(value) =>
-                  setProfile((current) => ({
-                    ...current,
-                    department: value,
-                  }))
-                }
-                placeholder="Department"
-              />
-
-              <Field
-                label="Year"
-                value={profile.year}
-                onChange={(value) =>
-                  setProfile((current) => ({ ...current, year: value }))
-                }
-                placeholder="Academic year"
-              />
             </div>
           </SectionCard>
 
