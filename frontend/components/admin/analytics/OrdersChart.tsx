@@ -21,6 +21,7 @@ type BackendOrder = {
 };
 
 type ChartOrder = {
+  date: string;
   day: string;
   orders: number;
 };
@@ -35,14 +36,16 @@ export default function OrdersChart() {
 
     async function loadOrders() {
       try {
-        setLoading(true);
-        setError(false);
-
         const data = await getOrderChartData();
 
         if (!mounted) return;
 
-        setOrders(Array.isArray(data.orders) ? data.orders : []);
+        if (!data || !Array.isArray(data.orders)) {
+          throw new Error("Invalid order chart data");
+        }
+
+        setOrders(data.orders);
+        setError(false);
       } catch (err) {
         console.error("Failed to load order chart data:", err);
 
@@ -87,11 +90,11 @@ export default function OrdersChart() {
 
       if (Number.isNaN(date.getTime())) continue;
 
-      const dayKey = date.toISOString().split("T")[0];
+      const dateKey = date.toISOString().split("T")[0];
 
       totals.set(
-        dayKey,
-        (totals.get(dayKey) ?? 0) + 1
+        dateKey,
+        (totals.get(dateKey) ?? 0) + 1
       );
     }
 
@@ -103,96 +106,101 @@ export default function OrdersChart() {
         const dateObject = new Date(`${date}T00:00:00`);
 
         return {
+          date,
           day: dateObject.toLocaleDateString("en-US", {
-            weekday: "short",
+            day: "2-digit",
+            month: "short",
           }),
           orders: count,
         };
       });
   }, [orders]);
 
-  if (loading) {
-    return (
-      <ChartCard
-        title="Orders Overview"
-        subtitle="Orders received from the database"
-      >
-        <div className="flex h-[300px] items-center justify-center text-sm text-zinc-400">
-          Loading orders...
-        </div>
-      </ChartCard>
-    );
-  }
-
-  if (error) {
-    return (
-      <ChartCard
-        title="Orders Overview"
-        subtitle="Orders received from the database"
-      >
-        <div className="flex h-[300px] items-center justify-center text-sm text-red-400">
-          Failed to load order data.
-        </div>
-      </ChartCard>
-    );
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <ChartCard
-        title="Orders Overview"
-        subtitle="Orders received from the database"
-      >
-        <div className="flex h-[300px] items-center justify-center text-sm text-zinc-400">
-          No orders found.
-        </div>
-      </ChartCard>
-    );
-  }
-
   return (
     <ChartCard
       title="Orders Overview"
       subtitle="Orders received from the database"
     >
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData}>
-            <CartesianGrid
-              stroke="#27272a"
-              vertical={false}
-            />
+      {loading && (
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-zinc-400">
+          Loading orders...
+        </div>
+      )}
 
-            <XAxis
-              dataKey="day"
-              stroke="#71717a"
-            />
+      {!loading && error && (
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-red-400">
+          Failed to load order data.
+        </div>
+      )}
 
-            <YAxis
-              allowDecimals={false}
-              stroke="#71717a"
-            />
+      {!loading && !error && chartData.length === 0 && (
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-zinc-400">
+          No orders found.
+        </div>
+      )}
 
-            <Tooltip
-              contentStyle={{
-                background: "#18181b",
-                border: "1px solid #27272a",
-                borderRadius: 14,
+      {!loading && !error && chartData.length > 0 && (
+        <div className="h-[300px] w-full min-w-0">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            minWidth={1}
+            minHeight={1}
+          >
+            <BarChart
+              data={chartData}
+              margin={{
+                top: 10,
+                right: 20,
+                left: 10,
+                bottom: 10,
               }}
-              formatter={(value) => [
-                `${value} orders`,
-                "Orders",
-              ]}
-            />
+            >
+              <CartesianGrid
+                stroke="#27272a"
+                vertical={false}
+              />
 
-            <Bar
-              dataKey="orders"
-              fill="#FF6B35"
-              radius={[8, 8, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+              <XAxis
+                dataKey="day"
+                stroke="#71717a"
+                tickLine={false}
+                axisLine={false}
+              />
+
+              <YAxis
+                allowDecimals={false}
+                stroke="#71717a"
+                tickLine={false}
+                axisLine={false}
+              />
+
+              <Tooltip
+                cursor={{
+                  fill: "rgba(255,255,255,0.04)",
+                }}
+                contentStyle={{
+                  background: "#18181b",
+                  border: "1px solid #27272a",
+                  borderRadius: 14,
+                  color: "#fff",
+                }}
+                formatter={(value) => [
+                  `${Number(value)} orders`,
+                  "Orders",
+                ]}
+              />
+
+              <Bar
+                dataKey="orders"
+                fill="#FF6B35"
+                radius={[8, 8, 0, 0]}
+                isAnimationActive={false}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </ChartCard>
   );
 }

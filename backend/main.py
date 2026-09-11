@@ -1671,7 +1671,29 @@ async def get_vendor_orders(
     vendor_stall_ids = set(get_vendor_stall_ids(current_user))
 
     if not vendor_stall_ids:
-        return {"success": True, "orders": []}
+        return {
+            "success": True,
+            "orders": [],
+            "today_revenue": 0.0,
+        }
+
+    # ============================================================
+    # TODAY'S DATE RANGE
+    # Uses the same local-time approach as the admin dashboard
+    # ============================================================
+
+    now = datetime.now()
+    today_start = now.replace(
+        hour=0,
+        minute=0,
+        second=0,
+        microsecond=0,
+    )
+    tomorrow_start = today_start + timedelta(days=1)
+
+    # ============================================================
+    # GET VENDOR ORDERS
+    # ============================================================
 
     orders = list(
         orders_collection.find(
@@ -1680,8 +1702,14 @@ async def get_vendor_orders(
     )
 
     result = []
+    today_revenue = 0.0
 
     for order in orders:
+
+        # --------------------------------------------------------
+        # ONLY ITEMS BELONGING TO THIS VENDOR
+        # --------------------------------------------------------
+
         vendor_items = [
             item
             for item in order.get("items", [])
@@ -1691,6 +1719,48 @@ async def get_vendor_orders(
         if not vendor_items:
             continue
 
+        # --------------------------------------------------------
+        # TODAY'S REVENUE
+        #
+        # Only PAID orders count.
+        # Cancelled items are excluded.
+        # Only this vendor's stall items are included.
+        # --------------------------------------------------------
+
+        payment_status = order.get("payment_status")
+
+        created_at = order.get("created_at")
+
+        is_today = False
+
+        if isinstance(created_at, datetime):
+            # Handle both timezone-aware and naive datetimes safely
+            created_at_compare = created_at
+
+            if created_at_compare.tzinfo is not None:
+                created_at_compare = created_at_compare.replace(tzinfo=None)
+
+            is_today = (
+                today_start <= created_at_compare < tomorrow_start
+            )
+
+        if payment_status == PaymentStatus.PAID and is_today:
+
+            for item in vendor_items:
+
+                # Do not count cancelled items
+                if item.get("cancelled") is True:
+                    continue
+
+                quantity = int(item.get("quantity", 0) or 0)
+                price = float(item.get("price", 0) or 0)
+
+                today_revenue += price * quantity
+
+        # --------------------------------------------------------
+        # BUILD STALL ORDERS
+        # --------------------------------------------------------
+
         stall_orders = build_stall_orders(order)
 
         vendor_stall_orders = [
@@ -1698,6 +1768,10 @@ async def get_vendor_orders(
             for stall_order in stall_orders
             if stall_order["stall_id"] in vendor_stall_ids
         ]
+
+        # --------------------------------------------------------
+        # SERIALIZATION
+        # --------------------------------------------------------
 
         order["_id"] = str(order["_id"])
 
@@ -1707,6 +1781,17 @@ async def get_vendor_orders(
         if isinstance(order.get("payment_date"), datetime):
             order["payment_date"] = order["payment_date"].isoformat()
 
+        # --------------------------------------------------------
+        # VENDOR TOTAL
+        # --------------------------------------------------------
+
+        vendor_total = sum(
+            float(item.get("price", 0) or 0)
+            * int(item.get("quantity", 0) or 0)
+            for item in vendor_items
+            if not item.get("cancelled")
+        )
+
         result.append({
             "order_id": order["_id"],
             "token": order.get("token"),
@@ -1715,16 +1800,24 @@ async def get_vendor_orders(
             "phone": order.get("phone"),
             "items": vendor_items,
             "stall_orders": vendor_stall_orders,
-            "status": order.get("status", OrderStatus.PREPARING),
-            "total": sum(
-                float(item.get("price", 0)) * int(item.get("quantity", 0))
-                for item in vendor_items
+            "status": order.get(
+                "status",
+                OrderStatus.PREPARING
             ),
+            "total": vendor_total,
             "created_at": order.get("created_at"),
             "date": order.get("date"),
         })
 
-    return {"success": True, "orders": result}
+    # ============================================================
+    # RESPONSE
+    # ============================================================
+
+    return {
+        "success": True,
+        "orders": result,
+        "today_revenue": round(today_revenue, 2),
+    }
 
 @fastapi_app.post("/vendor/orders/{token}/items/cancel")
 async def cancel_vendor_order_item(
@@ -7140,7 +7233,6 @@ def get_revenue_chart_data(
     try:
         from datetime import datetime
 
-        # If no year is supplied, use the current year
         if year is None:
             year = datetime.now().year
 
@@ -7149,49 +7241,70 @@ def get_revenue_chart_data(
             for month in range(1, 13)
         }
 
-        # Only use actual paid/completed orders
-        query = {
+        orders = orders_collection.find({
             "payment_status": PaymentStatus.PAID,
             "status": OrderStatus.COMPLETED,
-        }
-
-        orders = orders_collection.find(query)
-
-        # Prevent the same order from being counted twice
-        seen_order_ids = set()
+        })
 
         for order in orders:
-            order_id = str(order["_id"])
-
-            if order_id in seen_order_ids:
-                continue
-
-            seen_order_ids.add(order_id)
-
-            # Get order date
             order_date = order.get("date")
 
             if not order_date:
                 continue
 
-            try:
-                parsed_date = datetime.strptime(
-                    order_date,
-                    "%d %b %Y, %I:%M %p"
-                )
-            except (ValueError, TypeError):
+            parsed_date = None
+
+            # MongoDB datetime
+            if isinstance(order_date, datetime):
+                parsed_date = order_date
+
+            # String date
+            elif isinstance(order_date, str):
+                date_formats = [
+                    "%d %b %Y, %I:%M %p",
+                    "%Y-%m-%dT%H:%M:%S",
+                    "%Y-%m-%dT%H:%M:%S.%f",
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d %H:%M",
+                ]
+
+                for date_format in date_formats:
+                    try:
+                        parsed_date = datetime.strptime(
+                            order_date,
+                            date_format,
+                        )
+                        break
+                    except ValueError:
+                        continue
+
+                # ISO 8601 fallback
+                if parsed_date is None:
+                    try:
+                        parsed_date = datetime.fromisoformat(
+                            order_date.replace("Z", "+00:00")
+                        )
+
+                        if parsed_date.tzinfo:
+                            parsed_date = parsed_date.replace(
+                                tzinfo=None
+                            )
+
+                    except (ValueError, TypeError):
+                        parsed_date = None
+
+            if parsed_date is None:
                 continue
 
-            # Only include orders from requested year
             if parsed_date.year != year:
                 continue
 
-            # Get the real order total
-            total = order.get("total", 0)
-
             try:
-                total = float(total)
+                total = float(order.get("total", 0) or 0)
             except (TypeError, ValueError):
+                total = 0.0
+
+            if total <= 0:
                 continue
 
             monthly_revenue[parsed_date.month] += total
@@ -7214,7 +7327,10 @@ def get_revenue_chart_data(
         revenue = [
             {
                 "month": months[month - 1],
-                "revenue": monthly_revenue[month],
+                "revenue": round(
+                    monthly_revenue[month],
+                    2,
+                ),
             }
             for month in range(1, 13)
         ]
@@ -7237,20 +7353,39 @@ def get_revenue_chart_data(
     
 @fastapi_app.get("/admin/top-selling-foods")
 def get_top_selling_foods(
-    month: str = Query(..., pattern=r"^\d{4}-\d{2}$"),
-    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+    month: str = Query(
+        ...,
+        pattern=r"^\d{4}-\d{2}$",
+    ),
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
 ):
     try:
-        year, month_number = map(int, month.split("-"))
+        year, month_number = map(
+            int,
+            month.split("-"),
+        )
 
-        start_date = datetime(year, month_number, 1)
+        start_date = datetime(
+            year,
+            month_number,
+            1,
+        )
 
         if month_number == 12:
-            end_date = datetime(year + 1, 1, 1)
+            end_date = datetime(
+                year + 1,
+                1,
+                1,
+            )
         else:
-            end_date = datetime(year, month_number + 1, 1)
+            end_date = datetime(
+                year,
+                month_number + 1,
+                1,
+            )
 
-        # Get all orders that could contain sales.
         orders = orders_collection.find({
             "status": OrderStatus.COMPLETED,
             "payment_status": PaymentStatus.PAID,
@@ -7259,44 +7394,121 @@ def get_top_selling_foods(
         food_totals = {}
 
         for order in orders:
-            order_date_string = order.get("date")
 
-            if not order_date_string:
+            order_date = order.get("date")
+
+            if not order_date:
                 continue
 
-            try:
-                order_date = datetime.strptime(
-                    order_date_string,
-                    "%d %b %Y, %I:%M %p"
-                )
-            except (ValueError, TypeError):
+            parsed_date = None
+
+            if isinstance(
+                order_date,
+                datetime,
+            ):
+                parsed_date = order_date
+
+            elif isinstance(
+                order_date,
+                str,
+            ):
+
+                formats = [
+                    "%d %b %Y, %I:%M %p",
+                    "%Y-%m-%dT%H:%M:%S",
+                    "%Y-%m-%dT%H:%M:%S.%f",
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d %H:%M",
+                ]
+
+                for date_format in formats:
+                    try:
+                        parsed_date = datetime.strptime(
+                            order_date,
+                            date_format,
+                        )
+                        break
+                    except ValueError:
+                        continue
+
+                if parsed_date is None:
+                    try:
+                        parsed_date = datetime.fromisoformat(
+                            order_date.replace(
+                                "Z",
+                                "+00:00",
+                            )
+                        )
+
+                        if parsed_date.tzinfo:
+                            parsed_date = parsed_date.replace(
+                                tzinfo=None
+                            )
+
+                    except (
+                        ValueError,
+                        TypeError,
+                    ):
+                        parsed_date = None
+
+            if parsed_date is None:
                 continue
 
-            # Only include orders from selected month.
-            if not (start_date <= order_date < end_date):
+            if not (
+                start_date
+                <= parsed_date
+                < end_date
+            ):
                 continue
 
-            # Process each order's items.
-            for item in order.get("items", []):
+            items = order.get(
+                "items",
+                [],
+            )
+
+            if not isinstance(
+                items,
+                list,
+            ):
+                continue
+
+            for item in items:
+
+                if not isinstance(
+                    item,
+                    dict,
+                ):
+                    continue
+
                 food_name = item.get("name")
-                quantity = item.get("quantity", 0)
 
                 if not food_name:
                     continue
 
                 try:
-                    quantity = int(quantity)
-                except (ValueError, TypeError):
+                    quantity = int(
+                        item.get(
+                            "quantity",
+                            0,
+                        )
+                    )
+                except (
+                    ValueError,
+                    TypeError,
+                ):
                     continue
 
                 if quantity <= 0:
                     continue
 
                 food_totals[food_name] = (
-                    food_totals.get(food_name, 0) + quantity
+                    food_totals.get(
+                        food_name,
+                        0,
+                    )
+                    + quantity
                 )
 
-        # Nothing sold during selected month.
         if not food_totals:
             return {
                 "success": True,
@@ -7305,14 +7517,21 @@ def get_top_selling_foods(
                 "total_quantity": 0,
             }
 
-        total_quantity = sum(food_totals.values())
+        total_quantity = sum(
+            food_totals.values()
+        )
 
         foods = []
 
-        for name, quantity in food_totals.items():
+        for name, quantity in (
+            food_totals.items()
+        ):
             percentage = round(
-                (quantity / total_quantity) * 100,
-                1
+                (
+                    quantity
+                    / total_quantity
+                ) * 100,
+                1,
             )
 
             foods.append({
@@ -7321,10 +7540,9 @@ def get_top_selling_foods(
                 "percentage": percentage,
             })
 
-        # Highest-selling food first.
         foods.sort(
             key=lambda food: food["quantity"],
-            reverse=True
+            reverse=True,
         )
 
         return {
@@ -7340,57 +7558,46 @@ def get_top_selling_foods(
         )
 
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
+            status_code=500,
+            detail="Internal Server Error",
         )
 
 @fastapi_app.get("/admin/sales-distribution")
-async def get_sales_distribution(
+def get_sales_distribution(
     month: str,
-    current_user=Depends(get_current_user)
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
 ):
     try:
         # -----------------------------------------
-        # 1. ADMIN CHECK
-        # -----------------------------------------
-        if current_user.get("role") != "ADMIN":
-            raise HTTPException(
-                status_code=403,
-                detail="Admin access required"
-            )
-
-        # -----------------------------------------
-        # 2. VALIDATE MONTH
+        # Validate month
         # -----------------------------------------
         try:
             selected_month = datetime.strptime(
                 month,
-                "%Y-%m"
+                "%Y-%m",
             )
         except (ValueError, TypeError):
             raise HTTPException(
                 status_code=400,
-                detail="Invalid month format. Use YYYY-MM"
+                detail="Invalid month format. Use YYYY-MM",
             )
 
         # -----------------------------------------
-        # 3. GET COMPLETED + PAID ORDERS
-        #
-        # IMPORTANT:
-        # No await here because your MongoDB
-        # collection is returning normal lists.
+        # Get completed + paid orders
         # -----------------------------------------
         orders = list(
             orders_collection.find({
                 "status": OrderStatus.COMPLETED,
-                "payment_status": PaymentStatus.PAID
+                "payment_status": PaymentStatus.PAID,
             })
         )
 
         category_quantities = {}
 
         # -----------------------------------------
-        # 4. PROCESS EACH ORDER ONCE
+        # Process orders
         # -----------------------------------------
         for order in orders:
 
@@ -7399,35 +7606,67 @@ async def get_sales_distribution(
             if not order_date:
                 continue
 
-            # -------------------------------------
-            # Parse date
-            # -------------------------------------
+            parsed_date = None
+
+            # Mongo datetime
             if isinstance(order_date, datetime):
                 parsed_date = order_date
 
+            # String date
             elif isinstance(order_date, str):
-                try:
-                    parsed_date = datetime.strptime(
-                        order_date,
-                        "%d %b %Y, %I:%M %p"
-                    )
-                except ValueError:
-                    continue
 
-            else:
+                date_formats = [
+                    "%d %b %Y, %I:%M %p",
+                    "%Y-%m-%dT%H:%M:%S",
+                    "%Y-%m-%dT%H:%M:%S.%f",
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d %H:%M",
+                ]
+
+                for date_format in date_formats:
+                    try:
+                        parsed_date = datetime.strptime(
+                            order_date,
+                            date_format,
+                        )
+                        break
+                    except ValueError:
+                        continue
+
+                if parsed_date is None:
+                    try:
+                        parsed_date = datetime.fromisoformat(
+                            order_date.replace(
+                                "Z",
+                                "+00:00",
+                            )
+                        )
+
+                        if parsed_date.tzinfo:
+                            parsed_date = parsed_date.replace(
+                                tzinfo=None
+                            )
+
+                    except (ValueError, TypeError):
+                        parsed_date = None
+
+            if parsed_date is None:
                 continue
 
             # -------------------------------------
-            # Only selected month
+            # Selected month only
             # -------------------------------------
             if (
-                parsed_date.year != selected_month.year
-                or parsed_date.month != selected_month.month
+                parsed_date.year
+                != selected_month.year
+                or
+                parsed_date.month
+                != selected_month.month
             ):
                 continue
 
             # -------------------------------------
-            # 5. PROCESS ITEMS
+            # Process items
             # -------------------------------------
             items = order.get("items", [])
 
@@ -7444,9 +7683,6 @@ async def get_sales_distribution(
                 if not food_name:
                     continue
 
-                # ---------------------------------
-                # Quantity
-                # ---------------------------------
                 try:
                     quantity = int(
                         item.get("quantity", 0)
@@ -7457,20 +7693,35 @@ async def get_sales_distribution(
                 if quantity <= 0:
                     continue
 
-                # ---------------------------------
-                # 6. GET REAL FOOD CATEGORY
-                #
-                # IMPORTANT:
-                # No await here.
-                # ---------------------------------
-                food = foods_collection.find_one({
-                    "name": food_name
-                })
+                category = item.get("category")
 
-                if not food:
-                    continue
+                # ---------------------------------
+                # If order item already has category
+                # use it directly.
+                # ---------------------------------
+                if category:
+                    category = str(category).strip()
 
-                category = food.get("category")
+                # ---------------------------------
+                # Otherwise find food in database.
+                # ---------------------------------
+                if not category:
+
+                    food = foods_collection.find_one({
+                        "name": food_name
+                    })
+
+                    # Case-insensitive fallback
+                    if not food:
+                        food = foods_collection.find_one({
+                            "name": {
+                                "$regex": f"^{str(food_name).strip()}$",
+                                "$options": "i",
+                            }
+                        })
+
+                    if food:
+                        category = food.get("category")
 
                 if not category:
                     continue
@@ -7480,45 +7731,37 @@ async def get_sales_distribution(
                 if not category:
                     continue
 
-                # ---------------------------------
-                # 7. ADD QUANTITY
-                # ---------------------------------
                 category_quantities[category] = (
-                    category_quantities.get(category, 0)
+                    category_quantities.get(
+                        category,
+                        0,
+                    )
                     + quantity
                 )
 
         # -----------------------------------------
-        # 8. NO SALES DATA
+        # No data
         # -----------------------------------------
         if not category_quantities:
             return {
+                "success": True,
                 "month": month,
                 "total_quantity": 0,
-                "categories": []
+                "categories": [],
             }
 
         # -----------------------------------------
-        # 9. TOTAL SOLD QUANTITY
+        # Calculate total
         # -----------------------------------------
         total_quantity = sum(
             category_quantities.values()
         )
 
-        if total_quantity <= 0:
-            return {
-                "month": month,
-                "total_quantity": 0,
-                "categories": []
-            }
-
-        # -----------------------------------------
-        # 10. BUILD CATEGORY DATA
-        # -----------------------------------------
         categories = []
 
-        for category, quantity in category_quantities.items():
-
+        for category, quantity in (
+            category_quantities.items()
+        ):
             percentage = (
                 quantity / total_quantity
             ) * 100
@@ -7528,52 +7771,40 @@ async def get_sales_distribution(
                 "quantity": quantity,
                 "percentage": round(
                     percentage,
-                    1
-                )
+                    1,
+                ),
             })
 
-        # -----------------------------------------
-        # 11. SORT HIGHEST FIRST
-        # -----------------------------------------
         categories.sort(
             key=lambda item: item["quantity"],
-            reverse=True
+            reverse=True,
         )
 
-        # -----------------------------------------
-        # 12. RETURN REAL DATABASE DATA
-        # -----------------------------------------
         return {
+            "success": True,
             "month": month,
             "total_quantity": total_quantity,
-            "categories": categories
+            "categories": categories,
         }
 
     except HTTPException:
         raise
 
-    except Exception as exc:
-        print(
-            "========== SALES DISTRIBUTION ERROR =========="
-        )
-        print(
-            f"Error type: {type(exc).__name__}"
-        )
-        print(
-            f"Error message: {exc}"
-        )
-        print(
-            "==============================================="
+    except Exception as e:
+        logger.error(
+            f"Sales distribution error: {e}"
         )
 
         raise HTTPException(
             status_code=500,
-            detail="Failed to calculate sales distribution"
+            detail="Failed to calculate sales distribution",
         )
     
 @fastapi_app.get("/admin/order-chart-data")
 def get_admin_order_chart_data(
-    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+    _: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
 ):
     try:
         orders = list(
@@ -7583,16 +7814,27 @@ def get_admin_order_chart_data(
                     "_id": 1,
                     "date": 1,
                     "status": 1,
-                }
+                },
             )
         )
 
         result = []
 
         for order in orders:
+            order_date = order.get("date")
+
+            if not order_date:
+                continue
+
+            if isinstance(order_date, datetime):
+                date_value = order_date.isoformat()
+
+            else:
+                date_value = str(order_date)
+
             result.append({
                 "order_id": str(order["_id"]),
-                "date": order.get("date"),
+                "date": date_value,
                 "status": order.get("status"),
             })
 
@@ -7602,7 +7844,10 @@ def get_admin_order_chart_data(
         }
 
     except Exception as e:
-        logger.error(f"Order chart data error: {e}")
+        logger.error(
+            f"Order chart data error: {e}"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch order chart data",

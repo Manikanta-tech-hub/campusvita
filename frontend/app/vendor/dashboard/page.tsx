@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Clock3,
   CookingPot,
+  LogOut,
   PackageCheck,
   RefreshCw,
   Store,
@@ -15,7 +16,10 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { getAccessToken } from "@/app/lib/auth/session";
+import {
+  clearSession,
+  getAccessToken,
+} from "@/app/lib/auth/session";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
@@ -52,6 +56,12 @@ type VendorOrder = {
   cancellationReason?: string | null;
   items: VendorItem[];
   stall_orders: StallOrder[];
+};
+
+type VendorOrdersResponse = {
+  success: boolean;
+  orders: VendorOrder[];
+  today_revenue?: number;
 };
 
 type Action = {
@@ -170,37 +180,43 @@ function getStatusStyles(status: string) {
   switch (status) {
     case "Pending":
       return {
-        badge: "border-orange-400/20 bg-orange-500/10 text-orange-300",
+        badge:
+          "border-orange-400/20 bg-orange-500/10 text-orange-300",
         dot: "bg-orange-400",
       };
 
     case "Accepted":
       return {
-        badge: "border-blue-400/20 bg-blue-500/10 text-blue-300",
+        badge:
+          "border-blue-400/20 bg-blue-500/10 text-blue-300",
         dot: "bg-blue-400",
       };
 
     case "Placed":
       return {
-        badge: "border-violet-400/20 bg-violet-500/10 text-violet-300",
+        badge:
+          "border-violet-400/20 bg-violet-500/10 text-violet-300",
         dot: "bg-violet-400",
       };
 
     case "Cooking":
       return {
-        badge: "border-orange-400/20 bg-orange-500/10 text-orange-300",
+        badge:
+          "border-orange-400/20 bg-orange-500/10 text-orange-300",
         dot: "bg-orange-400",
       };
 
     case "Ready For Pickup":
       return {
-        badge: "border-emerald-400/20 bg-emerald-500/10 text-emerald-300",
+        badge:
+          "border-emerald-400/20 bg-emerald-500/10 text-emerald-300",
         dot: "bg-emerald-400",
       };
 
     case "Cancelled":
       return {
-        badge: "border-red-400/20 bg-red-500/10 text-red-300",
+        badge:
+          "border-red-400/20 bg-red-500/10 text-red-300",
         dot: "bg-red-400",
       };
 
@@ -244,6 +260,7 @@ function getRemainingSeconds(
   }
 
   const totalSeconds = Number(preparationMinutes) * 60;
+
   const elapsedSeconds = Math.floor(
     (Date.now() - started) / 1000
   );
@@ -276,6 +293,13 @@ function getProgress(status: string) {
 
 export default function VendorDashboardPage() {
   const [orders, setOrders] = useState<VendorOrder[]>([]);
+
+  // ============================================================
+  // TODAY'S REVENUE
+  // ============================================================
+
+  const [todayRevenue, setTodayRevenue] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -289,6 +313,19 @@ export default function VendorDashboardPage() {
   );
 
   const [, setTimerTick] = useState(0);
+
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
+  const handleLogout = () => {
+    clearSession("VENDOR");
+    window.location.href = "/login";
+  };
+
+  // ============================================================
+  // LOAD VENDOR ORDERS + TODAY'S REVENUE
+  // ============================================================
 
   const loadOrders = async (showRefreshing = false) => {
     try {
@@ -314,15 +351,32 @@ export default function VendorDashboardPage() {
         cache: "no-store",
       });
 
-      const data = await response.json();
+      const data: VendorOrdersResponse = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Failed to load vendor orders."
+          (data as unknown as { detail?: string }).detail ||
+            "Failed to load vendor orders."
         );
       }
 
-      setOrders(Array.isArray(data.orders) ? data.orders : []);
+      // ========================================================
+      // LIVE ORDERS
+      // ========================================================
+
+      setOrders(
+        Array.isArray(data.orders)
+          ? data.orders
+          : []
+      );
+
+      // ========================================================
+      // LIVE TODAY'S REVENUE
+      // ========================================================
+
+      setTodayRevenue(
+        Number(data.today_revenue || 0)
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -335,6 +389,10 @@ export default function VendorDashboardPage() {
     }
   };
 
+  // ============================================================
+  // INITIAL LOAD + LIVE POLLING
+  // ============================================================
+
   useEffect(() => {
     loadOrders();
 
@@ -345,6 +403,10 @@ export default function VendorDashboardPage() {
     return () => clearInterval(interval);
   }, []);
 
+  // ============================================================
+  // COOKING TIMER
+  // ============================================================
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimerTick((value) => value + 1);
@@ -353,6 +415,10 @@ export default function VendorDashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
+  // ============================================================
+  // STATISTICS
+  // ============================================================
+
   const statistics = useMemo(() => {
     let pending = 0;
     let cooking = 0;
@@ -360,7 +426,10 @@ export default function VendorDashboardPage() {
     let cancelled = 0;
 
     orders.forEach((order) => {
-      if (order.cancelled || order.status === "Cancelled") {
+      if (
+        order.cancelled ||
+        order.status === "Cancelled"
+      ) {
         cancelled += 1;
         return;
       }
@@ -388,6 +457,10 @@ export default function VendorDashboardPage() {
       cancelled,
     };
   }, [orders]);
+
+  // ============================================================
+  // UPDATE ORDER STATUS
+  // ============================================================
 
   const updateStatus = async (
     order: VendorOrder,
@@ -426,7 +499,8 @@ export default function VendorDashboardPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Unable to update order status."
+          data.detail ||
+            "Unable to update order status."
         );
       }
 
@@ -442,17 +516,16 @@ export default function VendorDashboardPage() {
     }
   };
 
-  /*
-   * Cancel ONLY the selected stall order.
-   *
-   * The stall_id is now sent to the backend so the backend
-   * can cancel only items belonging to this stall.
-   */
+  // ============================================================
+  // CANCEL STALL ORDER
+  // ============================================================
+
   const cancelCompleteOrder = async (
     order: VendorOrder,
     stallOrder: StallOrder
   ) => {
-    const orderNumber = order.token ?? order.order_id;
+    const orderNumber =
+      order.token ?? order.order_id;
 
     const confirmed = window.confirm(
       `Cancel this stall order from Order #${orderNumber}?\n\nOnly this stall's items will be cancelled. Items from other stalls will remain active.`
@@ -485,7 +558,8 @@ export default function VendorDashboardPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            reason: "Stall order cancelled by vendor",
+            reason:
+              "Stall order cancelled by vendor",
           }),
         }
       );
@@ -494,7 +568,8 @@ export default function VendorDashboardPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Unable to cancel stall order."
+          data.detail ||
+            "Unable to cancel stall order."
         );
       }
 
@@ -509,6 +584,10 @@ export default function VendorDashboardPage() {
       setCancellingKey(null);
     }
   };
+
+  // ============================================================
+  // CANCEL ITEM
+  // ============================================================
 
   const cancelItem = async (
     order: VendorOrder,
@@ -549,7 +628,8 @@ export default function VendorDashboardPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            reason: "Item cancelled by vendor",
+            reason:
+              "Item cancelled by vendor",
           }),
         }
       );
@@ -558,7 +638,8 @@ export default function VendorDashboardPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Unable to cancel item."
+          data.detail ||
+            "Unable to cancel item."
         );
       }
 
@@ -573,6 +654,10 @@ export default function VendorDashboardPage() {
       setCancellingKey(null);
     }
   };
+
+  // ============================================================
+  // LOADING
+  // ============================================================
 
   if (loading) {
     return (
@@ -601,7 +686,10 @@ export default function VendorDashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#090909] text-white">
-      {/* HEADER */}
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
+
       <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#090909]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
@@ -620,27 +708,46 @@ export default function VendorDashboardPage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => loadOrders(true)}
-            disabled={refreshing}
-            className="group flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm font-medium text-white/70 transition hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${
-                refreshing ? "animate-spin" : ""
-              }`}
-            />
+          {/* ==================================================
+              HEADER ACTIONS
+          ================================================== */}
 
-            <span className="hidden sm:inline">
-              Refresh
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* REFRESH */}
+            <button
+              type="button"
+              onClick={() => loadOrders(true)}
+              disabled={refreshing}
+              aria-label="Refresh orders"
+              title="Refresh orders"
+              className="group flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/70 transition hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${
+                  refreshing ? "animate-spin" : ""
+                }`}
+              />
+            </button>
+
+            {/* LOGOUT */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Log out"
+              title="Log out"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/55 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        {/* HERO */}
+        {/* ======================================================
+            HERO
+        ====================================================== */}
+
         <section className="relative overflow-hidden rounded-[28px] border border-orange-400/10 bg-gradient-to-br from-[#21120a] via-[#140c08] to-[#0d0d0d] p-5 shadow-2xl shadow-black/20 sm:p-7 lg:p-8">
           <div className="absolute -right-20 -top-32 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
 
@@ -663,6 +770,10 @@ export default function VendorDashboardPage() {
               </p>
             </div>
 
+            {/* ==================================================
+                TODAY'S REVENUE
+            ================================================== */}
+
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
                 <Store className="h-5 w-5 text-orange-400" />
@@ -670,18 +781,21 @@ export default function VendorDashboardPage() {
 
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
-                  Active Orders
+                  Today's Revenue
                 </p>
 
-                <p className="mt-0.5 text-xl font-bold">
-                  {statistics.total}
+                <p className="mt-0.5 text-xl font-bold text-white">
+                  {formatMoney(todayRevenue)}
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ERROR */}
+        {/* ======================================================
+            ERROR
+        ====================================================== */}
+
         {error && (
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -690,7 +804,10 @@ export default function VendorDashboardPage() {
           </div>
         )}
 
-        {/* STATISTICS */}
+        {/* ======================================================
+            STATISTICS
+        ====================================================== */}
+
         <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
           <div className="rounded-2xl border border-white/[0.07] bg-[#101010] p-4 sm:p-5">
             <p className="text-xs font-medium text-white/40">
@@ -763,7 +880,10 @@ export default function VendorDashboardPage() {
           </div>
         </section>
 
-        {/* ORDERS HEADER */}
+        {/* ======================================================
+            ORDERS HEADER
+        ====================================================== */}
+
         <div className="mb-4 mt-8 flex items-end justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-400">
@@ -780,7 +900,10 @@ export default function VendorDashboardPage() {
           </p>
         </div>
 
-        {/* EMPTY */}
+        {/* ======================================================
+            EMPTY
+        ====================================================== */}
+
         {orders.length === 0 ? (
           <section className="rounded-[28px] border border-white/[0.07] bg-[#101010] px-6 py-16 text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10">
@@ -811,7 +934,9 @@ export default function VendorDashboardPage() {
                 const action =
                   orderCancelled || stallCancelled
                     ? null
-                    : getNextAction(stallOrder.status);
+                    : getNextAction(
+                        stallOrder.status
+                      );
 
                 const statusForDisplay =
                   orderCancelled || stallCancelled
@@ -819,10 +944,14 @@ export default function VendorDashboardPage() {
                     : stallOrder.status;
 
                 const statusStyles =
-                  getStatusStyles(statusForDisplay);
+                  getStatusStyles(
+                    statusForDisplay
+                  );
 
                 const StatusIcon =
-                  getStatusIcon(statusForDisplay);
+                  getStatusIcon(
+                    statusForDisplay
+                  );
 
                 const stallItems = order.items
                   .map((item, originalIndex) => ({
@@ -851,40 +980,53 @@ export default function VendorDashboardPage() {
                   remainingSeconds === 0;
 
                 const progress =
-                  orderCancelled || stallCancelled
+                  orderCancelled ||
+                  stallCancelled
                     ? 100
-                    : getProgress(stallOrder.status);
+                    : getProgress(
+                        stallOrder.status
+                      );
 
-                const vendorTotal = stallItems.reduce(
-                  (sum, { item }) => {
-                    if (item.cancelled) {
-                      return sum;
-                    }
+                const vendorTotal =
+                  stallItems.reduce(
+                    (sum, { item }) => {
+                      if (item.cancelled) {
+                        return sum;
+                      }
 
-                    return (
-                      sum +
-                      Number(item.price || 0) *
-                        Number(item.quantity || 0)
-                    );
-                  },
-                  0
-                );
+                      return (
+                        sum +
+                        Number(
+                          item.price || 0
+                        ) *
+                          Number(
+                            item.quantity || 0
+                          )
+                      );
+                    },
+                    0
+                  );
 
                 const cancelOrderKey = `order-${order.order_id}-${stallOrder.stall_id}`;
 
                 const cancellingStallOrder =
-                  cancellingKey === cancelOrderKey;
+                  cancellingKey ===
+                  cancelOrderKey;
 
                 return (
                   <article
                     key={updateKey}
                     className={`overflow-hidden rounded-[28px] border bg-[#101010] shadow-2xl shadow-black/10 ${
-                      orderCancelled || stallCancelled
+                      orderCancelled ||
+                      stallCancelled
                         ? "border-red-500/10"
                         : "border-white/[0.07]"
                     }`}
                   >
-                    {/* ORDER HEADER */}
+                    {/* ==================================================
+                        ORDER HEADER
+                    ================================================== */}
+
                     <div className="border-b border-white/[0.06] p-4 sm:p-5 lg:p-6">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex items-center gap-3">
@@ -944,10 +1086,16 @@ export default function VendorDashboardPage() {
                       </div>
                     </div>
 
-                    {/* BODY */}
+                    {/* ==================================================
+                        BODY
+                    ================================================== */}
+
                     <div className="p-4 sm:p-5 lg:p-6">
                       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-                        {/* ITEMS */}
+                        {/* ==================================================
+                            ITEMS
+                        ================================================== */}
+
                         <div>
                           <div className="mb-4 flex items-center justify-between">
                             <div>
@@ -982,10 +1130,12 @@ export default function VendorDashboardPage() {
 
                                 const lineTotal =
                                   Number(
-                                    item.price || 0
+                                    item.price ||
+                                      0
                                   ) *
                                   Number(
-                                    item.quantity || 0
+                                    item.quantity ||
+                                      0
                                   );
 
                                 const itemCancelled =
@@ -1012,7 +1162,9 @@ export default function VendorDashboardPage() {
                                       <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-white/5 sm:h-[84px] sm:w-[84px]">
                                         {imageUrl ? (
                                           <img
-                                            src={imageUrl}
+                                            src={
+                                              imageUrl
+                                            }
                                             alt={
                                               item.name
                                             }
@@ -1090,7 +1242,10 @@ export default function VendorDashboardPage() {
                                       </div>
                                     </div>
 
-                                    {/* ITEM CANCEL */}
+                                    {/* ==================================================
+                                        ITEM CANCEL
+                                    ================================================== */}
+
                                     {!itemCancelled &&
                                       !orderCancelled &&
                                       !stallCancelled && (
@@ -1132,7 +1287,10 @@ export default function VendorDashboardPage() {
                           </div>
                         </div>
 
-                        {/* STATUS */}
+                        {/* ==================================================
+                            STATUS
+                        ================================================== */}
+
                         <div className="rounded-2xl border border-white/[0.06] bg-[#151515] p-4">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1154,7 +1312,10 @@ export default function VendorDashboardPage() {
                             </div>
                           </div>
 
-                          {/* PROGRESS */}
+                          {/* ==================================================
+                              PROGRESS
+                          ================================================== */}
+
                           {!orderCancelled &&
                             !stallCancelled && (
                               <div className="mt-5">
@@ -1175,7 +1336,10 @@ export default function VendorDashboardPage() {
                               </div>
                             )}
 
-                          {/* TIMER */}
+                          {/* ==================================================
+                              TIMER
+                          ================================================== */}
+
                           {stallOrder.status ===
                             "Cooking" &&
                             !orderCancelled &&
@@ -1222,7 +1386,10 @@ export default function VendorDashboardPage() {
                               </div>
                             )}
 
-                          {/* READY */}
+                          {/* ==================================================
+                              READY
+                          ================================================== */}
+
                           {stallOrder.status ===
                             "Ready For Pickup" &&
                             !orderCancelled &&
@@ -1247,7 +1414,10 @@ export default function VendorDashboardPage() {
                               </div>
                             )}
 
-                          {/* CANCELLED */}
+                          {/* ==================================================
+                              CANCELLED
+                          ================================================== */}
+
                           {(orderCancelled ||
                             stallCancelled) && (
                             <div className="mt-5 rounded-xl border border-red-400/10 bg-red-500/[0.06] p-3">
@@ -1273,7 +1443,10 @@ export default function VendorDashboardPage() {
                             </div>
                           )}
 
-                          {/* STATUS ACTION */}
+                          {/* ==================================================
+                              STATUS ACTION
+                          ================================================== */}
+
                           {action && (
                             <button
                               type="button"
@@ -1301,14 +1474,21 @@ export default function VendorDashboardPage() {
                             </button>
                           )}
 
-                          {/* CANCEL STALL ORDER */}
+                          {/* ==================================================
+                              CANCEL STALL ORDER
+                          ================================================== */}
+
                           {!orderCancelled &&
                             !stallCancelled && (
                               <button
                                 type="button"
                                 disabled={
-                                  Boolean(cancellingKey) ||
-                                  Boolean(updatingKey)
+                                  Boolean(
+                                    cancellingKey
+                                  ) ||
+                                  Boolean(
+                                    updatingKey
+                                  )
                                 }
                                 onClick={() =>
                                   cancelCompleteOrder(
