@@ -17,6 +17,7 @@ import firebase_admin
 from fastapi.encoders import jsonable_encoder
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 import logging
@@ -26,6 +27,7 @@ import cloudinary.uploader
 import razorpay
 import csv
 import io
+import json
 import uuid
 import shutil
 from fastapi.responses import StreamingResponse
@@ -75,6 +77,7 @@ from database import (
     ratings_collection,
     foods_collection,
     payments_collection,
+    refunds_collection,
     counters_collection,
     categories_collection,
     stalls_collection,
@@ -167,6 +170,7 @@ def get_env_or_raise(key: str) -> str:
 
 RAZORPAY_KEY_ID = get_env_or_raise("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = get_env_or_raise("RAZORPAY_KEY_SECRET")
+RAZORPAY_WEBHOOK_SECRET = get_env_or_raise("RAZORPAY_WEBHOOK_SECRET")
 CLOUDINARY_CLOUD_NAME = get_env_or_raise("CLOUDINARY_CLOUD_NAME")
 CLOUDINARY_API_KEY = get_env_or_raise("CLOUDINARY_API_KEY")
 CLOUDINARY_API_SECRET = get_env_or_raise("CLOUDINARY_API_SECRET")
@@ -222,6 +226,46 @@ class PaymentStatus:
     PENDING = "Pending"
     PAID = "Paid"
     FAILED = "Failed"
+
+
+class RefundStatus:
+    """
+    Authoritative refund lifecycle.
+
+    PENDING:
+        Refund request has been accepted and recorded but has not yet
+        been sent to the payment provider / wallet ledger.
+
+    INITIATED:
+        The backend has claimed the refund request and started processing it.
+
+    PROCESSING:
+        The external payment provider or internal wallet credit is being
+        reconciled.
+
+    PROCESSED:
+        The refund has been successfully completed.
+
+    FAILED:
+        Processing failed and the refund remains available for safe retry
+        or reconciliation.
+    """
+
+    PENDING = "PENDING"
+    INITIATED = "INITIATED"
+    PROCESSING = "PROCESSING"
+    PROCESSED = "PROCESSED"
+    FAILED = "FAILED"
+
+    @classmethod
+    def all_statuses(cls):
+        return [
+            cls.PENDING,
+            cls.INITIATED,
+            cls.PROCESSING,
+            cls.PROCESSED,
+            cls.FAILED,
+        ]
 
 
 class UserRole:
@@ -534,6 +578,449 @@ def get_vendor_stall_ids(current_user: Dict[str, Any]) -> List[str]:
 
     return [str(stall["_id"]) for stall in stalls]
 
+def money_to_paise(value: Any) -> int:
+    """
+    Convert a trusted monetary value to integer paise using Decimal.
+
+    Refund calculations must use integer paise to avoid floating-point
+    rounding errors. Values are rounded to the nearest paise using
+    standard half-up rounding.
+    """
+    try:
+        if isinstance(value, bool):
+            raise InvalidOperation
+
+        amount = Decimal(str(value)).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+    except (InvalidOperation, ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid monetary amount.",
+        )
+
+    if amount <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Monetary amount must be greater than zero.",
+        )
+
+    paise = int(amount * 100)
+
+    if paise <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Monetary amount is invalid.",
+        )
+
+    return paise
+
+
+def validate_refund_idempotency_key(value: str) -> str:
+    """
+    Validate and normalize a client-supplied refund idempotency key.
+
+    The key is used only for deduplicating the same refund request.
+    It must be deterministic, bounded, and safe to use as a MongoDB
+    identifier and Razorpay idempotency header value.
+    """
+    key = str(value or "").strip()
+
+    if not 10 <= len(key) <= 128:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid refund idempotency key.",
+        )
+
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", key):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid refund idempotency key.",
+        )
+
+    return key
+
+
+
+def _refund_payment_for_order(order: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Return the authoritative food-order payment record.
+
+    The caller never supplies a payment ID. The payment is resolved from
+    the trusted order identifier stored in MongoDB.
+    """
+    order_id = order.get("_id")
+    if not order_id:
+        return None
+
+    payment = payments_collection.find_one({
+        "order_id": str(order_id),
+        "purpose": "food_order",
+        "status": PaymentStatus.PAID,
+    })
+
+    if payment:
+        return payment
+
+    # Legacy-compatible fallback for records where purpose was not stored.
+    payment = payments_collection.find_one({
+        "order_id": str(order_id),
+        "status": PaymentStatus.PAID,
+    })
+
+    return payment
+
+
+def _refund_payment_method(order: Dict[str, Any],
+                            payment: Dict[str, Any]) -> str:
+    """
+    Resolve the payment method from trusted persisted state.
+    """
+    method = str(
+        payment.get("payment_method")
+        or order.get("payment_method")
+        or ""
+    ).strip().upper()
+
+    if method not in {"ONLINE", "WALLET"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This order does not use a supported refundable payment method.",
+        )
+
+    return method
+
+
+def _order_total_paise(order: Dict[str, Any],
+                       payment: Dict[str, Any]) -> int:
+    """
+    Resolve the original charged amount from the persisted payment record.
+
+    Payment amount is preferred because it represents the amount actually
+    recorded as paid. The order snapshot is used only as a compatibility
+    fallback for older records.
+    """
+    payment_amount = payment.get("amount")
+
+    if payment_amount is not None:
+        return money_to_paise(payment_amount)
+
+    order_amount = order.get("payment_amount", order.get("total"))
+
+    if order_amount is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Refund cannot be calculated because the original payment amount is unavailable.",
+        )
+
+    return money_to_paise(order_amount)
+
+
+def _refund_item_paise(item: Dict[str, Any]) -> int:
+    """
+    Calculate one item's refundable line amount from the immutable order
+    item snapshot, never from the current food catalogue price.
+    """
+    if not isinstance(item, dict):
+        return 0
+
+    price = item.get("price")
+    quantity = item.get("quantity")
+
+    if price is None or quantity is None:
+        return 0
+
+    try:
+        quantity = int(quantity)
+    except (TypeError, ValueError):
+        return 0
+
+    if quantity <= 0:
+        return 0
+
+    return money_to_paise(price) * quantity
+
+
+def _existing_refund_paise(order_id: str) -> int:
+    """
+    Sum all refund amounts already reserved for the order.
+
+    FAILED refunds are excluded because their funds were not completed.
+    All other refund lifecycle states reserve the corresponding amount
+    against the order to prevent concurrent over-refunding.
+    """
+    pipeline = [
+        {
+            "$match": {
+                "order_id": str(order_id),
+                "status": {
+                    "$in": [
+                        RefundStatus.PENDING,
+                        RefundStatus.INITIATED,
+                        RefundStatus.PROCESSING,
+                        RefundStatus.PROCESSED,
+                    ]
+                },
+            }
+        },
+        {
+            "$group": {
+                "_id": None,
+                "total": {"$sum": "$amount_paise"},
+            }
+        },
+    ]
+
+    result = list(refunds_collection.aggregate(pipeline))
+
+    if not result:
+        return 0
+
+    return int(result[0].get("total") or 0)
+
+
+def _existing_refunded_item_indexes(order_id: str) -> set[int]:
+    """
+    Return item indexes already reserved by non-failed partial refunds.
+
+    This prevents the same cancelled line item from being refunded twice
+    through different idempotency keys.
+    """
+    cursor = refunds_collection.find(
+        {
+            "order_id": str(order_id),
+            "status": {
+                "$in": [
+                    RefundStatus.PENDING,
+                    RefundStatus.INITIATED,
+                    RefundStatus.PROCESSING,
+                    RefundStatus.PROCESSED,
+                ]
+            },
+            "refund_scope": {
+                "$in": ["ITEM", "STALL"],
+            },
+            "item_indexes": {
+                "$exists": True,
+                "$ne": [],
+            },
+        },
+        {
+            "item_indexes": 1,
+        },
+    )
+
+    indexes: set[int] = set()
+
+    for refund in cursor:
+        for value in refund.get("item_indexes", []):
+            try:
+                indexes.add(int(value))
+            except (TypeError, ValueError):
+                continue
+
+    return indexes
+
+
+def _cancelled_refund_items(order: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Return cancelled item snapshots that have not already been assigned
+    to a completed/reserved refund.
+    """
+    items = []
+
+    for index, item in enumerate(order.get("items", [])):
+        if not isinstance(item, dict):
+            continue
+
+        if not bool(item.get("cancelled")):
+            continue
+
+        items.append({
+            "index": index,
+            "name": item.get("name", ""),
+            "quantity": int(item.get("quantity", 0) or 0),
+            "price": item.get("price"),
+            "stall_id": str(item.get("stall_id") or "").strip(),
+            "amount_paise": _refund_item_paise(item),
+        })
+
+    return items
+
+
+def _refund_target_items(order: Dict[str, Any],
+                         stall_id: Optional[str] = None,
+                         item_index: Optional[int] = None
+                         ) -> List[Dict[str, Any]]:
+    """
+    Determine the exact cancelled item scope.
+
+    A customer can request a whole order or a cancelled stall subset.
+    A vendor can request only its authenticated stall.
+
+    No client-supplied monetary value participates in this calculation.
+    """
+    cancelled = _cancelled_refund_items(order)
+
+    if item_index is not None:
+        return [
+            item for item in cancelled
+            if item["index"] == item_index
+            and (
+                not stall_id
+                or item["stall_id"] == str(stall_id).strip()
+            )
+        ]
+
+    if stall_id:
+        requested_stall_id = str(stall_id).strip()
+        return [
+            item for item in cancelled
+            if item["stall_id"] == requested_stall_id
+        ]
+
+    return cancelled
+
+
+def calculate_refund_amount_paise(
+    order: Dict[str, Any],
+    payment: Dict[str, Any],
+    *,
+    stall_id: Optional[str] = None,
+    item_index: Optional[int] = None,
+    full_order: bool = False,
+) -> Dict[str, Any]:
+    """
+    Calculate an authoritative refund from persisted order/payment data.
+
+    Full-order cancellation refunds the original charged amount.
+
+    Partial refunds refund only the cancelled item line totals. Shared
+    delivery fees are intentionally not refunded for partial cancellation
+    because the current billing schema does not contain a deterministic
+    per-stall fee allocation.
+
+    Existing reserved refunds are always subtracted before a new refund
+    can be accepted.
+    """
+    order_id = str(order.get("_id") or "").strip()
+
+    if not order_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid order.",
+        )
+
+    original_paise = _order_total_paise(order, payment)
+    already_refunded_paise = _existing_refund_paise(order_id)
+
+    if already_refunded_paise > original_paise:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Refund ledger exceeds the original payment amount.",
+        )
+
+    if full_order:
+        # A full-order refund means refund the remaining refundable
+        # balance, not the original amount a second time.
+        requested_paise = original_paise - already_refunded_paise
+        refund_scope = "FULL_ORDER"
+        target_items = []
+    else:
+        target_items = _refund_target_items(
+            order,
+            stall_id=stall_id,
+            item_index=item_index,
+        )
+
+        already_refunded_indexes = _existing_refunded_item_indexes(
+            order_id
+        )
+
+        target_items = [
+            item for item in target_items
+            if item["index"] not in already_refunded_indexes
+        ]
+
+        if not target_items:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="No eligible cancelled items are available for refund.",
+            )
+
+        requested_paise = sum(
+            int(item["amount_paise"])
+            for item in target_items
+        )
+        refund_scope = "ITEM" if item_index is not None else "STALL"
+
+    if requested_paise <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No refundable amount is available.",
+        )
+
+    remaining_paise = original_paise - already_refunded_paise
+
+    if requested_paise > remaining_paise:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Requested refund exceeds the remaining refundable amount.",
+        )
+
+    return {
+        "order_id": order_id,
+        "payment_id": payment.get("payment_id"),
+        "payment_method": _refund_payment_method(order, payment),
+        "original_amount_paise": original_paise,
+        "already_refunded_paise": already_refunded_paise,
+        "amount_paise": requested_paise,
+        "refund_scope": refund_scope,
+        "stall_id": str(stall_id).strip() if stall_id else None,
+        "item_index": item_index,
+        "item_indexes": [
+            int(item["index"])
+            for item in target_items
+        ],
+        "items": target_items,
+    }
+
+
+def ensure_refund_eligible_order(
+    order: Dict[str, Any],
+    payment: Dict[str, Any],
+) -> None:
+    """
+    Validate the minimum trusted conditions required before a refund.
+
+    The cancellation state itself is checked from persisted order data.
+    """
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No successful payment was found for this order.",
+        )
+
+    if payment.get("status") != PaymentStatus.PAID:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only successfully paid orders can be refunded.",
+        )
+
+    if str(payment.get("purpose", "food_order")) != "food_order":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This payment is not a food order payment.",
+        )
+
+
 def get_stall_preparation_minutes(stall_id: str) -> int:
     """Get preparation time configured for a stall."""
     try:
@@ -779,6 +1266,24 @@ async def create_indexes():
         payments_collection.create_index("date")
         logger.info(
             "✅ Payments collection index created"
+        )
+
+        # ============================================================
+        # REFUNDS
+        # ============================================================
+
+        refunds_collection.create_index(
+            "idempotency_key",
+            unique=True
+        )
+        refunds_collection.create_index("order_id")
+        refunds_collection.create_index("payment_id")
+        refunds_collection.create_index("razorpay_refund_id", sparse=True)
+        refunds_collection.create_index("user_email")
+        refunds_collection.create_index("status")
+
+        logger.info(
+            "✅ Refunds collection indexes created"
         )
 
         # ============================================================
@@ -1290,6 +1795,42 @@ class VerifyPaymentData(BaseModel):
     razorpay_signature: str
     order_intent: str
 
+class RefundRequestData(BaseModel):
+    """
+    Customer refund request.
+
+    The client may provide only the reason.
+    The backend determines the order, payment, eligibility, stall,
+    affected items, and refund amount from trusted database state.
+    """
+
+    reason: str = Field(
+        default="Customer requested cancellation",
+        min_length=1,
+        max_length=500,
+    )
+
+
+
+class VendorRefundRequestData(BaseModel):
+    """
+    Vendor cancellation/refund request.
+
+    The vendor supplies only the reason and idempotency key.
+    Stall ownership and the refundable amount are derived entirely
+    from authenticated vendor identity and database order data.
+    """
+
+    reason: str = Field(
+        default="Cancelled by vendor",
+        min_length=1,
+        max_length=500,
+    )
+
+    idempotency_key: str = Field(
+        min_length=10,
+        max_length=128,
+    )
 
 class RatingData(BaseModel):
     food_name: str
@@ -1596,7 +2137,74 @@ async def cancel_vendor_complete_order(
     )
 
     # ---------------------------------------------------------
-    # 12. Re-fetch latest order
+    # 12. Create the automatic refund request for this stall
+    # ---------------------------------------------------------
+    payment = _refund_payment_for_order(order)
+
+    ensure_refund_eligible_order(order, payment)
+
+    refund_calculation = calculate_refund_amount_paise(
+        order,
+        payment,
+        stall_id=requested_stall_id,
+    )
+
+    if refund_calculation["amount_paise"] > 0:
+        refund_idempotency_key = (
+            f"vendor-stall-{order['_id']}-{requested_stall_id}"
+        )
+
+        refund_document = {
+            "idempotency_key": refund_idempotency_key,
+            "order_id": refund_calculation["order_id"],
+            "payment_id": refund_calculation["payment_id"],
+            "razorpay_refund_id": None,
+            "user_email": (
+                order.get("email")
+                or order.get("user_email")
+            ),
+            "vendor_email": current_user.get("email"),
+            "payment_method": refund_calculation["payment_method"],
+            "amount_paise": refund_calculation["amount_paise"],
+            "currency": "INR",
+            "refund_scope": refund_calculation["refund_scope"],
+            "stall_id": requested_stall_id,
+            "item_index": None,
+            "item_indexes": refund_calculation["item_indexes"],
+            "items": refund_calculation["items"],
+            "reason": "Cancelled by vendor",
+            "status": RefundStatus.PENDING,
+            "created_at": cancellation_time,
+            "updated_at": cancellation_time,
+        }
+
+        try:
+            refund_result = refunds_collection.insert_one(
+                refund_document
+            )
+            refund_id = refund_result.inserted_id
+        except DuplicateKeyError:
+            existing_refund = refunds_collection.find_one(
+                {
+                    "idempotency_key": refund_idempotency_key,
+                }
+            )
+            refund_id = (
+                existing_refund["_id"]
+                if existing_refund
+                else None
+            )
+
+        if refund_id:
+            try:
+                process_refund_record(refund_id)
+            except HTTPException:
+                # Cancellation remains successful; the refund record
+                # remains persisted for safe retry/reconciliation.
+                pass
+
+    # ---------------------------------------------------------
+    # 13. Re-fetch latest order
     # ---------------------------------------------------------
     updated_order = orders_collection.find_one(
         {"_id": order["_id"]}
@@ -1608,12 +2216,12 @@ async def cancel_vendor_complete_order(
         )
 
         # -----------------------------------------------------
-        # 13. Send real-time WebSocket update
+        # 14. Send real-time WebSocket update
         # -----------------------------------------------------
         await safe_emit_order_update(updated_order)
 
         # -----------------------------------------------------
-        # 14. Send push notification to order owner
+        # 15. Send push notification to order owner
         # -----------------------------------------------------
         user_email = (
             order.get("email")
@@ -1863,7 +2471,25 @@ async def cancel_vendor_order_item(
             detail="You do not own this order item.",
         )
 
+    refund_idempotency_key = (
+        f"vendor-item-{order['_id']}-{item_index}"
+    )
+
     if item.get("cancelled"):
+        existing_refund = refunds_collection.find_one(
+            {
+                "idempotency_key": refund_idempotency_key,
+            }
+        )
+
+        if existing_refund:
+            return {
+                "success": True,
+                "duplicate": True,
+                "message": "This item was already cancelled and its refund request already exists.",
+                "refund": serialize_refund_response(existing_refund),
+            }
+
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This item is already cancelled.",
@@ -1940,6 +2566,70 @@ async def cancel_vendor_order_item(
         {"_id": order["_id"]},
         {"$set": update_fields},
     )
+
+    # -----------------------------------------------------
+    # Automatic partial refund for this cancelled item
+    # -----------------------------------------------------
+    payment = _refund_payment_for_order(order)
+
+    ensure_refund_eligible_order(order, payment)
+
+    refund_calculation = calculate_refund_amount_paise(
+        order,
+        payment,
+        stall_id=stall_id,
+        item_index=item_index,
+    )
+
+    if refund_calculation["amount_paise"] > 0:
+        refund_document = {
+            "idempotency_key": refund_idempotency_key,
+            "order_id": refund_calculation["order_id"],
+            "payment_id": refund_calculation["payment_id"],
+            "razorpay_refund_id": None,
+            "user_email": (
+                order.get("email")
+                or order.get("user_email")
+            ),
+            "vendor_email": current_user.get("email"),
+            "payment_method": refund_calculation["payment_method"],
+            "amount_paise": refund_calculation["amount_paise"],
+            "currency": "INR",
+            "refund_scope": "ITEM",
+            "stall_id": stall_id,
+            "item_index": item_index,
+            "item_indexes": refund_calculation["item_indexes"],
+            "items": refund_calculation["items"],
+            "reason": reason,
+            "status": RefundStatus.PENDING,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }
+
+        try:
+            refund_result = refunds_collection.insert_one(
+                refund_document
+            )
+            refund_id = refund_result.inserted_id
+        except DuplicateKeyError:
+            existing_refund = refunds_collection.find_one(
+                {
+                    "idempotency_key": refund_idempotency_key,
+                }
+            )
+            refund_id = (
+                existing_refund["_id"]
+                if existing_refund
+                else None
+            )
+
+        if refund_id:
+            try:
+                process_refund_record(refund_id)
+            except HTTPException:
+                # Cancellation remains successful. The refund record
+                # remains persisted for safe retry/reconciliation.
+                pass
 
     # -----------------------------------------------------
     # Reload updated order
@@ -4193,7 +4883,16 @@ async def pay_order_with_wallet(
 
             "total": total,
 
-            "email": current_user["email"],
+# Immutable billing snapshot used for future refund calculations.
+"billing": {
+    "subtotal": subtotal,
+    "delivery_fee": delivery_fee,
+    "tax_amount": 0.0,
+    "discount": 0.0,
+    "total": total,
+},
+
+"email": current_user["email"],
 
             "name": data.name,
 
@@ -4364,9 +5063,73 @@ async def pay_order_with_wallet(
             "refund_payment_id": None,
         }
 
-        payments_collection.insert_one(
-            payment
-        )
+        try:
+            payments_collection.insert_one(
+                payment
+            )
+
+        except DuplicateKeyError:
+            # The wallet debit and order already exist, but the
+            # payment ledger says this payment identifier was used.
+            # Roll back both so the customer is never charged
+            # without one consistent payment record.
+            orders_collection.delete_one(
+                {"_id": result.inserted_id}
+            )
+
+            users_collection.update_one(
+                {"email": current_user["email"]},
+                {
+                    "$inc": {
+                        "wallet": total,
+                        "total_orders": -1,
+                        "total_spent": -total,
+                    },
+                    "$pull": {
+                        "wallet_history": {
+                            "order_token": token
+                        }
+                    },
+                },
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment already processed",
+            )
+
+        except Exception:
+            # Payment record creation failed after the wallet was
+            # debited and the order was inserted. Restore both.
+            orders_collection.delete_one(
+                {"_id": result.inserted_id}
+            )
+
+            users_collection.update_one(
+                {"email": current_user["email"]},
+                {
+                    "$inc": {
+                        "wallet": total,
+                        "total_orders": -1,
+                        "total_spent": -total,
+                    },
+                    "$pull": {
+                        "wallet_history": {
+                            "order_token": token
+                        }
+                    },
+                },
+            )
+
+            logger.exception(
+                "Wallet payment record insertion failed; "
+                "order and wallet debit rolled back."
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to complete wallet payment.",
+            )
 
         # ============================================================
         # 9. SEND ORDER UPDATE
@@ -4434,12 +5197,936 @@ async def pay_order_with_wallet(
 # ORDER ROUTES
 # =====================================
 
+def serialize_refund_response(
+    refund: Optional[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """
+    Return only customer/vendor-safe refund fields.
+
+    Provider responses and internal failure details are never exposed
+    through customer/vendor refund APIs.
+    """
+    if not refund:
+        return None
+
+    safe_fields = {
+        "_id",
+        "order_id",
+        "payment_id",
+        "razorpay_refund_id",
+        "user_email",
+        "payment_method",
+        "amount_paise",
+        "currency",
+        "refund_scope",
+        "stall_id",
+        "item_index",
+        "item_indexes",
+        "items",
+        "reason",
+        "status",
+        "created_at",
+        "updated_at",
+        "processed_at",
+    }
+
+    return {
+        key: value
+        for key, value in refund.items()
+        if key in safe_fields
+    }
+
+def process_refund_record(refund_id: ObjectId) -> Dict[str, Any]:
+    """
+    Process one persisted refund exactly once.
+
+    ONLINE refunds are sent to Razorpay with the same idempotency key stored
+    in MongoDB. WALLET refunds are applied atomically to the customer's
+    wallet and recorded in wallet_history.
+    """
+    refund = refunds_collection.find_one({"_id": refund_id})
+
+    if not refund:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Refund request not found.",
+        )
+
+    if refund.get("status") == RefundStatus.PROCESSED:
+        return refund
+
+    if refund.get("status") not in {
+        RefundStatus.PENDING,
+        RefundStatus.FAILED,
+    }:
+        return refund
+
+    order_id = str(refund.get("order_id") or "").strip()
+    amount_paise = int(refund.get("amount_paise") or 0)
+    payment_method = str(
+        refund.get("payment_method") or ""
+    ).strip().upper()
+
+    if not order_id or amount_paise <= 0:
+        refunds_collection.update_one(
+            {"_id": refund_id},
+            {
+                "$set": {
+                    "status": RefundStatus.FAILED,
+                    "failure_reason": "Invalid persisted refund data.",
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Refund data is invalid.",
+        )
+
+    claim_time = datetime.now(timezone.utc)
+
+    claimed = refunds_collection.find_one_and_update(
+        {
+            "_id": refund_id,
+            "status": {
+                "$in": [
+                    RefundStatus.PENDING,
+                    RefundStatus.FAILED,
+                ]
+            },
+        },
+        {
+            "$set": {
+                "status": RefundStatus.INITIATED,
+                "updated_at": claim_time,
+            }
+        },
+    )
+
+    if not claimed:
+        latest = refunds_collection.find_one({"_id": refund_id})
+
+        if latest and latest.get("status") == RefundStatus.PROCESSED:
+            return latest
+
+        if latest:
+            return latest
+
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Refund is already being processed.",
+        )
+
+    try:
+        refunds_collection.update_one(
+            {
+                "_id": refund_id,
+                "status": RefundStatus.INITIATED,
+            },
+            {
+                "$set": {
+                    "status": RefundStatus.PROCESSING,
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            },
+        )
+
+        if payment_method == "ONLINE":
+            payment_id = str(
+                refund.get("payment_id") or ""
+            ).strip()
+
+            if not payment_id:
+                raise RuntimeError(
+                    "Online refund is missing its payment reference."
+                )
+
+            idempotency_key = validate_refund_idempotency_key(
+                refund.get("idempotency_key", "")
+            )
+
+            razorpay_response = razorpay_client.payment.refund(
+                payment_id,
+                {
+                    "amount": amount_paise,
+                    "speed": "normal",
+                },
+                headers={
+                    "X-Refund-Idempotency": idempotency_key,
+                },
+            )
+
+            razorpay_refund_id = str(
+                razorpay_response.get("id") or ""
+            ).strip()
+
+            if not razorpay_refund_id:
+                raise RuntimeError(
+                    "Razorpay did not return a refund ID."
+                )
+
+            refunds_collection.update_one(
+                {
+                    "_id": refund_id,
+                    "status": RefundStatus.PROCESSING,
+                },
+                {
+                    "$set": {
+                        "razorpay_refund_id": razorpay_refund_id,
+                        "provider_response": razorpay_response,
+                        "updated_at": datetime.now(timezone.utc),
+                    }
+                },
+            )
+
+            # Razorpay's refund API response confirms that the refund
+            # request was accepted. Final PROCESSED state is set by the
+            # verified refund webhook.
+
+        elif payment_method == "WALLET":
+            user_email = str(
+                refund.get("user_email") or ""
+            ).strip().lower()
+
+            if not user_email:
+                raise RuntimeError(
+                    "Wallet refund is missing the customer account."
+                )
+
+            amount = Decimal(amount_paise) / Decimal("100")
+
+            wallet_result = users_collection.find_one_and_update(
+                {
+                    "email": user_email,
+                    "is_active": True,
+                    "wallet_history": {
+                        "$not": {
+                            "$elemMatch": {
+                                "refund_id": str(refund_id),
+                            }
+                        }
+                    },
+                },
+                {
+                    "$inc": {
+                        "wallet": float(amount),
+                    },
+                    "$push": {
+                        "wallet_history": {
+                            "type": "credit",
+                            "amount": float(amount),
+                            "reason": "Automatic food order refund",
+                            "refund_id": str(refund_id),
+                            "order_id": order_id,
+                            "date": datetime.now().strftime(
+                                "%d %b %Y, %I:%M %p"
+                            ),
+                        }
+                    },
+                },
+            )
+
+            if not wallet_result:
+                existing_wallet_entry = users_collection.find_one(
+                    {
+                        "email": user_email,
+                        "wallet_history": {
+                            "$elemMatch": {
+                                "refund_id": str(refund_id),
+                            }
+                        },
+                    },
+                    {"_id": 1},
+                )
+
+                if not existing_wallet_entry:
+                    raise RuntimeError(
+                        "Customer wallet account was not found."
+                    )
+
+            refunds_collection.update_one(
+                {
+                    "_id": refund_id,
+                    "status": RefundStatus.PROCESSING,
+                },
+                {
+                    "$set": {
+                        "status": RefundStatus.PROCESSED,
+                        "processed_at": datetime.now(timezone.utc),
+                        "updated_at": datetime.now(timezone.utc),
+                    }
+                },
+            )
+
+        else:
+            raise RuntimeError(
+                "Unsupported refund payment method."
+            )
+
+    except Exception as exc:
+        refunds_collection.update_one(
+            {
+                "_id": refund_id,
+                "status": {
+                    "$in": [
+                        RefundStatus.INITIATED,
+                        RefundStatus.PROCESSING,
+                    ]
+                },
+            },
+            {
+                "$set": {
+                    "status": RefundStatus.FAILED,
+                    "failure_reason": str(exc)[:500],
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Refund processing failed. The refund remains safely recorded for retry.",
+        )
+
+    return refunds_collection.find_one({"_id": refund_id})
+
+
+@fastapi_app.post("/orders/{token}/refund")
+async def request_customer_refund(
+    token: int,
+    data: RefundRequestData,
+    current_user: Dict[str, Any] = Depends(
+        require_role(UserRole.USER)
+    ),
+):
+    """
+    Secure customer cancellation + refund.
+
+    The customer supplies only a reason.
+
+    The backend:
+    - verifies ownership
+    - verifies the real paid food-order payment
+    - verifies every active stall is still Pending
+    - cancels all remaining eligible items
+    - calculates the refundable amount from persisted order/payment data
+    - creates one deterministic refund record
+    - processes the refund through the existing refund engine
+    """
+
+    customer_email = current_user["email"]
+
+    # ============================================================
+    # 1. FIND THE CUSTOMER'S OWN ORDER
+    # ============================================================
+
+    order = orders_collection.find_one({
+        "token": token,
+        "email": customer_email,
+    })
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    order_id = str(order["_id"])
+
+    # ============================================================
+    # 2. PREVENT A SECOND CUSTOMER FULL REFUND
+    # ============================================================
+
+    existing_full_refund = refunds_collection.find_one({
+        "order_id": order_id,
+        "refund_scope": "FULL_ORDER",
+        "status": {
+            "$in": [
+                RefundStatus.PENDING,
+                RefundStatus.INITIATED,
+                RefundStatus.PROCESSING,
+                RefundStatus.PROCESSED,
+            ]
+        },
+    })
+
+    if existing_full_refund:
+        return {
+            "success": True,
+            "duplicate": True,
+            "refund": serialize_refund_response(existing_full_refund),
+        }
+
+    # ============================================================
+    # 4. VERIFY THE REAL PAYMENT
+    # ============================================================
+
+    payment = _refund_payment_for_order(order)
+
+    ensure_refund_eligible_order(
+        order,
+        payment,
+    )
+
+    # ============================================================
+    # 5. VERIFY CUSTOMER CANCELLATION ELIGIBILITY
+    # ============================================================
+    #
+    # Only active stalls that are still Pending may be cancelled
+    # by the customer.
+    #
+    # Cancelled items are ignored because they may already have been
+    # cancelled/refunded by a vendor.
+    # ============================================================
+
+    items = order.get("items", [])
+
+    active_item_indexes = [
+        index
+        for index, item in enumerate(items)
+        if isinstance(item, dict)
+        and not bool(item.get("cancelled"))
+    ]
+
+    if not active_item_indexes:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This order has no active items available for customer cancellation.",
+        )
+
+    stall_orders = build_stall_orders(order)
+
+    active_stall_ids = {
+        str(items[index].get("stall_id") or "").strip()
+        for index in active_item_indexes
+        if str(items[index].get("stall_id") or "").strip()
+    }
+
+    stall_order_by_id = {
+        str(stall_order.get("stall_id")): stall_order
+        for stall_order in stall_orders
+        if stall_order.get("stall_id")
+    }
+
+    for stall_id in active_stall_ids:
+        stall_order = stall_order_by_id.get(stall_id)
+
+        if stall_order is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This order cannot be cancelled safely because stall state is unavailable.",
+            )
+
+        if stall_order.get("status") != StallOrderStatus.PENDING:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This order can no longer be cancelled because preparation has already started.",
+            )
+
+        if bool(stall_order.get("cancelled")):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This order contains an unavailable active stall.",
+            )
+
+    # ============================================================
+    # 6. ATOMIC CANCELLATION
+    # ============================================================
+    #
+    # The MongoDB condition is re-checked at update time.
+    #
+    # This prevents a customer cancellation from succeeding after
+    # another request has already changed the order from Pending.
+    # ============================================================
+
+    cancellation_time = datetime.now(timezone.utc)
+    cancellation_reason = data.reason.strip()
+
+    updated_items = []
+
+    for index, item in enumerate(items):
+        item_copy = dict(item)
+
+        if index in active_item_indexes:
+            item_copy["cancelled"] = True
+            item_copy["cancelledAt"] = cancellation_time
+            item_copy["cancellationReason"] = cancellation_reason
+
+        updated_items.append(item_copy)
+
+    updated_stall_orders = []
+
+    for stall_order in stall_orders:
+        stall_copy = dict(stall_order)
+
+        stall_id = str(
+            stall_copy.get("stall_id") or ""
+        ).strip()
+
+        if stall_id in active_stall_ids:
+            stall_copy["cancelled"] = True
+            stall_copy["status"] = StallOrderStatus.CANCELLED
+            stall_copy["cancelledAt"] = cancellation_time
+            stall_copy["cancellationReason"] = cancellation_reason
+
+        updated_stall_orders.append(stall_copy)
+
+    cancellation_update = orders_collection.update_one(
+        {
+            "_id": order["_id"],
+            "email": customer_email,
+            "cancelled": {"$ne": True},
+
+            # At least one item must still be active when MongoDB
+            # performs the update. This prevents a race with another
+            # cancellation request.
+            "items": {
+                "$elemMatch": {
+                    "cancelled": {
+                        "$ne": True
+                    }
+                }
+            },
+
+            # Every non-cancelled stall must still be Pending.
+            # Already-cancelled stalls are ignored.
+            "stall_orders": {
+                "$not": {
+                    "$elemMatch": {
+                        "cancelled": {
+                            "$ne": True
+                        },
+                        "status": {
+                            "$nin": [
+                                StallOrderStatus.PENDING
+                            ]
+                        },
+                    }
+                }
+            },
+        },
+        {
+            "$set": {
+                "items": updated_items,
+                "stall_orders": updated_stall_orders,
+                "cancelled": True,
+                "cancelledAt": cancellation_time,
+                "cancellationReason": cancellation_reason,
+            }
+        },
+    )
+
+    if cancellation_update.modified_count != 1:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The order changed while cancellation was being processed. Please refresh and try again.",
+        )
+
+    # ============================================================
+    # 7. RELOAD THE AUTHORITATIVE ORDER
+    # ============================================================
+
+    order = orders_collection.find_one({
+        "_id": order["_id"],
+        "email": customer_email,
+    })
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order could not be reloaded after cancellation.",
+        )
+
+    # ============================================================
+    # 8. RE-VERIFY PAYMENT + CALCULATE SERVER-SIDE REFUND
+    # ============================================================
+
+    payment = _refund_payment_for_order(order)
+
+    ensure_refund_eligible_order(
+        order,
+        payment,
+    )
+
+    calculation = calculate_refund_amount_paise(
+        order,
+        payment,
+        full_order=True,
+    )
+
+    if calculation["amount_paise"] <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No refundable amount remains for this order.",
+        )
+
+    # ============================================================
+    # 9. CREATE DETERMINISTIC REFUND RECORD
+    # ============================================================
+    #
+    # The key is based on the real MongoDB order ID.
+    #
+    # Retrying the same customer cancellation therefore cannot
+    # create another refund.
+    # ============================================================
+
+    refund_idempotency_key = (
+        f"customer-order-{order['_id']}"
+    )
+
+    existing_customer_refund = refunds_collection.find_one({
+        "idempotency_key": refund_idempotency_key,
+    })
+
+    if existing_customer_refund:
+        return {
+            "success": True,
+            "duplicate": True,
+            "refund": serialize_refund_response(existing_customer_refund),
+        }
+
+    refund_document = {
+        "idempotency_key": refund_idempotency_key,
+        "order_id": calculation["order_id"],
+        "payment_id": calculation["payment_id"],
+        "razorpay_refund_id": None,
+        "user_email": customer_email,
+        "payment_method": calculation["payment_method"],
+        "amount_paise": calculation["amount_paise"],
+        "currency": "INR",
+        "refund_scope": "FULL_ORDER",
+        "stall_id": None,
+        "item_index": None,
+        "item_indexes": calculation["item_indexes"],
+        "items": calculation["items"],
+        "reason": cancellation_reason,
+        "status": RefundStatus.PENDING,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    try:
+        result = refunds_collection.insert_one(
+            refund_document
+        )
+
+    except DuplicateKeyError:
+        existing_customer_refund = refunds_collection.find_one({
+            "idempotency_key": refund_idempotency_key,
+        })
+
+        if not existing_customer_refund:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Refund request is already being processed.",
+            )
+
+        return {
+            "success": True,
+            "duplicate": True,
+            "refund": serialize_refund_response(existing_customer_refund),
+        }
+
+    # ============================================================
+    # 10. PROCESS THROUGH EXISTING REFUND ENGINE
+    # ============================================================
+
+    try:
+        saved_refund = process_refund_record(
+            result.inserted_id
+        )
+
+    except HTTPException:
+        # The cancellation is already persisted.
+        # The refund record remains safely available for retry.
+        raise
+
+    # ============================================================
+    # 11. NOTIFY ORDER CLIENTS
+    # ============================================================
+
+    updated_order = orders_collection.find_one({
+        "_id": order["_id"]
+    })
+
+    if updated_order:
+        await safe_emit_order_update(
+            updated_order
+        )
+
+    return {
+        "success": True,
+        "duplicate": False,
+        "message": "Order cancelled and refund requested successfully.",
+        "refund": serialize_refund_response(saved_refund),
+    }
+
+
+@fastapi_app.post("/vendor/orders/{token}/refund")
+async def request_vendor_refund(
+    token: int,
+    stall_id: str = Query(..., min_length=1),
+    data: VendorRefundRequestData = None,
+    current_user: Dict[str, Any] = Depends(
+        require_role(UserRole.VENDOR)
+    ),
+):
+    """
+    Vendor stall refund request.
+
+    The vendor can refund only items belonging to a stall they own.
+    The refund amount is calculated exclusively from persisted order data.
+    """
+    if data is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Refund request data is required.",
+        )
+
+    idempotency_key = validate_refund_idempotency_key(
+        data.idempotency_key
+    )
+
+    requested_stall_id = str(stall_id).strip()
+
+    vendor_stall_ids = get_vendor_stall_ids(current_user)
+
+    if requested_stall_id not in vendor_stall_ids:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to refund this stall.",
+        )
+
+    order = orders_collection.find_one({
+        "token": token,
+    })
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    payment = _refund_payment_for_order(order)
+
+    ensure_refund_eligible_order(order, payment)
+
+    calculation = calculate_refund_amount_paise(
+        order,
+        payment,
+        stall_id=requested_stall_id,
+    )
+
+    existing = refunds_collection.find_one({
+        "idempotency_key": idempotency_key,
+    })
+
+    if existing:
+        if (
+            existing.get("order_id") != calculation["order_id"]
+            or existing.get("stall_id") != requested_stall_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Idempotency key is already associated with another refund.",
+            )
+
+        return {
+            "success": True,
+            "duplicate": True,
+            "refund": serialize_refund_response(existing),
+        }
+
+    refund_document = {
+        "idempotency_key": idempotency_key,
+        "order_id": calculation["order_id"],
+        "payment_id": calculation["payment_id"],
+        "razorpay_refund_id": None,
+        "user_email": order.get("email"),
+        "vendor_email": current_user["email"],
+        "payment_method": calculation["payment_method"],
+        "amount_paise": calculation["amount_paise"],
+        "currency": "INR",
+        "refund_scope": calculation["refund_scope"],
+        "stall_id": requested_stall_id,
+        "item_index": None,
+        "item_indexes": calculation["item_indexes"],
+        "items": calculation["items"],
+        "reason": data.reason.strip(),
+        "status": RefundStatus.PENDING,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    try:
+        result = refunds_collection.insert_one(refund_document)
+    except DuplicateKeyError:
+        existing = refunds_collection.find_one({
+            "idempotency_key": idempotency_key,
+        })
+
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Refund request is already being processed.",
+            )
+
+        return {
+            "success": True,
+            "duplicate": True,
+            "refund": serialize_refund_response(existing),
+        }
+
+    saved_refund = process_refund_record(result.inserted_id)
+
+    return {
+        "success": True,
+        "duplicate": False,
+        "message": "Refund processed successfully.",
+        "refund": serialize_refund_response(saved_refund),
+    }
+
+
 @fastapi_app.get("/orders")
 def get_orders(current_user: Dict[str, Any] = Depends(get_current_user)):
     try:
-        orders = list(orders_collection.find({"email": current_user["email"]}))
+        orders = list(
+            orders_collection.find({
+                "email": current_user["email"]
+            })
+        )
 
         for order in orders:
+            payment = _refund_payment_for_order(order)
+
+            refund_eligible = False
+
+            try:
+                if (
+                    payment
+                    and payment.get("status") == PaymentStatus.PAID
+                    and str(
+                        payment.get(
+                            "purpose",
+                            "food_order"
+                        )
+                    ) == "food_order"
+                    and not bool(order.get("cancelled"))
+                ):
+                    items = order.get("items", [])
+
+                    active_items = [
+                        item
+                        for item in items
+                        if isinstance(item, dict)
+                        and not bool(item.get("cancelled"))
+                    ]
+
+                    if active_items:
+                        stored_stall_orders = order.get("stall_orders")
+
+                        # Fail closed for legacy orders that do not have
+                        # persisted stall-level state. Never assume Pending
+                        # when the real top-level order may already be Cooking
+                        # or further along.
+                        if not isinstance(stored_stall_orders, list):
+                            refund_eligible = (
+                                str(order.get("status") or "").strip().lower()
+                                == "pending"
+                            )
+                        else:
+                            stall_orders = build_stall_orders(order)
+
+                            active_stall_ids = {
+                                str(
+                                    item.get("stall_id") or ""
+                                ).strip()
+                                for item in active_items
+                                if str(
+                                    item.get("stall_id") or ""
+                                ).strip()
+                            }
+
+                            stall_order_by_id = {
+                            str(
+                                stall_order.get("stall_id")
+                            ): stall_order
+                            for stall_order in stall_orders
+                            if stall_order.get("stall_id")
+                        }
+
+                            refund_eligible = bool(
+                                active_stall_ids
+                            ) and all(
+                                stall_order_by_id.get(
+                                    stall_id
+                                )
+                                and stall_order_by_id[
+                                    stall_id
+                                ].get("status")
+                                == StallOrderStatus.PENDING
+                                and not bool(
+                                    stall_order_by_id[
+                                        stall_id
+                                    ].get("cancelled")
+                                )
+                                for stall_id in active_stall_ids
+                            )
+
+            except Exception:
+                logger.exception(
+                    "Failed to calculate refund eligibility "
+                    "for order %s",
+                    order.get("_id"),
+                )
+                refund_eligible = False
+
+            latest_refund = refunds_collection.find_one(
+                {
+                    "order_id": str(order["_id"]),
+                    "user_email": current_user["email"],
+                    "status": {
+                        "$in": RefundStatus.all_statuses()
+                    },
+                },
+                {
+                    "status": 1,
+                    "amount_paise": 1,
+                    "refund_scope": 1,
+                    "updated_at": 1,
+                    "processed_at": 1,
+                },
+                sort=[
+                    ("created_at", -1),
+                ],
+            )
+
+            order["refund_eligible"] = refund_eligible
+            order["refund_status"] = (
+                latest_refund.get("status")
+                if latest_refund
+                else None
+            )
+            order["refund_amount_paise"] = (
+                int(latest_refund.get("amount_paise", 0) or 0)
+                if latest_refund
+                else 0
+            )
+            order["refund_scope"] = (
+                latest_refund.get("refund_scope")
+                if latest_refund
+                else None
+            )
+            order["refund_updated_at"] = (
+                latest_refund.get("updated_at")
+                if latest_refund
+                else None
+            )
+            order["refund_processed_at"] = (
+                latest_refund.get("processed_at")
+                if latest_refund
+                else None
+            )
+
             order["order_id"] = str(order["_id"])
             del order["_id"]
 
@@ -4451,6 +6138,151 @@ def get_orders(current_user: Dict[str, Any] = Depends(get_current_user)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error"
         )
+
+
+@fastapi_app.get("/orders/{token}/refund-status")
+def get_customer_refund_status(
+    token: int,
+    current_user: Dict[str, Any] = Depends(
+        require_role(UserRole.USER)
+    ),
+):
+    """
+    Return the authenticated customer's refund status for their own order.
+
+    Ownership is determined exclusively from the authenticated user's
+    email and the order token. Client-supplied user/payment/refund
+    identifiers are never trusted.
+    """
+
+    customer_email = current_user["email"]
+
+    order = orders_collection.find_one({
+        "token": token,
+        "email": customer_email,
+    })
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    order_id = str(order["_id"])
+
+    refund = refunds_collection.find_one(
+        {
+            "order_id": order_id,
+            "user_email": customer_email,
+            "status": {
+                "$in": RefundStatus.all_statuses()
+            },
+        },
+        sort=[
+            ("created_at", -1),
+        ],
+    )
+
+    return {
+        "success": True,
+        "refund": serialize_refund_response(refund),
+    }
+
+
+@fastapi_app.post("/admin/refunds/{refund_id}/retry")
+def retry_refund(
+    refund_id: str,
+    current_user: Dict[str, Any] = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    """
+    Retry a persisted refund using the existing refund processor.
+
+    Only the refund record ID is accepted from the client. The refund
+    amount, payment reference, customer, payment method, and idempotency
+    key are loaded from trusted database state.
+    """
+
+    refund_id = str(refund_id or "").strip()
+
+    if not ObjectId.is_valid(refund_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid refund ID.",
+        )
+
+    refund = refunds_collection.find_one({
+        "_id": ObjectId(refund_id),
+    })
+
+    if not refund:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Refund request not found.",
+        )
+
+    if refund.get("status") == RefundStatus.PROCESSED:
+        return {
+            "success": True,
+            "message": "Refund is already processed.",
+            "refund": serialize_refund_response(refund),
+        }
+
+    if refund.get("status") not in {
+        RefundStatus.PENDING,
+        RefundStatus.FAILED,
+    }:
+        return {
+            "success": True,
+            "message": "Refund is currently being processed.",
+            "refund": serialize_refund_response(refund),
+        }
+
+    try:
+        processed_refund = process_refund_record(
+            ObjectId(refund_id)
+        )
+
+        return {
+            "success": True,
+            "message": "Refund retry submitted.",
+            "refund": serialize_refund_response(
+                processed_refund
+            ),
+        }
+
+    except HTTPException:
+        latest_refund = refunds_collection.find_one({
+            "_id": ObjectId(refund_id),
+        })
+
+        return {
+            "success": False,
+            "message": "Refund retry could not be completed. The refund remains recorded for recovery.",
+            "refund": serialize_refund_response(
+                latest_refund
+            ),
+        }
+
+    except Exception:
+        logger.exception(
+            "Admin refund retry failed for refund %s by %s",
+            refund_id,
+            current_user["email"],
+        )
+
+        latest_refund = refunds_collection.find_one({
+            "_id": ObjectId(refund_id),
+        })
+
+        return {
+            "success": False,
+            "message": "Refund retry could not be completed. The refund remains recorded for recovery.",
+            "refund": serialize_refund_response(
+                latest_refund
+            ),
+        }
 
 
 @fastapi_app.get("/track-order/{token}")
@@ -6667,6 +8499,14 @@ def create_payment_order(
                 # Backend-authoritative final amount
                 "total": total,
 
+# Immutable billing snapshot for future refund calculations.
+"billing": {
+    "subtotal": bill.get("subtotal", 0),
+    "delivery_fee": bill.get("delivery_fee", 0),
+    "tax_amount": bill.get("tax_amount", 0),
+    "discount": bill.get("discount", 0),
+    "total": bill.get("total", 0),
+},
                 # Customer information
                 "name": data.name.strip(),
                 "phone": str(data.phone).strip(),
@@ -6809,13 +8649,26 @@ async def verify_payment(
         # ========================================================
 
         order = {
-            "items": intent["items"],
+    "items": intent["items"],
 
-            "total": float(
-                intent["total"]
-            ),
+    "total": float(
+        intent["total"]
+    ),
 
-            "email": intent["email"],
+    # Immutable billing snapshot captured when the Razorpay
+    # payment intent was created.
+    "billing": intent.get(
+        "billing",
+        {
+            "subtotal": float(intent["total"]),
+            "delivery_fee": 0.0,
+            "tax_amount": 0.0,
+            "discount": 0.0,
+            "total": float(intent["total"]),
+        },
+    ),
+
+    "email": intent["email"],
 
             "name": intent["name"],
 
@@ -6970,9 +8823,7 @@ async def verify_payment(
         # ========================================================
 
         try:
-            payments_collection.insert_one(
-                payment
-            )
+            payments_collection.insert_one(payment)
 
         except DuplicateKeyError:
             raise HTTPException(
@@ -9805,6 +11656,278 @@ def get_admin_payment(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch payment details",
         )
+# ============================================================
+# RAZORPAY WEBHOOK
+# ============================================================
+# Refund finalization is driven by Razorpay's signed webhook.
+# The raw request body MUST be used for signature verification.
+# Customer/vendor clients never call this endpoint directly.
+# ============================================================
+
+@fastapi_app.post("/webhooks/razorpay")
+async def razorpay_webhook(
+    request: Request,
+    x_razorpay_signature: Optional[str] = Header(
+        default=None,
+        alias="X-Razorpay-Signature",
+    ),
+):
+    try:
+        raw_body = await request.body()
+
+        if not x_razorpay_signature:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Missing webhook signature.",
+            )
+
+        expected_signature = hmac.new(
+            RAZORPAY_WEBHOOK_SECRET.encode("utf-8"),
+            raw_body,
+            hashlib.sha256,
+        ).hexdigest()
+
+        if not hmac.compare_digest(
+            expected_signature,
+            x_razorpay_signature.strip(),
+        ):
+            logger.warning(
+                "Rejected Razorpay webhook with invalid signature."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid webhook signature.",
+            )
+
+        try:
+            payload = json.loads(raw_body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid webhook payload.",
+            )
+
+        event = str(
+            payload.get("event") or ""
+        ).strip().lower()
+
+        supported_events = {
+            "refund.created",
+            "refund.processed",
+            "refund.failed",
+        }
+
+        if event not in supported_events:
+            return {
+                "success": True,
+                "ignored": True,
+            }
+
+        payload_entity = (
+            payload.get("payload") or {}
+        )
+
+        refund_entity = (
+            payload_entity.get("refund") or {}
+        ).get("entity") or {}
+
+        razorpay_refund_id = str(
+            refund_entity.get("id") or ""
+        ).strip()
+
+        if not razorpay_refund_id:
+            logger.warning(
+                "Razorpay refund webhook missing refund ID."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refund ID is missing.",
+            )
+
+        refund = refunds_collection.find_one(
+            {
+                "razorpay_refund_id": razorpay_refund_id,
+            }
+        )
+
+        if not refund:
+            logger.warning(
+                "Received Razorpay refund webhook for unknown "
+                "refund_id=%s",
+                razorpay_refund_id,
+            )
+            return {
+                "success": True,
+                "ignored": True,
+            }
+
+        current_status = str(
+            refund.get("status") or ""
+        ).upper()
+
+        if current_status == RefundStatus.PROCESSED:
+            return {
+                "success": True,
+                "already_processed": True,
+            }
+
+        now = datetime.now(timezone.utc)
+
+        if event == "refund.processed":
+            refund_update = refunds_collection.update_one(
+                {
+                    "_id": refund["_id"],
+                    "status": {
+                        "$in": [
+                            RefundStatus.PENDING,
+                            RefundStatus.INITIATED,
+                            RefundStatus.PROCESSING,
+                        ]
+                    },
+                },
+                {
+                    "$set": {
+                        "status": RefundStatus.PROCESSED,
+                        "processed_at": now,
+                        "updated_at": now,
+                    }
+                },
+            )
+
+            if refund_update.modified_count == 1:
+                payment_id = str(
+                    refund.get("payment_id") or ""
+                ).strip()
+
+                if payment_id:
+                    processed_refunds = refunds_collection.find(
+                        {
+                            "payment_id": payment_id,
+                            "status": RefundStatus.PROCESSED,
+                        },
+                        {
+                            "amount_paise": 1,
+                            "razorpay_refund_id": 1,
+                            "processed_at": 1,
+                        },
+                    )
+
+                    total_refunded_paise = 0
+                    latest_refund = None
+
+                    for processed_refund in processed_refunds:
+                        amount_paise = int(
+                            processed_refund.get(
+                                "amount_paise",
+                                0,
+                            )
+                            or 0
+                        )
+
+                        if amount_paise > 0:
+                            total_refunded_paise += amount_paise
+
+                        processed_at = processed_refund.get(
+                            "processed_at"
+                        )
+
+                        if (
+                            latest_refund is None
+                            or (
+                                processed_at
+                                and processed_at
+                                > latest_refund.get(
+                                    "processed_at"
+                                )
+                            )
+                        ):
+                            latest_refund = processed_refund
+
+                    latest_refund_id = (
+                        str(
+                            latest_refund.get(
+                                "razorpay_refund_id"
+                            )
+                            or ""
+                        ).strip()
+                        if latest_refund
+                        else razorpay_refund_id
+                    )
+
+                    payments_collection.update_one(
+                        {
+                            "payment_id": payment_id,
+                        },
+                        {
+                            "$set": {
+                                "refund_status": "PROCESSED",
+                                "refund_amount": (
+                                    total_refunded_paise / 100
+                                ),
+                                "refund_date": now,
+                                "refund_payment_id": latest_refund_id,
+                            },
+                        },
+                    )
+
+        elif event == "refund.failed":
+            refunds_collection.update_one(
+                {
+                    "_id": refund["_id"],
+                    "status": {
+                        "$in": [
+                            RefundStatus.PENDING,
+                            RefundStatus.INITIATED,
+                            RefundStatus.PROCESSING,
+                        ]
+                    },
+                },
+                {
+                    "$set": {
+                        "status": RefundStatus.FAILED,
+                        "updated_at": now,
+                        "failure_reason": "Razorpay reported refund failure.",
+                    }
+                },
+            )
+
+        elif event == "refund.created":
+            refunds_collection.update_one(
+                {
+                    "_id": refund["_id"],
+                    "status": {
+                        "$in": [
+                            RefundStatus.INITIATED,
+                            RefundStatus.PROCESSING,
+                        ]
+                    },
+                },
+                {
+                    "$set": {
+                        "updated_at": now,
+                    }
+                },
+            )
+
+        return {
+            "success": True,
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as exc:
+        logger.exception(
+            "Razorpay refund webhook processing error: %s",
+            exc,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Webhook processing failed.",
+        )
+
+
+
 # =====================================
 # FINAL SOCKET APP
 # =====================================
