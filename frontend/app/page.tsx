@@ -62,16 +62,12 @@ export default function Home() {
 
   const cartItemCount = useMemo(() => {
     return cartItems.reduce(
-      (total, item) =>
-        total + Number(item.quantity || 0),
-      0
+      (total, item) => total + Number(item.quantity || 0),
+      0,
     );
   }, [cartItems]);
 
-  const cartLabel =
-    cartItemCount === 1
-      ? "item"
-      : "items";
+  const cartLabel = cartItemCount === 1 ? "item" : "items";
 
   // ============================================================
   // AUTHENTICATION
@@ -99,21 +95,19 @@ export default function Home() {
           setError("");
         }
 
-        const response = await fetch(
-          "http://127.0.0.1:8000/stalls",
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
-            cache: "no-store",
-          }
-        );
+        const API_URL =
+          process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
+        const response = await fetch(`${API_URL}/stalls`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        });
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch stalls: ${response.status}`
-          );
+          throw new Error(`Failed to fetch stalls: ${response.status}`);
         }
 
         const data = await response.json();
@@ -121,24 +115,17 @@ export default function Home() {
         console.log("🏪 Live stalls:", data);
 
         if (!Array.isArray(data?.stalls)) {
-          throw new Error(
-            "Invalid stalls response from server"
-          );
+          throw new Error("Invalid stalls response from server");
         }
 
         if (!cancelled) {
           setStalls(data.stalls);
         }
       } catch (err) {
-        console.error(
-          "❌ Failed to load stalls:",
-          err
-        );
+        console.error("❌ Failed to load stalls:", err);
 
         if (!cancelled) {
-          setError(
-            "Unable to load food stalls."
-          );
+          setError("Unable to load food stalls.");
         }
       } finally {
         if (!cancelled) {
@@ -169,10 +156,7 @@ export default function Home() {
           listenNotifications();
         }
       } catch (error) {
-        console.log(
-          "Notification error:",
-          error
-        );
+        console.log("Notification error:", error);
       }
     };
 
@@ -188,15 +172,11 @@ export default function Home() {
   // ============================================================
 
   const activeStalls = useMemo(() => {
-    return stalls.filter(
-      (stall) => stall.active !== false
-    );
+    return stalls.filter((stall) => stall.active !== false);
   }, [stalls]);
 
   const openStalls = useMemo(() => {
-    return activeStalls.filter(
-      (stall) => stall.is_open
-    );
+    return activeStalls.filter((stall) => stall.is_open);
   }, [activeStalls]);
 
   // ============================================================
@@ -204,53 +184,37 @@ export default function Home() {
   // ============================================================
 
   const filteredStalls = useMemo(() => {
-    const query =
-      searchQuery.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
 
     if (!query) {
       return activeStalls;
     }
 
     return activeStalls.filter((stall) => {
-      const stallName =
-        stall.name?.toLowerCase() ?? "";
+      const stallName = stall.name?.toLowerCase() ?? "";
 
-      const stallDescription =
-        stall.description?.toLowerCase() ?? "";
+      const stallDescription = stall.description?.toLowerCase() ?? "";
 
-      return (
-        stallName.includes(query) ||
-        stallDescription.includes(query)
-      );
+      return stallName.includes(query) || stallDescription.includes(query);
     });
-  }, [
-    activeStalls,
-    searchQuery,
-  ]);
+  }, [activeStalls, searchQuery]);
 
   // ============================================================
   // PREMIUM HOME BANNER
   // ============================================================
 
-  const heroImage =
-    "/images/campus-canteen-banner.jpeg";
+  const heroImage = "/images/campus-canteen-banner.jpeg";
 
   // ============================================================
   // STALL NAVIGATION
   // ============================================================
 
-  const handleStallClick = (
-    stall: Stall
-  ) => {
+  const handleStallClick = (stall: Stall) => {
     if (!stall.is_open) {
       return;
     }
 
-    router.push(
-      `/stall/${encodeURIComponent(
-        stall._id
-      )}`
-    );
+    router.push(`/stall/${encodeURIComponent(stall._id)}`);
   };
 
   // ============================================================
@@ -279,9 +243,7 @@ export default function Home() {
         <div className="px-6 text-center">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-orange-500" />
 
-          <p className="text-sm text-zinc-400">
-            Loading food stalls...
-          </p>
+          <p className="text-sm text-zinc-400">Loading food stalls...</p>
         </div>
       </main>
     );
@@ -293,7 +255,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white">
-
       {/* ========================================================
           NAVBAR
           ======================================================== */}
@@ -301,14 +262,12 @@ export default function Home() {
       <Navbar />
 
       <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-5 sm:px-6 sm:pb-32 sm:pt-8 lg:px-10">
-
         {/* ======================================================
             SEARCH BOX
             ====================================================== */}
 
         <section className="mb-5">
           <div className="relative">
-
             <Search
               size={20}
               className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
@@ -317,11 +276,7 @@ export default function Home() {
             <input
               type="search"
               value={searchQuery}
-              onChange={(event) =>
-                setSearchQuery(
-                  event.target.value
-                )
-              }
+              onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search food stalls..."
               aria-label="Search food stalls"
               className="h-14 w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-12 pr-12 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
@@ -343,10 +298,7 @@ export default function Home() {
             <div className="mt-2 px-1">
               <p className="text-xs text-zinc-500">
                 {filteredStalls.length}{" "}
-                {filteredStalls.length === 1
-                  ? "stall"
-                  : "stalls"}{" "}
-                found
+                {filteredStalls.length === 1 ? "stall" : "stalls"} found
               </p>
             </div>
           )}
@@ -358,7 +310,6 @@ export default function Home() {
 
         <section className="mb-9">
           <div className="group relative isolate overflow-hidden rounded-[28px] border border-zinc-800/80 bg-zinc-950 shadow-2xl shadow-black/40">
-
             {/* REAL LOCAL BANNER IMAGE */}
 
             <img
@@ -368,11 +319,10 @@ export default function Home() {
               onError={(event) => {
                 console.error(
                   "❌ CampusVita banner image failed to load:",
-                  heroImage
+                  heroImage,
                 );
 
-                event.currentTarget.style.display =
-                  "none";
+                event.currentTarget.style.display = "none";
               }}
             />
 
@@ -385,21 +335,15 @@ export default function Home() {
             {/* HERO CONTENT */}
 
             <div className="relative z-20 flex min-h-[210px] flex-col justify-center px-6 py-8 sm:min-h-[240px] sm:px-9 sm:py-10 lg:min-h-[270px] lg:px-12">
-
               {/* CAMPUS CANTEEN LABEL */}
 
               <div className="mb-4 flex items-center gap-2">
                 <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 backdrop-blur-md">
-
-                  <MapPin
-                    size={13}
-                    className="text-orange-400"
-                  />
+                  <MapPin size={13} className="text-orange-400" />
 
                   <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-xs">
                     Campus Canteen
                   </span>
-
                 </div>
               </div>
 
@@ -407,53 +351,37 @@ export default function Home() {
 
               <h1 className="max-w-2xl text-3xl font-black leading-[1.05] tracking-tight text-white sm:text-4xl lg:text-5xl">
                 Delicious food from{" "}
-                <span className="text-orange-400">
-                  {activeStalls.length}
-                </span>{" "}
-                {activeStalls.length === 1
-                  ? "amazing stall"
-                  : "amazing stalls"}
+                <span className="text-orange-400">{activeStalls.length}</span>{" "}
+                {activeStalls.length === 1 ? "amazing stall" : "amazing stalls"}
               </h1>
 
               {/* DESCRIPTION */}
 
               <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-200 sm:text-base">
-                Discover fresh food, explore menus,
-                and order directly from your campus
-                food stalls.
+                Discover fresh food, explore menus, and order directly from your
+                campus food stalls.
               </p>
 
               {/* REAL OPEN STALL COUNT */}
 
               <div className="mt-5 flex flex-wrap items-center gap-3">
-
                 <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
-
                   <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
 
                   <span className="text-xs font-medium text-white/90">
                     {openStalls.length}{" "}
-                    {openStalls.length === 1
-                      ? "stall"
-                      : "stalls"}{" "}
-                    accepting orders
+                    {openStalls.length === 1 ? "stall" : "stalls"} accepting
+                    orders
                   </span>
-
                 </div>
 
                 <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md sm:flex">
-
-                  <UtensilsCrossed
-                    size={13}
-                    className="text-orange-400"
-                  />
+                  <UtensilsCrossed size={13} className="text-orange-400" />
 
                   <span className="text-xs font-medium text-white/80">
                     Fresh campus food
                   </span>
-
                 </div>
-
               </div>
             </div>
           </div>
@@ -474,17 +402,12 @@ export default function Home() {
             ====================================================== */}
 
         <section>
-
           {/* STALL HEADER */}
 
           <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
-
             <div>
-
               <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                {searchQuery.trim()
-                  ? "Search Results"
-                  : "All Stalls"}
+                {searchQuery.trim() ? "Search Results" : "All Stalls"}
               </h2>
 
               <p className="mt-1 text-sm text-zinc-500">
@@ -492,13 +415,11 @@ export default function Home() {
                   ? "Matching food stalls from campus"
                   : "Select a stall to explore its menu"}
               </p>
-
             </div>
 
             {/* REAL RESULT / STALL COUNT */}
 
             <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5">
-
               <span className="text-sm font-semibold text-zinc-300">
                 {searchQuery.trim()
                   ? filteredStalls.length
@@ -514,39 +435,28 @@ export default function Home() {
                     ? "stall"
                     : "stalls"}
               </span>
-
             </div>
-
           </div>
 
           {/* ====================================================
               EMPTY STATE
               ==================================================== */}
 
-          {activeStalls.length === 0 &&
-            !error && (
-              <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-10 text-center shadow-xl">
-
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900">
-
-                  <UtensilsCrossed
-                    size={28}
-                    className="text-zinc-600"
-                  />
-
-                </div>
-
-                <h3 className="text-xl font-semibold text-white">
-                  No food stalls available
-                </h3>
-
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-                  There are currently no active food
-                  stalls available.
-                </p>
-
+          {activeStalls.length === 0 && !error && (
+            <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-10 text-center shadow-xl">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900">
+                <UtensilsCrossed size={28} className="text-zinc-600" />
               </div>
-            )}
+
+              <h3 className="text-xl font-semibold text-white">
+                No food stalls available
+              </h3>
+
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+                There are currently no active food stalls available.
+              </p>
+            </div>
+          )}
 
           {/* ====================================================
               SEARCH EMPTY STATE
@@ -556,14 +466,8 @@ export default function Home() {
             searchQuery.trim() &&
             filteredStalls.length === 0 && (
               <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-10 text-center shadow-xl">
-
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900">
-
-                  <Search
-                    size={28}
-                    className="text-zinc-600"
-                  />
-
+                  <Search size={28} className="text-zinc-600" />
                 </div>
 
                 <h3 className="text-xl font-semibold text-white">
@@ -571,17 +475,13 @@ export default function Home() {
                 </h3>
 
                 <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-
                   No active food stall matches{" "}
-
                   <span className="font-medium text-zinc-300">
                     &quot;
                     {searchQuery.trim()}
                     &quot;
                   </span>
-
                   .
-
                 </p>
 
                 <button
@@ -591,7 +491,6 @@ export default function Home() {
                 >
                   Clear Search
                 </button>
-
               </div>
             )}
 
@@ -601,24 +500,17 @@ export default function Home() {
 
           {filteredStalls.length > 0 && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-
               {filteredStalls.map((stall) => {
-
-                const isOpen =
-                  stall.is_open;
+                const isOpen = stall.is_open;
 
                 return (
                   <button
                     key={stall._id}
                     type="button"
                     disabled={!isOpen}
-                    onClick={() =>
-                      handleStallClick(stall)
-                    }
+                    onClick={() => handleStallClick(stall)}
                     aria-label={
-                      isOpen
-                        ? `Open ${stall.name}`
-                        : `${stall.name} is closed`
+                      isOpen ? `Open ${stall.name}` : `${stall.name} is closed`
                     }
                     className={`group relative overflow-hidden rounded-[22px] border text-left outline-none transition-all duration-300 ${
                       isOpen
@@ -626,16 +518,12 @@ export default function Home() {
                         : "cursor-not-allowed border-zinc-900 bg-zinc-950"
                     }`}
                   >
-
                     {/* STALL IMAGE */}
 
                     <div className="relative aspect-square w-full overflow-hidden bg-zinc-950">
-
                       {stall.image ? (
                         <img
-                          src={getImageUrl(
-                            stall.image
-                          )}
+                          src={getImageUrl(stall.image)}
                           alt={stall.name}
                           loading="lazy"
                           className={`h-full w-full object-cover transition-all duration-500 ${
@@ -647,21 +535,15 @@ export default function Home() {
                       ) : (
                         <div
                           className={`flex h-full w-full items-center justify-center ${
-                            isOpen
-                              ? "bg-zinc-900"
-                              : "bg-black"
+                            isOpen ? "bg-zinc-900" : "bg-black"
                           }`}
                         >
-
                           <UtensilsCrossed
                             size={38}
                             className={
-                              isOpen
-                                ? "text-zinc-600"
-                                : "text-zinc-800"
+                              isOpen ? "text-zinc-600" : "text-zinc-800"
                             }
                           />
-
                         </div>
                       )}
 
@@ -678,34 +560,23 @@ export default function Home() {
                             : "bg-zinc-800/95 text-zinc-300"
                         }`}
                       >
-
                         <span
                           className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${
-                            isOpen
-                              ? "bg-white"
-                              : "bg-red-500"
+                            isOpen ? "bg-white" : "bg-red-500"
                           }`}
                         />
 
-                        {isOpen
-                          ? "Open"
-                          : "Closed"}
-
+                        {isOpen ? "Open" : "Closed"}
                       </div>
-
                     </div>
 
                     {/* STALL INFORMATION */}
 
                     <div className="p-3.5 sm:p-4">
-
                       <div className="flex items-start justify-between gap-2">
-
                         <h3
                           className={`line-clamp-1 text-sm font-bold sm:text-base ${
-                            isOpen
-                              ? "text-white"
-                              : "text-zinc-500"
+                            isOpen ? "text-white" : "text-zinc-500"
                           }`}
                         >
                           {stall.name}
@@ -717,7 +588,6 @@ export default function Home() {
                             className="mt-0.5 shrink-0 text-zinc-600 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-orange-400"
                           />
                         )}
-
                       </div>
 
                       {/* REAL DESCRIPTION */}
@@ -725,9 +595,7 @@ export default function Home() {
                       {stall.description && (
                         <p
                           className={`mt-1.5 line-clamp-2 text-[11px] leading-4 sm:text-xs ${
-                            isOpen
-                              ? "text-zinc-500"
-                              : "text-zinc-700"
+                            isOpen ? "text-zinc-500" : "text-zinc-700"
                           }`}
                         >
                           {stall.description}
@@ -737,38 +605,26 @@ export default function Home() {
                       {/* ORDER STATUS */}
 
                       <div className="mt-3 flex items-center gap-1.5">
-
                         <span
                           className={`h-1.5 w-1.5 rounded-full ${
-                            isOpen
-                              ? "bg-green-500"
-                              : "bg-red-500"
+                            isOpen ? "bg-green-500" : "bg-red-500"
                           }`}
                         />
 
                         <span
                           className={`text-[10px] font-medium leading-4 sm:text-xs ${
-                            isOpen
-                              ? "text-green-400"
-                              : "text-zinc-600"
+                            isOpen ? "text-green-400" : "text-zinc-600"
                           }`}
                         >
-                          {isOpen
-                            ? "Accepting orders"
-                            : "Currently closed"}
+                          {isOpen ? "Accepting orders" : "Currently closed"}
                         </span>
-
                       </div>
-
                     </div>
-
                   </button>
                 );
               })}
-
             </div>
           )}
-
         </section>
 
         {/* ======================================================
@@ -777,7 +633,6 @@ export default function Home() {
 
         {activeStalls.length > 0 && (
           <div className="mt-10 flex items-center justify-center gap-2 text-center">
-
             <div className="h-px w-8 bg-zinc-800" />
 
             <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-700">
@@ -785,10 +640,8 @@ export default function Home() {
             </span>
 
             <div className="h-px w-8 bg-zinc-800" />
-
           </div>
         )}
-
       </div>
 
       {/* ========================================================
@@ -832,7 +685,6 @@ export default function Home() {
             md:right-6
           "
         >
-
           <button
             type="button"
             onClick={handleOpenCart}
@@ -860,17 +712,12 @@ export default function Home() {
               focus-visible:ring-offset-black
             "
           >
-
             {/* ==================================================
                 CART ICON
                 ================================================== */}
 
             <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-
-              <ShoppingCart
-                size={22}
-                strokeWidth={2.2}
-              />
+              <ShoppingCart size={22} strokeWidth={2.2} />
 
               {/* LIVE ITEM COUNT BADGE */}
 
@@ -895,7 +742,6 @@ export default function Home() {
               >
                 {cartItemCount}
               </span>
-
             </div>
 
             {/* ==================================================
@@ -903,15 +749,11 @@ export default function Home() {
                 ================================================== */}
 
             <div className="ml-1 flex min-w-0 flex-1 flex-col items-start justify-center leading-none">
-
-              <span className="text-[13px] font-bold">
-                Cart
-              </span>
+              <span className="text-[13px] font-bold">Cart</span>
 
               <span className="mt-[5px] text-[10px] font-medium text-white/80">
                 {cartItemCount} {cartLabel}
               </span>
-
             </div>
 
             {/* ==================================================
@@ -923,12 +765,9 @@ export default function Home() {
               strokeWidth={2.5}
               className="ml-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
             />
-
           </button>
-
         </div>
       )}
-
     </main>
   );
 }

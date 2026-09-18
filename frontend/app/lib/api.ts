@@ -1,5 +1,5 @@
 import { getAccessToken } from "@/app/lib/auth/session";
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 export async function getDashboard() {
   const token = getAccessToken("ADMIN");
@@ -62,14 +62,12 @@ export async function getOrders() {
   return res.json();
 }
 
-export async function getTopSellingFoods(
-  month: string
-) {
+export async function getTopSellingFoods(month: string) {
   const token = getAccessToken("ADMIN");
 
-if (!token) {
-  throw new Error("No admin access token found");
-}
+  if (!token) {
+    throw new Error("No admin access token found");
+  }
 
   const res = await fetch(
     `${API_URL}/admin/top-selling-foods?month=${encodeURIComponent(month)}`,
@@ -77,13 +75,11 @@ if (!token) {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    }
+    },
   );
 
   if (!res.ok) {
-    throw new Error(
-      "Failed to fetch top selling foods"
-    );
+    throw new Error("Failed to fetch top selling foods");
   }
 
   return res.json();
@@ -104,21 +100,15 @@ export async function getSalesDistribution(month: string) {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   if (!response.ok) {
     const errorText = await response.text();
 
-    console.error(
-      "Sales distribution API error:",
-      response.status,
-      errorText
-    );
+    console.error("Sales distribution API error:", response.status, errorText);
 
-    throw new Error(
-      `Sales distribution API failed: ${response.status}`
-    );
+    throw new Error(`Sales distribution API failed: ${response.status}`);
   }
 
   return response.json();
@@ -142,32 +132,22 @@ export async function getOrderChartData() {
 export async function getRevenueChartData(year?: number) {
   const token = getAccessToken("ADMIN");
 
-  const params = year
-    ? `?year=${year}`
-    : "";
+  const params = year ? `?year=${year}` : "";
 
-  const res = await fetch(
-    `${API_URL}/admin/revenue-chart-data${params}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const res = await fetch(`${API_URL}/admin/revenue-chart-data${params}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   if (!res.ok) {
-    throw new Error(
-      "Failed to fetch revenue chart data"
-    );
+    throw new Error("Failed to fetch revenue chart data");
   }
 
   return res.json();
 }
 
-export async function updateOrderStatus(
-  orderToken: number,
-  status: string
-) {
+export async function updateOrderStatus(orderToken: number, status: string) {
   const token = getAccessToken("ADMIN");
 
   const res = await fetch(`${API_URL}/admin/orders/${orderToken}`, {
@@ -185,11 +165,7 @@ export async function updateOrderStatus(
 
   return res.json();
 }
-export async function addFood(
-  food: any,
-  image: File,
-  token: string
-) {
+export async function addFood(food: any, image: File, token: string) {
   const formData = new FormData();
 
   formData.append("name", food.name);
@@ -198,39 +174,27 @@ export async function addFood(
   formData.append("category_id", food.category_id);
   formData.append("stall_id", food.stall_id);
   formData.append("price", String(food.price));
-  formData.append("available",String(food.available));
-  formData.append("is_veg",food.is_veg ?? "unknown");
+  formData.append("available", String(food.available));
+  formData.append("is_veg", food.is_veg ?? "unknown");
   formData.append("image", image);
 
-  const res = await fetch(
-    `${API_URL}/add-food`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    }
-  );
+  const res = await fetch(`${API_URL}/add-food`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
 
-  const data = await res.json().catch(
-    () => null
-  );
+  const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(
-      data?.detail ||
-        "Failed to add food"
-    );
+    throw new Error(data?.detail || "Failed to add food");
   }
 
   return data;
 }
-export async function updateFood(
-  foodName: string,
-  food: any,
-  token: string
-) {
+export async function updateFood(foodName: string, food: any, token: string) {
   const res = await fetch(`${API_URL}/update-food/${foodName}`, {
     method: "PUT",
     headers: {
@@ -247,10 +211,7 @@ export async function updateFood(
   return res.json();
 }
 
-export async function deleteFood(
-  foodName: string,
-  token: string
-) {
+export async function deleteFood(foodName: string, token: string) {
   const res = await fetch(`${API_URL}/delete-food/${foodName}`, {
     method: "DELETE",
     headers: {
@@ -270,7 +231,7 @@ export async function getRecentOrders(
   status = "All",
   search = "",
   sortBy = "token",
-  sortOrder = "desc"
+  sortOrder = "desc",
 ) {
   const token = getAccessToken("ADMIN");
 
@@ -283,14 +244,11 @@ export async function getRecentOrders(
     sortOrder,
   });
 
-  const res = await fetch(
-    `${API_URL}/admin/recent-orders?${params}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const res = await fetch(`${API_URL}/admin/recent-orders?${params}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   if (!res.ok) {
     throw new Error("Failed to fetch recent orders");
@@ -307,7 +265,7 @@ export async function getCustomers(
   limit = 10,
   search = "",
   status = "ALL",
-  sort = "LATEST"
+  sort = "LATEST",
 ) {
   const token = getAccessToken("ADMIN");
 
@@ -323,36 +281,27 @@ export async function getCustomers(
     sort,
   });
 
-  const res = await fetch(
-    `${API_URL}/admin/customers?${params.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+  const res = await fetch(`${API_URL}/admin/customers?${params.toString()}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
 
   if (!res.ok) {
     const errorText = await res.text();
 
-    console.error(
-      "Customers API error:",
-      res.status,
-      errorText
-    );
+    console.error("Customers API error:", res.status, errorText);
 
-    throw new Error(
-      `Failed to fetch customers: ${res.status}`
-    );
+    throw new Error(`Failed to fetch customers: ${res.status}`);
   }
 
   return res.json();
 }
 export async function updateUserRole(
   email: string,
-  role: "ADMIN" | "USER" | "VENDOR"
+  role: "ADMIN" | "USER" | "VENDOR",
 ) {
   const token = getAccessToken("ADMIN");
 
@@ -372,15 +321,13 @@ export async function updateUserRole(
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(
-      data?.detail || "Failed to update user role"
-    );
+    throw new Error(data?.detail || "Failed to update user role");
   }
 
   return data;
