@@ -39,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Generated Firebase service worker containing environment configuration
+/public/firebase-messaging-sw.js

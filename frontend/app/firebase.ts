@@ -12,7 +12,7 @@ import {
 } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: "REDACTED_GOOGLE_API_KEY",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
 
   authDomain: "campusvita-3115.firebaseapp.com",
 
