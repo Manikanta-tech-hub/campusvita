@@ -47,6 +47,7 @@ export default function AdminLayout({
       <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] text-white">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
+
           <p className="text-sm text-zinc-400">
             Checking admin session...
           </p>
@@ -60,14 +61,22 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0a0a0f] text-white">
-      <Sidebar />
+    <div className="flex min-h-screen w-full items-stretch bg-[#0a0a0f] text-white">
+      {/* Sidebar */}
+      <div className="hidden w-72 shrink-0 lg:block">
+        <Sidebar />
+      </div>
 
-      <div className="flex flex-1 flex-col">
+      {/* Main Admin Content */}
+      <div className="min-w-0 flex-1 bg-[#0a0a0f]">
+        {/* Topbar */}
         <Topbar />
 
-        <main className="flex-1 p-8">
-          {children}
+        {/* Page Content */}
+        <main className="bg-[#0a0a0f]">
+          <div className="mx-auto w-full max-w-[1800px] p-4 sm:p-6 lg:p-8">
+            {children}
+          </div>
         </main>
       </div>
     </div>
