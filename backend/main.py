@@ -1456,15 +1456,9 @@ async def create_indexes():
         # COUNTERS
         # ============================================================
 
-        counters_collection.create_index(
-            "_id",
-            unique=True
-        )
-
         logger.info(
-            "✅ Counters collection index created"
+            "✅ Counters collection uses MongoDB's built-in _id index"
         )
-
     except Exception as e:
         logger.warning(
             f"⚠️ Index creation warning: {e}"
