@@ -1,370 +1,934 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  ChevronRight,
+  MapPin,
+  Search,
+  ShoppingCart,
+  UtensilsCrossed,
+  X,
+} from "lucide-react";
 
+import { getImageUrl } from "@/app/lib/getImageUrl";
 import Navbar from "@/components/layout/Navbar";
-
-import FoodCard from "../components/home/FoodCard";
-
-import { useCart } from "../context/CartContext";
+import { getAccessToken } from "@/app/lib/auth/session";
+import { useCart } from "@/context/CartContext";
 
 import {
   requestNotificationPermission,
   listenNotifications,
 } from "./notifications";
 
-type Food = {
+type Stall = {
+  _id: string;
   name: string;
-  price: number;
-  category: string;
   image: string;
+  description: string;
+  is_open: boolean;
+  active: boolean;
 };
 
 export default function Home() {
   const router = useRouter();
-  const [search, setSearch] =
-    useState("");
 
-  const [foods, setFoods] =
-    useState<Food[]>([]);
+  const [stalls, setStalls] = useState<Stall[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-    const {
-      cartItems,
-      addToCart,
-      increaseQuantity,
-      decreaseQuantity,
-    } = useCart();
+  // ============================================================
+  // LIVE CART
+  // ============================================================
+  //
+  // IMPORTANT:
+  // This uses the SAME CartContext used by the Stall Page.
+  //
+  // Therefore:
+  //
+  // Stall Page -> add item -> CartContext updates
+  // Home Page  -> automatically sees the updated cart
+  //
+  // No separate cart state is created here.
+  // ============================================================
 
-  const [
-    selectedCategory,
-    setSelectedCategory,
-  ] = useState("All");
+  const { cartItems } = useCart();
 
-  const [sortBy, setSortBy] =
-    useState("default");
+  // ============================================================
+  // LIVE CART ITEM COUNT
+  // ============================================================
 
-  const [loading, setLoading] =
-    useState(true);
+  const cartItemCount = useMemo(() => {
+    return cartItems.reduce(
+      (total, item) =>
+        total + Number(item.quantity || 0),
+      0
+    );
+  }, [cartItems]);
 
-    useEffect(() => {
-      const token = localStorage.getItem("access_token");
-    
-      if (!token) {
-        window.location.replace("/login");
-        return;
-      }
-    
-      void fetchFoods();
-    }, []); 
+  const cartLabel =
+    cartItemCount === 1
+      ? "item"
+      : "items";
 
-  const fetchFoods = async () => {
-
-    try {
-
-      const response = await fetch(
-        "http://127.0.0.1:8000/foods"
-      );
-
-      const data =
-        await response.json();
-
-      setFoods(data.foods);
-
-    } catch (error) {
-
-      console.log(error);
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
+  // ============================================================
+  // AUTHENTICATION
+  // ============================================================
 
   useEffect(() => {
+    const token = getAccessToken("USER");
 
-    const setupNotifications =
-      async () => {
-
-        try {
-
-          await requestNotificationPermission();
-
-          listenNotifications();
-
-        } catch (error) {
-
-          console.log(
-            "Notification error:",
-            error
-          );
-
-        }
-
-      };
-
-    setupNotifications();
-
+    if (!token) {
+      window.location.replace("/login");
+    }
   }, []);
 
-  // DYNAMIC CATEGORIES
+  // ============================================================
+  // STALL DATA
+  // ============================================================
 
-  const categories = [
+  useEffect(() => {
+    let cancelled = false;
 
-    "All",
+    const loadStalls = async () => {
+      try {
+        if (!cancelled) {
+          setLoading(true);
+          setError("");
+        }
 
-    ...new Set(
-      foods.map(
-        (food) => food.category
-      )
-    ),
-
-  ];
-
-  // FILTER + SEARCH + SORT
-
-  const filteredFoods =
-    foods
-
-      .filter((food) => {
-
-        const matchesSearch =
-          food.name
-            .toLowerCase()
-            .includes(
-              search.toLowerCase()
-            );
-
-        const matchesCategory =
-
-          selectedCategory === "All"
-
-          ||
-
-          food.category ===
-          selectedCategory;
-
-        return (
-          matchesSearch &&
-          matchesCategory
+        const response = await fetch(
+          "http://127.0.0.1:8000/stalls",
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-store",
+          }
         );
 
-      })
-
-      .sort((a, b) => {
-
-        if (
-          sortBy ===
-          "lowToHigh"
-        ) {
-
-          return (
-            a.price -
-            b.price
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch stalls: ${response.status}`
           );
-
         }
 
-        if (
-          sortBy ===
-          "highToLow"
-        ) {
+        const data = await response.json();
 
-          return (
-            b.price -
-            a.price
+        console.log("🏪 Live stalls:", data);
+
+        if (!Array.isArray(data?.stalls)) {
+          throw new Error(
+            "Invalid stalls response from server"
           );
-
         }
 
-        if (
-          sortBy ===
-          "name"
-        ) {
-
-          return a.name.localeCompare(
-            b.name
-          );
-
+        if (!cancelled) {
+          setStalls(data.stalls);
         }
+      } catch (err) {
+        console.error(
+          "❌ Failed to load stalls:",
+          err
+        );
 
-        return 0;
+        if (!cancelled) {
+          setError(
+            "Unable to load food stalls."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
-      });
+    void loadStalls();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ============================================================
+  // NOTIFICATIONS
+  // ============================================================
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const setupNotifications = async () => {
+      try {
+        await requestNotificationPermission();
+
+        if (!cancelled) {
+          listenNotifications();
+        }
+      } catch (error) {
+        console.log(
+          "Notification error:",
+          error
+        );
+      }
+    };
+
+    void setupNotifications();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ============================================================
+  // REAL BACKEND DATA
+  // ============================================================
+
+  const activeStalls = useMemo(() => {
+    return stalls.filter(
+      (stall) => stall.active !== false
+    );
+  }, [stalls]);
+
+  const openStalls = useMemo(() => {
+    return activeStalls.filter(
+      (stall) => stall.is_open
+    );
+  }, [activeStalls]);
+
+  // ============================================================
+  // SEARCH
+  // ============================================================
+
+  const filteredStalls = useMemo(() => {
+    const query =
+      searchQuery.trim().toLowerCase();
+
+    if (!query) {
+      return activeStalls;
+    }
+
+    return activeStalls.filter((stall) => {
+      const stallName =
+        stall.name?.toLowerCase() ?? "";
+
+      const stallDescription =
+        stall.description?.toLowerCase() ?? "";
+
+      return (
+        stallName.includes(query) ||
+        stallDescription.includes(query)
+      );
+    });
+  }, [
+    activeStalls,
+    searchQuery,
+  ]);
+
+  // ============================================================
+  // PREMIUM HOME BANNER
+  // ============================================================
+
+  const heroImage =
+    "/images/campus-canteen-banner.jpeg";
+
+  // ============================================================
+  // STALL NAVIGATION
+  // ============================================================
+
+  const handleStallClick = (
+    stall: Stall
+  ) => {
+    if (!stall.is_open) {
+      return;
+    }
+
+    router.push(
+      `/stall/${encodeURIComponent(
+        stall._id
+      )}`
+    );
+  };
+
+  // ============================================================
+  // CLEAR SEARCH
+  // ============================================================
+
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+
+  // ============================================================
+  // OPEN CART
+  // ============================================================
+
+  const handleOpenCart = () => {
+    router.push("/cart");
+  };
+
+  // ============================================================
+  // LOADING
+  // ============================================================
 
   if (loading) {
-
     return (
+      <main className="flex min-h-screen items-center justify-center bg-black text-white">
+        <div className="px-6 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-orange-500" />
 
-      <main className="min-h-screen bg-white dark:bg-black flex items-center justify-center transition-colors duration-300">
-
-        <h1 className="text-4xl text-orange-500 font-bold">
-          Loading...
-        </h1>
-
+          <p className="text-sm text-zinc-400">
+            Loading food stalls...
+          </p>
+        </div>
       </main>
-
     );
-
   }
 
+  // ============================================================
+  // HOME
+  // ============================================================
+
   return (
-<main className="min-h-screen bg-white text-black dark:bg-black dark:text-white transition-colors duration-300">
-    
+    <main className="min-h-screen bg-black text-white">
 
-      <Navbar/>
+      {/* ========================================================
+          NAVBAR
+          ======================================================== */}
 
-      <div className="mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-5 sm:px-6 sm:py-8 lg:px-10">
+      <Navbar />
 
-        {/* HERO */}
+      <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-5 sm:px-6 sm:pb-32 sm:pt-8 lg:px-10">
 
-        <h1 className="text-3xl font-bold text-orange-500 sm:text-4xl lg:text-5xl">
-          CampusVita
-        </h1>
+        {/* ======================================================
+            SEARCH BOX
+            ====================================================== */}
 
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Smart Campus Food Ordering System
-        </p>
+        <section className="mb-5">
+          <div className="relative">
 
-        {/* SEARCH */}
+            <Search
+              size={20}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+            />
 
-        <div className="flex gap-4 overflow-x-auto pb-2 mt-6">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) =>
+                setSearchQuery(
+                  event.target.value
+                )
+              }
+              placeholder="Search food stalls..."
+              aria-label="Search food stalls"
+              className="h-14 w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-12 pr-12 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
+            />
 
-          <input
-            type="text"
-            placeholder="Search Foods..."
-            value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-            className="bg-white dark:bg-zinc-900
-border border-gray-300 dark:border-zinc-800
-text-black dark:text-white
-placeholder:text-gray-500
-p-4 rounded-2xl w-full outline-none
-focus:border-orange-500 transition-colors"
-          />
-
-        </div>
-
-        {/* CATEGORY FILTER */}
-
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-2 sm:mt-6 sm:gap-4">
-
-          {categories.map(
-            (category) => (
-
+            {searchQuery && (
               <button
-                key={category}
-                onClick={() =>
-                  setSelectedCategory(
-                    category
-                  )
-                }
-                className={`px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-all ${
-                  selectedCategory ===
-                  category
-
-                   ? "bg-orange-500 text-white"
-: "bg-gray-100 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-800 text-black dark:text-white"
-                }`}
+                type="button"
+                onClick={clearSearch}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-white"
               >
-
-                {category}
-
+                <X size={18} />
               </button>
+            )}
+          </div>
 
-            )
+          {searchQuery.trim() && (
+            <div className="mt-2 px-1">
+              <p className="text-xs text-zinc-500">
+                {filteredStalls.length}{" "}
+                {filteredStalls.length === 1
+                  ? "stall"
+                  : "stalls"}{" "}
+                found
+              </p>
+            </div>
           )}
+        </section>
 
-        </div>
+        {/* ======================================================
+            PREMIUM HERO BANNER
+            ====================================================== */}
 
-        {/* SORT */}
+        <section className="mb-9">
+          <div className="group relative isolate overflow-hidden rounded-[28px] border border-zinc-800/80 bg-zinc-950 shadow-2xl shadow-black/40">
 
-        <div className="mt-6">
+            {/* REAL LOCAL BANNER IMAGE */}
 
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(
-                e.target.value
-              )
-            }
-            className="bg-white dark:bg-zinc-900
-border border-gray-300 dark:border-zinc-700
-text-black dark:text-white
-p-3 rounded-xl outline-none"
-          >
+            <img
+              src={heroImage}
+              alt="Campus canteen"
+              className="absolute inset-0 z-0 h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.025]"
+              onError={(event) => {
+                console.error(
+                  "❌ CampusVita banner image failed to load:",
+                  heroImage
+                );
 
-            <option value="default">
-              Sort Foods
-            </option>
+                event.currentTarget.style.display =
+                  "none";
+              }}
+            />
 
-            <option value="lowToHigh">
-              Price: Low To High
-            </option>
+            {/* IMAGE DARK OVERLAY */}
 
-            <option value="highToLow">
-              Price: High To Low
-            </option>
+            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/65 to-black/20" />
 
-            <option value="name">
-              Name: A-Z
-            </option>
+            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/10" />
 
-          </select>
+            {/* HERO CONTENT */}
 
-        </div>
+            <div className="relative z-20 flex min-h-[210px] flex-col justify-center px-6 py-8 sm:min-h-[240px] sm:px-9 sm:py-10 lg:min-h-[270px] lg:px-12">
 
-        {/* FOOD GRID */}
+              {/* CAMPUS CANTEEN LABEL */}
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-  {filteredFoods.map((food, index) => {
-    const cartItem = cartItems.find(
-      (item) => item.name === food.name
-    );
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 backdrop-blur-md">
 
-    const quantity = cartItem?.quantity ?? 0;
+                  <MapPin
+                    size={13}
+                    className="text-orange-400"
+                  />
 
-    return (
-      <FoodCard
-        key={`${food.name}-${index}`}
-        name={food.name}
-        price={food.price}
-        image={food.image}
-        quantity={quantity}
-        onAddToCart={() => addToCart(food)}
-        onIncrease={() => increaseQuantity(food.name)}
-        onDecrease={() => decreaseQuantity(food.name)}
-      />
-    );
-  })}
-</div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-xs">
+                    Campus Canteen
+                  </span>
 
-        {/* EMPTY STATE */}
+                </div>
+              </div>
 
-        {filteredFoods.length === 0 && (
+              {/* REAL DYNAMIC STALL COUNT */}
 
-          <div className="text-center mt-20">
+              <h1 className="max-w-2xl text-3xl font-black leading-[1.05] tracking-tight text-white sm:text-4xl lg:text-5xl">
+                Delicious food from{" "}
+                <span className="text-orange-400">
+                  {activeStalls.length}
+                </span>{" "}
+                {activeStalls.length === 1
+                  ? "amazing stall"
+                  : "amazing stalls"}
+              </h1>
 
-<h2 className="text-3xl font-bold text-gray-500 dark:text-gray-400">
+              {/* DESCRIPTION */}
 
-              No Foods Found 🍔
+              <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-200 sm:text-base">
+                Discover fresh food, explore menus,
+                and order directly from your campus
+                food stalls.
+              </p>
 
-            </h2>
+              {/* REAL OPEN STALL COUNT */}
+
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
+
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
+
+                  <span className="text-xs font-medium text-white/90">
+                    {openStalls.length}{" "}
+                    {openStalls.length === 1
+                      ? "stall"
+                      : "stalls"}{" "}
+                    accepting orders
+                  </span>
+
+                </div>
+
+                <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md sm:flex">
+
+                  <UtensilsCrossed
+                    size={13}
+                    className="text-orange-400"
+                  />
+
+                  <span className="text-xs font-medium text-white/80">
+                    Fresh campus food
+                  </span>
+
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ======================================================
+            ERROR
+            ====================================================== */}
+
+        {error && (
+          <div className="mb-7 rounded-2xl border border-red-900/50 bg-red-950/30 p-4 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
+        {/* ======================================================
+            ALL STALLS
+            ====================================================== */}
+
+        <section>
+
+          {/* STALL HEADER */}
+
+          <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
+
+            <div>
+
+              <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                {searchQuery.trim()
+                  ? "Search Results"
+                  : "All Stalls"}
+              </h2>
+
+              <p className="mt-1 text-sm text-zinc-500">
+                {searchQuery.trim()
+                  ? "Matching food stalls from campus"
+                  : "Select a stall to explore its menu"}
+              </p>
+
+            </div>
+
+            {/* REAL RESULT / STALL COUNT */}
+
+            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5">
+
+              <span className="text-sm font-semibold text-zinc-300">
+                {searchQuery.trim()
+                  ? filteredStalls.length
+                  : activeStalls.length}
+              </span>
+
+              <span className="text-xs text-zinc-600">
+                {searchQuery.trim()
+                  ? filteredStalls.length === 1
+                    ? "result"
+                    : "results"
+                  : activeStalls.length === 1
+                    ? "stall"
+                    : "stalls"}
+              </span>
+
+            </div>
 
           </div>
 
+          {/* ====================================================
+              EMPTY STATE
+              ==================================================== */}
+
+          {activeStalls.length === 0 &&
+            !error && (
+              <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-10 text-center shadow-xl">
+
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900">
+
+                  <UtensilsCrossed
+                    size={28}
+                    className="text-zinc-600"
+                  />
+
+                </div>
+
+                <h3 className="text-xl font-semibold text-white">
+                  No food stalls available
+                </h3>
+
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+                  There are currently no active food
+                  stalls available.
+                </p>
+
+              </div>
+            )}
+
+          {/* ====================================================
+              SEARCH EMPTY STATE
+              ==================================================== */}
+
+          {activeStalls.length > 0 &&
+            searchQuery.trim() &&
+            filteredStalls.length === 0 && (
+              <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-10 text-center shadow-xl">
+
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900">
+
+                  <Search
+                    size={28}
+                    className="text-zinc-600"
+                  />
+
+                </div>
+
+                <h3 className="text-xl font-semibold text-white">
+                  No stalls found
+                </h3>
+
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
+
+                  No active food stall matches{" "}
+
+                  <span className="font-medium text-zinc-300">
+                    &quot;
+                    {searchQuery.trim()}
+                    &quot;
+                  </span>
+
+                  .
+
+                </p>
+
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="mt-5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-400"
+                >
+                  Clear Search
+                </button>
+
+              </div>
+            )}
+
+          {/* ====================================================
+              REAL STALL GRID
+              ==================================================== */}
+
+          {filteredStalls.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+
+              {filteredStalls.map((stall) => {
+
+                const isOpen =
+                  stall.is_open;
+
+                return (
+                  <button
+                    key={stall._id}
+                    type="button"
+                    disabled={!isOpen}
+                    onClick={() =>
+                      handleStallClick(stall)
+                    }
+                    aria-label={
+                      isOpen
+                        ? `Open ${stall.name}`
+                        : `${stall.name} is closed`
+                    }
+                    className={`group relative overflow-hidden rounded-[22px] border text-left outline-none transition-all duration-300 ${
+                      isOpen
+                        ? "cursor-pointer border-zinc-800 bg-zinc-900 hover:-translate-y-1 hover:border-orange-500/70 hover:shadow-xl hover:shadow-orange-500/10 focus-visible:ring-2 focus-visible:ring-orange-500"
+                        : "cursor-not-allowed border-zinc-900 bg-zinc-950"
+                    }`}
+                  >
+
+                    {/* STALL IMAGE */}
+
+                    <div className="relative aspect-square w-full overflow-hidden bg-zinc-950">
+
+                      {stall.image ? (
+                        <img
+                          src={getImageUrl(
+                            stall.image
+                          )}
+                          alt={stall.name}
+                          loading="lazy"
+                          className={`h-full w-full object-cover transition-all duration-500 ${
+                            isOpen
+                              ? "group-hover:scale-105"
+                              : "brightness-[0.2] grayscale"
+                          }`}
+                        />
+                      ) : (
+                        <div
+                          className={`flex h-full w-full items-center justify-center ${
+                            isOpen
+                              ? "bg-zinc-900"
+                              : "bg-black"
+                          }`}
+                        >
+
+                          <UtensilsCrossed
+                            size={38}
+                            className={
+                              isOpen
+                                ? "text-zinc-600"
+                                : "text-zinc-800"
+                            }
+                          />
+
+                        </div>
+                      )}
+
+                      {/* IMAGE GRADIENT */}
+
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                      {/* OPEN / CLOSED STATUS */}
+
+                      <div
+                        className={`absolute right-2.5 top-2.5 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-bold shadow-lg backdrop-blur-md sm:right-3 sm:top-3 sm:px-3 sm:text-xs ${
+                          isOpen
+                            ? "bg-green-500/95 text-white"
+                            : "bg-zinc-800/95 text-zinc-300"
+                        }`}
+                      >
+
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${
+                            isOpen
+                              ? "bg-white"
+                              : "bg-red-500"
+                          }`}
+                        />
+
+                        {isOpen
+                          ? "Open"
+                          : "Closed"}
+
+                      </div>
+
+                    </div>
+
+                    {/* STALL INFORMATION */}
+
+                    <div className="p-3.5 sm:p-4">
+
+                      <div className="flex items-start justify-between gap-2">
+
+                        <h3
+                          className={`line-clamp-1 text-sm font-bold sm:text-base ${
+                            isOpen
+                              ? "text-white"
+                              : "text-zinc-500"
+                          }`}
+                        >
+                          {stall.name}
+                        </h3>
+
+                        {isOpen && (
+                          <ChevronRight
+                            size={17}
+                            className="mt-0.5 shrink-0 text-zinc-600 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-orange-400"
+                          />
+                        )}
+
+                      </div>
+
+                      {/* REAL DESCRIPTION */}
+
+                      {stall.description && (
+                        <p
+                          className={`mt-1.5 line-clamp-2 text-[11px] leading-4 sm:text-xs ${
+                            isOpen
+                              ? "text-zinc-500"
+                              : "text-zinc-700"
+                          }`}
+                        >
+                          {stall.description}
+                        </p>
+                      )}
+
+                      {/* ORDER STATUS */}
+
+                      <div className="mt-3 flex items-center gap-1.5">
+
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${
+                            isOpen
+                              ? "bg-green-500"
+                              : "bg-red-500"
+                          }`}
+                        />
+
+                        <span
+                          className={`text-[10px] font-medium leading-4 sm:text-xs ${
+                            isOpen
+                              ? "text-green-400"
+                              : "text-zinc-600"
+                          }`}
+                        >
+                          {isOpen
+                            ? "Accepting orders"
+                            : "Currently closed"}
+                        </span>
+
+                      </div>
+
+                    </div>
+
+                  </button>
+                );
+              })}
+
+            </div>
+          )}
+
+        </section>
+
+        {/* ======================================================
+            BOTTOM CONTEXT
+            ====================================================== */}
+
+        {activeStalls.length > 0 && (
+          <div className="mt-10 flex items-center justify-center gap-2 text-center">
+
+            <div className="h-px w-8 bg-zinc-800" />
+
+            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-700">
+              Campus food • Live availability
+            </span>
+
+            <div className="h-px w-8 bg-zinc-800" />
+
+          </div>
         )}
 
       </div>
 
+      {/* ========================================================
+          GLOBAL FLOATING CART
+          ========================================================
+
+          IMPORTANT:
+          This is outside the main page content.
+
+          Therefore it is NOT affected by:
+          - Stall grid
+          - Hero banner
+          - Search section
+          - Page width
+          - Desktop grid columns
+          - Mobile grid
+          - Content overflow
+
+          It is positioned relative to the viewport.
+
+          MOBILE:
+          bottom-[76px]
+          -> keeps it above the bottom navigation.
+
+          DESKTOP:
+          md:bottom-6
+          -> moves it down to the normal bottom-right position.
+
+          z-50:
+          -> keeps it above the page content.
+          ======================================================== */}
+
+      {cartItemCount > 0 && (
+        <div
+          className="
+            fixed
+            bottom-[76px]
+            right-4
+            z-50
+            md:bottom-6
+            md:right-6
+          "
+        >
+
+          <button
+            type="button"
+            onClick={handleOpenCart}
+            aria-label={`Open cart with ${cartItemCount} ${cartLabel}`}
+            className="
+              group
+              flex
+              h-[58px]
+              w-[142px]
+              items-center
+              rounded-[16px]
+              bg-orange-500
+              px-3
+              text-white
+              shadow-lg
+              shadow-orange-500/25
+              transition-all
+              duration-200
+              hover:bg-orange-400
+              active:scale-[0.97]
+              focus:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-orange-300
+              focus-visible:ring-offset-2
+              focus-visible:ring-offset-black
+            "
+          >
+
+            {/* ==================================================
+                CART ICON
+                ================================================== */}
+
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+
+              <ShoppingCart
+                size={22}
+                strokeWidth={2.2}
+              />
+
+              {/* LIVE ITEM COUNT BADGE */}
+
+              <span
+                className="
+                  absolute
+                  -right-1
+                  -top-1
+                  flex
+                  h-[17px]
+                  min-w-[17px]
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                  px-1
+                  text-[9px]
+                  font-bold
+                  leading-none
+                  text-orange-500
+                "
+              >
+                {cartItemCount}
+              </span>
+
+            </div>
+
+            {/* ==================================================
+                CART TEXT
+                ================================================== */}
+
+            <div className="ml-1 flex min-w-0 flex-1 flex-col items-start justify-center leading-none">
+
+              <span className="text-[13px] font-bold">
+                Cart
+              </span>
+
+              <span className="mt-[5px] text-[10px] font-medium text-white/80">
+                {cartItemCount} {cartLabel}
+              </span>
+
+            </div>
+
+            {/* ==================================================
+                ARROW
+                ================================================== */}
+
+            <ArrowRight
+              size={18}
+              strokeWidth={2.5}
+              className="ml-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+
+          </button>
+
+        </div>
+      )}
+
     </main>
-
   );
-
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { deleteFood } from "@/app/lib/api";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 type Props = {
   open: boolean;
   foodName: string;
@@ -19,7 +19,7 @@ export default function DeleteFoodModal({
 
   async function handleDelete() {
     try {
-      const token = localStorage.getItem("access_token");
+      const token = getAccessToken("ADMIN");
 
       if (!token) {
         alert("Login again");

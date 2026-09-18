@@ -8,16 +8,16 @@ import {
   UtensilsCrossed,
   ClipboardList,
   Layers3,
-  BarChart3,
   Settings,
-  ShieldCheck,
   CreditCard,
   Users,
+  Store,
   LogOut,
 } from "lucide-react";
-import { clearAllSessions } from "@/app/lib/auth/session";
+
 import SidebarItem from "./SidebarItem";
 import SidebarSection from "./SidebarSection";
+import { clearSession } from "@/app/lib/auth/session";
 
 const navigation = [
   {
@@ -49,6 +49,11 @@ const navigation = [
         icon: Layers3,
       },
       {
+        label: "Stalls",
+        href: "/admin/stalls",
+        icon: Store,
+      },
+      {
         label: "Customers",
         href: "/admin/customers",
         icon: Users,
@@ -74,30 +79,11 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-
+  const router = useRouter();
 
   const handleLogout = () => {
-    clearAllSessions();
-  
-    // Remove any legacy authentication keys
-    [
-      "isLoggedIn",
-      "access_token",
-      "refresh_token",
-      "token_type",
-      "expires_in",
-      "userEmail",
-      "email",
-      "userName",
-      "userRole",
-    ].forEach((key) => {
-      localStorage.removeItem(key);
-    });
-  
-    sessionStorage.clear();
-  
-    // Full navigation guarantees the admin dashboard is unmounted
-    window.location.replace("/login");
+    clearSession("ADMIN");
+    router.replace("/login");
   };
 
   return (
@@ -105,7 +91,7 @@ export default function Sidebar() {
       initial={{ x: -40, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="w-72 border-r border-zinc-800 bg-[#111113] flex flex-col"
+      className="flex h-full w-full flex-col border-r border-zinc-800 bg-[#111113]"
     >
       {/* Logo */}
       <div className="border-b border-zinc-800 px-6 py-7">
@@ -139,36 +125,19 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-zinc-800 p-5 space-y-3">
-        <div className="flex items-center gap-3 rounded-2xl bg-zinc-900 p-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500">
-            <ShieldCheck
-              size={22}
-              className="text-white"
-            />
-          </div>
-
-          <div>
-            <p className="font-semibold text-white">
-              Administrator
-            </p>
-
-            <p className="text-xs text-zinc-500">
-              CampusVita
-            </p>
-          </div>
-        </div>
-
-        {/* Logout */}
+      {/* Logout */}
+      <div className="border-t border-zinc-800 p-3">
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-left text-zinc-300 transition-all hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400"
+          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-zinc-400 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400"
         >
-          <LogOut size={20} />
+          <LogOut
+            size={20}
+            className="transition-transform duration-200 group-hover:translate-x-0.5"
+          />
 
-          <span className="font-medium">
+          <span className="text-sm font-medium">
             Logout
           </span>
         </button>

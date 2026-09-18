@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import CategoryStats from "./CategoryStats";
 import CategoryFilters from "./CategoryFilters";
 import CategoryTable from "./CategoryTable";
@@ -96,13 +96,11 @@ export default function CategoryManagement() {
 
       try {
 
-        const token =
-          localStorage.getItem(
-            "access_token"
-          ) ||
-          localStorage.getItem(
-            "token"
-          );
+        const token = getAccessToken("ADMIN");
+
+if (!token) {
+  throw new Error("No admin access token found");
+}
 
         const params =
           new URLSearchParams({
@@ -204,6 +202,76 @@ export default function CategoryManagement() {
     };
 
   }, [loadCategories]);
+
+
+  async function handleDeleteCategory(category: Category) {
+    try {
+      const token = getAccessToken("ADMIN");
+
+      if (!token) {
+        throw new Error("Admin session expired. Please login again.");
+      }
+
+      if (!category.id) {
+        throw new Error("Category ID is missing.");
+      }
+
+      console.log(
+        "Deleting category:",
+        category.name,
+        "ID:",
+        category.id
+      );
+
+      const response = await fetch(
+        `${API_URL}/admin/categories/${encodeURIComponent(category.id)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const data = await response.json().catch(() => null);
+
+      console.log(
+        "Delete category response:",
+        response.status,
+        data
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          data?.detail ||
+          data?.message ||
+          `Failed to delete category (${response.status})`
+        );
+      }
+
+      alert(
+        data?.message ||
+        "Category deleted successfully"
+      );
+
+      setDeletingCategory(null);
+
+      await loadCategories(false);
+
+    } catch (error) {
+      console.error(
+        "Delete category error:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete category"
+      );
+    }
+  }
 
   // Reset page when filters change
   useEffect(() => {
@@ -329,8 +397,9 @@ export default function CategoryManagement() {
           setDeletingCategory(null)
         }
         onSuccess={() => {
-          setDeletingCategory(null);
-          loadCategories(false);
+          if (deletingCategory) {
+            handleDeleteCategory(deletingCategory);
+          }
         }}
       />
 

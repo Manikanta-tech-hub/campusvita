@@ -48,3 +48,16 @@ node_modules/
 *.before-customers
 *-backup
 *.backup
+
+# Firebase service account credentials
+backend/firebase-service-account.json
+
+# Local backup files
+backend/main.py.backup-*
+
+# Uploaded/generated media
+backend/uploads/
+
+# Frontend backup files
+frontend/app/payment-success/page.backup.tsx
+frontend/app/payment-success/page.before-redesign.tsx

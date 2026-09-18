@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { io } from "socket.io-client";
-
+import { getAccessToken } from "@/app/lib/auth/session";
 import { getImageUrl } from "@/app/lib/getImageUrl";
 import Navbar from "@/components/layout/Navbar";
 
@@ -29,6 +29,7 @@ type OrderItem = {
   quantity: number;
   price: number;
   image?: string;
+  stall_id: string;
 };
 
 type Order = {
@@ -42,6 +43,12 @@ type Order = {
   estimated_time: string;
   payment_method?: string;
   payment_status?: string;
+  refund_eligible?: boolean;
+  refund_status?: string | null;
+  refund_amount_paise?: number;
+  refund_scope?: string | null;
+  refund_updated_at?: string | null;
+  refund_processed_at?: string | null;
 };
 
 // ============================================================
@@ -64,6 +71,10 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Prevent duplicate refund requests while one is being processed.
+  const [refundingToken, setRefundingToken] =
+    useState<number | null>(null);
 
   // Used only for the order options modal.
   const [selectedOrder, setSelectedOrder] =
@@ -95,7 +106,7 @@ export default function OrdersPage() {
       return null;
     }
 
-    return localStorage.getItem("access_token");
+    return getAccessToken("USER");
   };
 
   // ============================================================
@@ -274,6 +285,36 @@ export default function OrdersPage() {
   }, [fetchOrders]);
 
   // ============================================================
+  // REFUND STATUS POLLING
+  // ============================================================
+
+  useEffect(() => {
+    const hasProcessingRefund = orders.some((order) =>
+      [
+        "PENDING",
+        "INITIATED",
+        "PROCESSING",
+      ].includes(
+        (order.refund_status || "")
+          .trim()
+          .toUpperCase()
+      )
+    );
+
+    if (!hasProcessingRefund) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      fetchOrders();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [orders, fetchOrders]);
+
+  // ============================================================
   // REORDER
   // ============================================================
 
@@ -293,12 +334,107 @@ export default function OrdersPage() {
         name: item.name,
         price: item.price,
         image: item.image || "",
+        stall_id: item.stall_id,
       });
     });
 
     toast.success(
       "Items added to cart 🚀"
     );
+  };
+
+  // ============================================================
+  // CUSTOMER REFUND
+  // ============================================================
+
+  const handleRequestRefund = async (
+    order: Order
+  ) => {
+    if (!order?.token) {
+      toast.error("Invalid order.");
+      return;
+    }
+
+    if (order.refund_eligible !== true) {
+      toast.error(
+        "This order is no longer eligible for cancellation."
+      );
+      return;
+    }
+
+    if (refundingToken !== null) {
+      return;
+    }
+
+    try {
+      const token = getToken();
+
+      if (!token) {
+        toast.error("Please login again");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "Cancel this order and request a refund? This action cannot be undone."
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setRefundingToken(order.token);
+
+      const response = await fetch(
+        `${API_URL}/orders/${order.token}/refund`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            reason: "Customer requested cancellation",
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.status === 401) {
+        toast.error("Your session has expired");
+        return;
+      }
+
+      if (!response.ok) {
+        toast.error(
+          data.detail ||
+            data.message ||
+            "Unable to cancel order"
+        );
+        return;
+      }
+
+      toast.success(
+        data.message ||
+          "Order cancelled. Refund requested successfully."
+      );
+
+      setSelectedOrder(null);
+      setExpandedOrder(null);
+
+      await fetchOrders();
+    } catch (error) {
+      console.error(
+        "❌ Customer refund request error:",
+        error
+      );
+
+      toast.error(
+        "Unable to process the refund request. Please try again."
+      );
+    } finally {
+      setRefundingToken(null);
+    }
   };
 
   // ============================================================
@@ -583,6 +719,53 @@ Total: ₹${order.total}
       text: "text-gray-300",
       label:
         status || "Unknown",
+    };
+  };
+
+  // ============================================================
+  // REFUND STATUS STYLE
+  // ============================================================
+
+  const getRefundStatusStyle = (
+    refundStatus?: string | null
+  ) => {
+    const normalizedStatus =
+      (refundStatus || "")
+        .trim()
+        .toUpperCase();
+
+    if (normalizedStatus === "PROCESSED") {
+      return {
+        dot: "bg-green-500",
+        text: "text-green-400",
+        label: "Refund Completed",
+      };
+    }
+
+    if (
+      normalizedStatus === "PENDING" ||
+      normalizedStatus === "INITIATED" ||
+      normalizedStatus === "PROCESSING"
+    ) {
+      return {
+        dot: "bg-orange-500",
+        text: "text-orange-400",
+        label: "Refund Processing",
+      };
+    }
+
+    if (normalizedStatus === "FAILED") {
+      return {
+        dot: "bg-red-500",
+        text: "text-red-400",
+        label: "Refund Failed",
+      };
+    }
+
+    return {
+      dot: "bg-gray-400",
+      text: "text-gray-300",
+      label: "Refund Status Unknown",
     };
   };
 
@@ -1095,10 +1278,71 @@ Total: ₹${order.total}
                               </p>
                             </div>
 
+                            {order.refund_status && (
+                              <div className="col-span-2 rounded-xl bg-zinc-900 p-3">
+                                <p className="text-[11px] text-zinc-500">
+                                  Refund
+                                </p>
+
+                                <div className="mt-1 flex items-center gap-2">
+                                  <span
+                                    className={`h-2 w-2 shrink-0 rounded-full ${
+                                      getRefundStatusStyle(
+                                        order.refund_status
+                                      ).dot
+                                    }`}
+                                  />
+
+                                  <p
+                                    className={`truncate text-sm font-semibold ${
+                                      getRefundStatusStyle(
+                                        order.refund_status
+                                      ).text
+                                    }`}
+                                  >
+                                    {
+                                      getRefundStatusStyle(
+                                        order.refund_status
+                                      ).label
+                                    }
+                                  </p>
+                                </div>
+
+                                {order.refund_amount_paise &&
+                                  order.refund_amount_paise > 0 && (
+                                    <p className="mt-1 text-xs text-zinc-500">
+                                      Amount: ₹
+                                      {(
+                                        order.refund_amount_paise / 100
+                                      ).toFixed(2)}
+                                    </p>
+                                  )}
+                              </div>
+                            )}
+
                           </div>
 
                           {/* ACTIONS */}
                           <div className="mt-5 grid grid-cols-2 gap-2">
+
+                            {order.refund_eligible === true && (
+                              <button
+                                type="button"
+                                disabled={
+                                  refundingToken === order.token
+                                }
+                                onClick={() =>
+                                  handleRequestRefund(
+                                    order
+                                  )
+                                }
+                                className="col-span-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm font-bold text-red-400 transition-all hover:border-red-500/50 hover:bg-red-500/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {refundingToken === order.token
+                                  ? "Processing Refund..."
+                                  : "Cancel & Request Refund"}
+                              </button>
+                            )}
 
                             <button
                               type="button"
