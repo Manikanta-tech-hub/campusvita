@@ -1,10 +1,18 @@
+import os
+
+from dotenv import load_dotenv
 from pymongo import MongoClient, ASCENDING, DESCENDING
+
+load_dotenv()
 
 # =====================================
 # MONGODB CONNECTION
 # =====================================
 
-MONGO_URL = "mongodb://127.0.0.1:27017"
+MONGO_URL = os.getenv("MONGO_URL")
+
+if not MONGO_URL:
+    raise RuntimeError("MONGO_URL is not configured")
 
 client = MongoClient(MONGO_URL)
 
