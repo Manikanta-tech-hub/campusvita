@@ -1,0 +1,3157 @@
+[
+  {
+    "_id": "6a575ffc8c02f49586f32c83",
+    "items": [
+      {
+        "name": "Chicken Burger",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+      }
+    ],
+    "total": 120.0,
+    "email": "mani@gmail.com",
+    "name": "h",
+    "phone": "1234567890",
+    "location": "n",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TDkDFZv9sM0zSN",
+    "razorpay_order_id": "order_TDkCZoIgNUxCTV",
+    "razorpay_signature": "1deadf618495a46e4d54959bd5bf4cd90de0c90803b9e131e29a25c8334b30ba",
+    "payment_date": "15 Jul 2026, 03:55 PM",
+    "payment_amount": 120.0,
+    "status": "Completed",
+    "date": "15 Jul 2026, 03:55 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8056,
+    "token": 5,
+    "user_email": "mani@gmail.com"
+  },
+  {
+    "_id": "6a5b4c05b2047980ef92c53e",
+    "items": [
+      {
+        "name": "Chicken Burger",
+        "price": 120.0,
+        "quantity": 2,
+        "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+      }
+    ],
+    "total": 240.0,
+    "email": "manikanta@gmail.com",
+    "name": "hena",
+    "phone": "121212121212",
+    "location": "class ",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TEvCVYu5iJRc6S",
+    "razorpay_order_id": "order_TEvBTBnlAc2JOz",
+    "razorpay_signature": "6f02068035d1dc99e71bf334fdc12cacfbe36c4b2b712ae7cd609037e9d057df",
+    "payment_date": "18 Jul 2026, 03:18 PM",
+    "payment_amount": 240.0,
+    "status": "Completed",
+    "date": "18 Jul 2026, 03:18 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8697,
+    "token": 6,
+    "user_email": "manikanta@gmail.com"
+  },
+  {
+    "_id": "6a5b51ce652408932123298b",
+    "items": [
+      {
+        "name": "Chocolate Milkshake",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1577805947697-89e18249d767"
+      }
+    ],
+    "total": 110.0,
+    "email": "manikanta@gmail.com",
+    "name": "honey",
+    "phone": "2222222222",
+    "location": "home",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TEvceL76WmuiVc",
+    "razorpay_order_id": "order_TEvcO9tOPpWUmE",
+    "razorpay_signature": "169617d5cd9c07cf3d443d5affe0c6274c1ecdcaa86939ebf0edca3dd4939cbc",
+    "payment_date": "18 Jul 2026, 03:43 PM",
+    "payment_amount": 110.0,
+    "status": "Completed",
+    "date": "18 Jul 2026, 03:43 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 9864,
+    "token": 7,
+    "user_email": "manikanta@gmail.com"
+  },
+  {
+    "_id": "6a5b5519652408932123298d",
+    "items": [
+      {
+        "name": "Cheese Burger",
+        "price": 150.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1550547660-d9450f859349"
+      }
+    ],
+    "total": 150.0,
+    "email": "manikanta@gmail.com",
+    "name": "maya",
+    "phone": "73671667207",
+    "location": "home",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TEvrQjy7GlEGAx",
+    "razorpay_order_id": "order_TEvrJDDhjNm15w",
+    "razorpay_signature": "c6833bd576a33c430797f65efca7038c5ff553c9cfe18e007f0be415bdd8726e",
+    "payment_date": "18 Jul 2026, 03:57 PM",
+    "payment_amount": 150.0,
+    "status": "Completed",
+    "date": "18 Jul 2026, 03:57 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 7559,
+    "token": 8,
+    "user_email": "manikanta@gmail.com"
+  },
+  {
+    "_id": "6a5b57bd652408932123298f",
+    "items": [
+      {
+        "name": "Chicken Burger",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+      }
+    ],
+    "total": 120.0,
+    "email": "manikanta@gmail.com",
+    "name": "bro",
+    "phone": "h",
+    "location": "f",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TEw3OOEyvO8pfQ",
+    "razorpay_order_id": "order_TEw3IAZxt0yCrr",
+    "razorpay_signature": "dd75c1a2b279bac851a670b15de104ae9ed97d9367f66280b84bab4842fa990e",
+    "payment_date": "18 Jul 2026, 04:08 PM",
+    "payment_amount": 120.0,
+    "status": "Completed",
+    "date": "18 Jul 2026, 04:08 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6464,
+    "token": 9,
+    "user_email": "manikanta@gmail.com"
+  },
+  {
+    "_id": "6a617d94abcb7a850202f291",
+    "items": [
+      {
+        "name": "Chocolate Milkshake",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1577805947697-89e18249d767"
+      }
+    ],
+    "total": 110.0,
+    "email": "bhavani@gmail.com",
+    "name": "manasa",
+    "phone": "1234567890",
+    "location": "home",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TGmSiRVVmwx7qv",
+    "razorpay_order_id": "order_TGmQPwMINgQvjQ",
+    "razorpay_signature": "a76b2000e17ee80830d916f3f75f2dd0fe9fc2f4a9a13eee82a72acac5614d26",
+    "payment_date": "23 Jul 2026, 08:03 AM",
+    "payment_amount": 110.0,
+    "status": "Completed",
+    "date": "23 Jul 2026, 08:03 AM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6038,
+    "token": 10,
+    "user_email": "bhavani@gmail.com"
+  },
+  {
+    "_id": "6a61b952cbcceba71686423c",
+    "items": [
+      {
+        "name": "Chocolate Milkshake",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1577805947697-89e18249d767"
+      }
+    ],
+    "total": 110.0,
+    "email": "bhavani@gmail.com",
+    "name": "mani",
+    "phone": "123456789",
+    "location": "home",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TGqny9jN6Ne2Ra",
+    "razorpay_order_id": "order_TGqniXvnd687zq",
+    "razorpay_signature": "e6ce497e83db7bdcf758821b3822c12695367c1f3051b6a4367ff4dfd8847dcc",
+    "payment_date": "23 Jul 2026, 12:18 PM",
+    "payment_amount": 110.0,
+    "status": "Completed",
+    "date": "23 Jul 2026, 12:18 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 5789,
+    "token": 11,
+    "user_email": "bhavani@gmail.com"
+  },
+  {
+    "_id": "6a61bc20cbcceba71686423e",
+    "items": [
+      {
+        "name": "Chicken Burger",
+        "price": 120.0,
+        "quantity": 4,
+        "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+      },
+      {
+        "name": "Cheese Burger",
+        "price": 150.0,
+        "quantity": 2,
+        "image": "https://images.unsplash.com/photo-1550547660-d9450f859349"
+      }
+    ],
+    "total": 780.0,
+    "email": "bhavani@gmail.com",
+    "name": "mani",
+    "phone": "12345678",
+    "location": "class",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TGqzrhE1i8FE10",
+    "razorpay_order_id": "order_TGqzcpGyRnaXfR",
+    "razorpay_signature": "bb4b794bb479c96ca731601231bfbd47c3819386c71c1735a689aa5de4d76f1e",
+    "payment_date": "23 Jul 2026, 12:30 PM",
+    "payment_amount": 780.0,
+    "status": "Completed",
+    "date": "23 Jul 2026, 12:30 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8083,
+    "token": 12,
+    "user_email": "bhavani@gmail.com"
+  },
+  {
+    "_id": "6a6642754eab646321f05b54",
+    "items": [
+      {
+        "name": "Chicken Burger",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
+      }
+    ],
+    "total": 120.0,
+    "email": "bhavani@gmail.com",
+    "name": "manasa",
+    "phone": "1212312341",
+    "location": "class",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TIDDFH72Yod917",
+    "razorpay_order_id": "order_TID8i7wVetdP35",
+    "razorpay_signature": "4775b01685fa0e08df3b88b4291147bb044a0c03ee448eb9dcc4195b44dd7af8",
+    "payment_date": "26 Jul 2026, 10:53 PM",
+    "payment_amount": 120.0,
+    "status": "Completed",
+    "date": "26 Jul 2026, 10:53 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8223,
+    "token": 13,
+    "user_email": "bhavani@gmail.com"
+  },
+  {
+    "_id": "6a670b7226cbe4d45febabd2",
+    "items": [
+      {
+        "name": "Chocolate Milkshake",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1577805947697-89e18249d767"
+      },
+      {
+        "name": "Veg Sandwich",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af"
+      }
+    ],
+    "total": 200.0,
+    "email": "bhavani@gmail.com",
+    "name": "bhaviii",
+    "phone": "1234567890",
+    "location": "class",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TIRp7omgFc3jG7",
+    "razorpay_order_id": "order_TIRoxEH5TY8FxP",
+    "razorpay_signature": "e681b93339f078b9b5be781304decf7e01af04171fa406386e23172d8edaaccb",
+    "payment_date": "27 Jul 2026, 01:10 PM",
+    "payment_amount": 200.0,
+    "status": "Completed",
+    "date": "27 Jul 2026, 01:10 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8375,
+    "token": 14,
+    "user_email": "bhavani@gmail.com"
+  },
+  {
+    "_id": "6a670c7f26cbe4d45febabd4",
+    "items": [
+      {
+        "name": "Chocolate Milkshake",
+        "price": 110.0,
+        "quantity": 2,
+        "image": "https://images.unsplash.com/photo-1577805947697-89e18249d767"
+      },
+      {
+        "name": "Veg Sandwich",
+        "price": 90.0,
+        "quantity": 2,
+        "image": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af"
+      }
+    ],
+    "total": 400.0,
+    "email": "bhavani@gmail.com",
+    "name": "bhaviii",
+    "phone": "1234567890",
+    "location": "class",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TIRtoeDRj0Lc0u",
+    "razorpay_order_id": "order_TIRtfbcVdw95no",
+    "razorpay_signature": "5019a3d63743d61a2634fe22f9b3c55eef22d2cf55c22940a7240c852979743e",
+    "payment_date": "27 Jul 2026, 01:15 PM",
+    "payment_amount": 400.0,
+    "status": "Completed",
+    "date": "27 Jul 2026, 01:15 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 9780,
+    "token": 15,
+    "user_email": "bhavani@gmail.com"
+  },
+  {
+    "_id": "6a6d9fa9b2aae6caf0999451",
+    "items": [
+      {
+        "name": "hkj",
+        "price": 788.0,
+        "quantity": 1,
+        "image": "/uploads/foods/4f43f361-eb78-4028-8930-d48f8fe52ca1.jpg"
+      }
+    ],
+    "total": 788.0,
+    "email": "bhavani@gmail.com",
+    "name": "kalavathi",
+    "phone": "123456789",
+    "location": "class",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TKQFrbq31eYVzR",
+    "razorpay_order_id": "order_TKQFLcJchDp6hb",
+    "razorpay_signature": "34225ae93044fd6ccdc2cea6f219e1e0828092a7a72baa75a94d475ec1b7a44c",
+    "payment_date": "01 Aug 2026, 12:56 PM",
+    "payment_amount": 788.0,
+    "status": "Completed",
+    "date": "01 Aug 2026, 12:56 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 1662,
+    "token": 16,
+    "user_email": "bhavani@gmail.com"
+  },
+  {
+    "_id": "6a75fca338cf0a8c9477ca24",
+    "items": [
+      {
+        "name": "shake",
+        "price": 80.0,
+        "quantity": 2,
+        "image": "/uploads/foods/bd475280-0bce-4001-ad2f-08905a88c083.jpg"
+      }
+    ],
+    "total": 160.0,
+    "email": "manikanta@gmail.com",
+    "name": "mani",
+    "phone": "1233456789",
+    "location": "home",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TMvtKo7sqgOeoc",
+    "razorpay_order_id": "order_TMvqDeofOiGi07",
+    "razorpay_signature": "3625dd0142b5c17b3b4b1c50a6192572599422d78f23e4742e277b5904a426f9",
+    "payment_date": "07 Aug 2026, 09:11 PM",
+    "payment_amount": 160.0,
+    "status": "Completed",
+    "created_at": "2026-08-07T21:11:23.268000",
+    "date": "07 Aug 2026, 09:11 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 9753,
+    "token": 17,
+    "user_email": "manikanta@gmail.com"
+  },
+  {
+    "_id": "6a8213dbcf6d6adc70cf5f33",
+    "items": [
+      {
+        "name": "strawberry milkshake",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/4f43f361-eb78-4028-8930-d48f8fe52ca1.jpg"
+      }
+    ],
+    "total": 90.0,
+    "email": "bhavani25@gmail.com",
+    "name": "mani",
+    "phone": "123456789",
+    "location": "class",
+    "payment_method": "WALLET",
+    "payment_status": "Paid",
+    "payment_id": null,
+    "razorpay_order_id": null,
+    "razorpay_signature": null,
+    "payment_date": "17 Aug 2026, 01:17 AM",
+    "payment_amount": 90.0,
+    "status": "Completed",
+    "created_at": "2026-08-17T01:17:39.846000",
+    "date": "17 Aug 2026, 01:17 AM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 4797,
+    "token": 18,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a8485785527dc0928e80d27",
+    "items": [
+      {
+        "name": "strawberry milkshake",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/4f43f361-eb78-4028-8930-d48f8fe52ca1.jpg"
+      }
+    ],
+    "total": 90.0,
+    "email": "bhavani25@gmail.com",
+    "name": "mani",
+    "phone": "123456789",
+    "location": "m",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TRINCrYujAhzD5",
+    "razorpay_order_id": "order_TRIMXbpobqPKgH",
+    "razorpay_signature": "fdccf92869b6272543c08b520aef0d06fc1c8e0d450dd65945a40296078d9d62",
+    "payment_date": "18 Aug 2026, 09:46 PM",
+    "payment_amount": 90.0,
+    "status": "Completed",
+    "created_at": "2026-08-18T21:46:56.310000",
+    "date": "18 Aug 2026, 09:46 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 9411,
+    "token": 19,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a84c63c4d8a577e346d9e24",
+    "items": [
+      {
+        "name": "strawberry milkshake",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/4f43f361-eb78-4028-8930-d48f8fe52ca1.jpg"
+      },
+      {
+        "name": "Coke",
+        "price": 40.0,
+        "quantity": 1,
+        "image": "/uploads/foods/5c4ab1d4-956e-4dca-a954-d65435550867.jpg"
+      }
+    ],
+    "total": 150.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TRN58O6pfe09Ss",
+    "razorpay_order_id": "order_TRN51rcBFAzDp8",
+    "razorpay_signature": "cc4bbfdb00d7adb7557f5a9ee8e54b59ea4e65b9ee74ab20ce728aa36cf1c21d",
+    "payment_date": "19 Aug 2026, 02:23 AM",
+    "payment_amount": 150.0,
+    "status": "Completed",
+    "created_at": "2026-08-19T02:23:16.762000",
+    "date": "19 Aug 2026, 02:23 AM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 7947,
+    "token": 20,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a85559135f6e3afa79604e8",
+    "items": [
+      {
+        "name": "strawberry milkshake",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/4f43f361-eb78-4028-8930-d48f8fe52ca1.jpg"
+      }
+    ],
+    "total": 110.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "WALLET",
+    "payment_status": "Paid",
+    "payment_id": null,
+    "razorpay_order_id": null,
+    "razorpay_signature": null,
+    "payment_date": "19 Aug 2026, 12:34 PM",
+    "payment_amount": 110.0,
+    "status": "Completed",
+    "created_at": "2026-08-19T12:34:49.667000",
+    "date": "19 Aug 2026, 12:34 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 2613,
+    "token": 21,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a86ab357c3f594fc2b6aa63",
+    "items": [
+      {
+        "name": "strawberry milkshake",
+        "price": 90.0,
+        "quantity": 2,
+        "image": "/uploads/foods/4f43f361-eb78-4028-8930-d48f8fe52ca1.jpg"
+      },
+      {
+        "name": "shake",
+        "price": 80.0,
+        "quantity": 1,
+        "image": "/uploads/foods/bd475280-0bce-4001-ad2f-08905a88c083.jpg"
+      }
+    ],
+    "total": 280.0,
+    "email": "ajaygoli@gmail.com",
+    "name": "ajayy",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TRwKhxuT2kdqHX",
+    "razorpay_order_id": "order_TRwKW2eCPCBXPt",
+    "razorpay_signature": "fc89bf228c67ecdb1f5b0928cb926f6e34905a4725a0cded9fed552cd1ecac21",
+    "payment_date": "20 Aug 2026, 12:52 PM",
+    "payment_amount": 280.0,
+    "status": "Completed",
+    "created_at": "2026-08-20T12:52:29.033000",
+    "date": "20 Aug 2026, 12:52 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8527,
+    "token": 22,
+    "user_email": "ajaygoli@gmail.com"
+  },
+  {
+    "_id": "6a96d2b5acc8fdac37deb679",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      }
+    ],
+    "total": 135.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWmxer9FLLYfar",
+    "razorpay_order_id": "order_TWmxUMRFNbgKRk",
+    "razorpay_signature": "251abdb1ce5d944dd5bf63f2f88de64604da9463cba103b552fd0a3f98968bd3",
+    "payment_date": "01 Sep 2026, 06:57 PM",
+    "payment_amount": 135.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T18:57:17.247000",
+    "date": "01 Sep 2026, 06:57 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 7617,
+    "token": 23,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a96d92dedba6f7c9a9b010c",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      }
+    ],
+    "total": 135.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWnQra42JuJKBW",
+    "razorpay_order_id": "order_TWnQkBH8o9Dmhp",
+    "razorpay_signature": "2d93d14093acb3b5b9238527ab2524d8009beb90f025f683efe550f4df6b24f6",
+    "payment_date": "01 Sep 2026, 07:24 PM",
+    "payment_amount": 135.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T19:24:53.678000",
+    "date": "01 Sep 2026, 07:24 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6633,
+    "token": 24,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a96da1dedba6f7c9a9b010e",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      }
+    ],
+    "total": 135.0,
+    "email": "ajaygoli@gmail.com",
+    "name": "ajayy",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWnV61DlhFP5lc",
+    "razorpay_order_id": "order_TWnUyG1R9JCpnS",
+    "razorpay_signature": "c41114113bca9f11ecb1a673e26c082bde82ab493d52a33dce77fb8d1407815d",
+    "payment_date": "01 Sep 2026, 07:28 PM",
+    "payment_amount": 135.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T19:28:53.620000",
+    "date": "01 Sep 2026, 07:28 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6586,
+    "token": 25,
+    "user_email": "ajaygoli@gmail.com"
+  },
+  {
+    "_id": "6a96da94edba6f7c9a9b0110",
+    "items": [
+      {
+        "name": "Cheesy Chicken pizza",
+        "price": 150.0,
+        "quantity": 1,
+        "image": "/uploads/foods/697ee917-fb20-462c-a7ed-e772a98f103d.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "paneer pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/022e9317-9c89-4848-9e4e-18a50f250fee.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      }
+    ],
+    "total": 310.0,
+    "email": "ajaygoli@gmail.com",
+    "name": "ajayy",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWnXBg9LaAyDMy",
+    "razorpay_order_id": "order_TWnX745DxbknJ1",
+    "razorpay_signature": "0f017bfed3307a0ab2e0175338f2f247d91b74dbb4945ab7ab62e4f2e3251f07",
+    "payment_date": "01 Sep 2026, 07:30 PM",
+    "payment_amount": 310.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T19:30:52.972000",
+    "date": "01 Sep 2026, 07:30 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 1449,
+    "token": 26,
+    "user_email": "ajaygoli@gmail.com"
+  },
+  {
+    "_id": "6a96e154dcdbcd29ee92179f",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      },
+      {
+        "name": "paneer tikka masala sandwich",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "/uploads/foods/ac60642c-93b7-4592-b004-1a5c7fddbe21.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "chocolate milkshake",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/bd77ff96-2924-4ff1-bfb3-229bda0bed8f.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      }
+    ],
+    "total": 365.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWo1YXMevWCNdI",
+    "razorpay_order_id": "order_TWo1SFenVryMlc",
+    "razorpay_signature": "acc211c3cef2a5697d46d5bf602d5065a2641daec44832aa18ad59f27760d542",
+    "payment_date": "01 Sep 2026, 07:59 PM",
+    "payment_amount": 365.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T19:59:40.756000",
+    "date": "01 Sep 2026, 07:59 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 3748,
+    "token": 27,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a970172b82f1a70c74c2af6",
+    "items": [
+      {
+        "name": "chocolate milkshake",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/bd77ff96-2924-4ff1-bfb3-229bda0bed8f.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      },
+      {
+        "name": "paneer tikka masala sandwich",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "/uploads/foods/ac60642c-93b7-4592-b004-1a5c7fddbe21.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      }
+    ],
+    "total": 365.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWqMKN4XvZZLzH",
+    "razorpay_order_id": "order_TWqMCyKf2AQm9l",
+    "razorpay_signature": "b5a120c3f9282f2d1b10ca44f0c94d7538ebe770af865c037bc6f67e9ec5e4db",
+    "payment_date": "01 Sep 2026, 10:16 PM",
+    "payment_amount": 365.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T22:16:42.290000",
+    "date": "01 Sep 2026, 10:16 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6583,
+    "token": 28,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a9701bfb82f1a70c74c2af8",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      }
+    ],
+    "total": 135.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWqNh06DKMx2FX",
+    "razorpay_order_id": "order_TWqNb6ElXkDZol",
+    "razorpay_signature": "ada113ce8825151a5fc32b04e641aa124bc1e78ee575fc96b535d5d36186ee1d",
+    "payment_date": "01 Sep 2026, 10:17 PM",
+    "payment_amount": 135.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T22:17:59.554000",
+    "date": "01 Sep 2026, 10:17 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 4332,
+    "token": 29,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a97024fb82f1a70c74c2afa",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      }
+    ],
+    "total": 135.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWqQAmb8w50iMW",
+    "razorpay_order_id": "order_TWqQ76BXhnfipg",
+    "razorpay_signature": "4521439ad99fc36418d29b1d0ad8d3311297f2b5c14ec2b55dacac3401304fee",
+    "payment_date": "01 Sep 2026, 10:20 PM",
+    "payment_amount": 135.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T22:20:23.977000",
+    "date": "01 Sep 2026, 10:20 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 7992,
+    "token": 30,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a970360b82f1a70c74c2afc",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 2,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      },
+      {
+        "name": "Cheesy Chicken pizza",
+        "price": 150.0,
+        "quantity": 1,
+        "image": "/uploads/foods/697ee917-fb20-462c-a7ed-e772a98f103d.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "paneer pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/022e9317-9c89-4848-9e4e-18a50f250fee.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "oreo milkshake",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "/uploads/foods/4ad85a94-f7d4-40a7-86ab-19579662af59.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      },
+      {
+        "name": "chocolate milkshake",
+        "price": 120.0,
+        "quantity": 2,
+        "image": "/uploads/foods/bd77ff96-2924-4ff1-bfb3-229bda0bed8f.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      }
+    ],
+    "total": 890.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TWqV2OG24jVq9o",
+    "razorpay_order_id": "order_TWqUxVxT5qxFNm",
+    "razorpay_signature": "2b8cc4b0295860efc51e13576c22af1fd049d4f64b820d449c055bf05e5cc1a0",
+    "payment_date": "01 Sep 2026, 10:24 PM",
+    "payment_amount": 890.0,
+    "status": "Completed",
+    "created_at": "2026-09-01T22:24:56.553000",
+    "date": "01 Sep 2026, 10:24 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8461,
+    "token": 31,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a982689de55f4345d54cd77",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      },
+      {
+        "name": "paneer tikka masala sandwich",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "/uploads/foods/ac60642c-93b7-4592-b004-1a5c7fddbe21.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "paneer pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/022e9317-9c89-4848-9e4e-18a50f250fee.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "chocolate milkshake",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/bd77ff96-2924-4ff1-bfb3-229bda0bed8f.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      },
+      {
+        "name": "oreo milkshake",
+        "price": 110.0,
+        "quantity": 1,
+        "image": "/uploads/foods/4ad85a94-f7d4-40a7-86ab-19579662af59.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      }
+    ],
+    "total": 615.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TXBfH7ZLBZfvtz",
+    "razorpay_order_id": "order_TXBfBJJt5FOrTu",
+    "razorpay_signature": "6808d4c89eef29362ad5f18097b8b3171642993ca3e0086313288e773fa4054c",
+    "payment_date": "02 Sep 2026, 07:07 PM",
+    "payment_amount": 615.0,
+    "status": "Completed",
+    "created_at": "2026-09-02T19:07:13.852000",
+    "date": "02 Sep 2026, 07:07 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6545,
+    "token": 32,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a982818de55f4345d54cd79",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      },
+      {
+        "name": "paneer pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/022e9317-9c89-4848-9e4e-18a50f250fee.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "paneer tikka masala sandwich",
+        "price": 110.0,
+        "quantity": 2,
+        "image": "/uploads/foods/ac60642c-93b7-4592-b004-1a5c7fddbe21.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "chocolate milkshake",
+        "price": 120.0,
+        "quantity": 2,
+        "image": "/uploads/foods/bd77ff96-2924-4ff1-bfb3-229bda0bed8f.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      }
+    ],
+    "total": 735.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "WALLET",
+    "payment_status": "Paid",
+    "payment_id": null,
+    "razorpay_order_id": null,
+    "razorpay_signature": null,
+    "payment_date": "02 Sep 2026, 07:13 PM",
+    "payment_amount": 735.0,
+    "status": "Completed",
+    "created_at": "2026-09-02T19:13:52.786000",
+    "date": "02 Sep 2026, 07:13 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 7311,
+    "token": 33,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a995f2dc949279da239ccb0",
+    "items": [
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      },
+      {
+        "name": "paneer pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/022e9317-9c89-4848-9e4e-18a50f250fee.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      }
+    ],
+    "total": 275.0,
+    "email": "bhavani25@gmail.com",
+    "name": "Bhavani",
+    "phone": "9398873360",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TXYNs8RjBOTJ3B",
+    "razorpay_order_id": "order_TXYNiSGOQaxvUq",
+    "razorpay_signature": "15b204be1da364f95149a4c67a2f5059ffe21105659871b8de2a62602117d721",
+    "payment_date": "03 Sep 2026, 05:21 PM",
+    "payment_amount": 275.0,
+    "status": "Cooking",
+    "created_at": "2026-09-03T17:21:09.905000",
+    "date": "03 Sep 2026, 05:21 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8746,
+    "token": 34,
+    "user_email": "bhavani25@gmail.com"
+  },
+  {
+    "_id": "6a9db005bc873a8a1da34269",
+    "items": [
+      {
+        "name": "chocolate milkshake",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/bd77ff96-2924-4ff1-bfb3-229bda0bed8f.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      },
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      },
+      {
+        "name": "Cheesy Chicken pizza",
+        "price": 150.0,
+        "quantity": 1,
+        "image": "/uploads/foods/697ee917-fb20-462c-a7ed-e772a98f103d.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      }
+    ],
+    "total": 405.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TYqhxDfkni2Fyx",
+    "razorpay_order_id": "order_TYqhsr9sLfYZhq",
+    "razorpay_signature": "248979c6d98166f5a7e58f456f4f9d60dfb7966d2cf0dcc3e3c5e29820ab0842",
+    "payment_date": "06 Sep 2026, 11:55 PM",
+    "payment_amount": 405.0,
+    "status": "Cooking",
+    "created_at": "2026-09-06T23:55:09.840000",
+    "date": "06 Sep 2026, 11:55 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 4478,
+    "token": 35,
+    "user_email": "ajaygoli1701@gmail.com"
+  },
+  {
+    "_id": "6a9e48ce7224ab40b5060a3f",
+    "items": [
+      {
+        "name": "chocolate",
+        "price": 40.0,
+        "quantity": 1,
+        "image": "/uploads/foods/9db024bd-ccc7-4bd0-8975-431ac9977977.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44"
+      }
+    ],
+    "total": 60.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZ1oX1JR8OzDMw",
+    "razorpay_order_id": "order_TZ1oRa90HomMDP",
+    "razorpay_signature": "4836cc0499a1196e35cd3e0230495f5d32d755107b91cdfa3395d154b20f04ec",
+    "payment_date": "07 Sep 2026, 10:47 AM",
+    "payment_amount": 60.0,
+    "status": "Cooking",
+    "created_at": "2026-09-07T10:47:02.222000",
+    "date": "07 Sep 2026, 10:47 AM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 9061,
+    "token": 36,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": "2026-09-07T11:06:27.291004",
+        "readyAt": "2026-09-07T11:06:36.248162"
+      }
+    ]
+  },
+  {
+    "_id": "6a9e7aadcf993f914020e22f",
+    "items": [
+      {
+        "name": "chocolate",
+        "price": 40.0,
+        "quantity": 1,
+        "image": "/uploads/foods/9db024bd-ccc7-4bd0-8975-431ac9977977.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44"
+      }
+    ],
+    "total": 60.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZ5RJCr1UjRUaQ",
+    "razorpay_order_id": "order_TZ5RDhrs2IEbvR",
+    "razorpay_signature": "617fb0fc129c4d2c19e0aa440666e795e50ddc84ddd50274443c93527c4edbe7",
+    "payment_date": "07 Sep 2026, 02:19 PM",
+    "payment_amount": 60.0,
+    "status": "Cooking",
+    "created_at": "2026-09-07T14:19:49.137000",
+    "date": "07 Sep 2026, 02:19 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 3586,
+    "token": 37,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": "2026-09-07T14:51:29.995221",
+        "readyAt": "2026-09-07T14:51:30.200291"
+      }
+    ]
+  },
+  {
+    "_id": "6a9e82684868f02ea99a4647",
+    "items": [
+      {
+        "name": "chocolate",
+        "price": 40.0,
+        "quantity": 1,
+        "image": "/uploads/foods/9db024bd-ccc7-4bd0-8975-431ac9977977.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44"
+      },
+      {
+        "name": "chocolate waffle",
+        "price": 115.0,
+        "quantity": 1,
+        "image": "/uploads/foods/086839c8-edfd-4af8-a9bc-91be64442db0.jpg",
+        "stall_id": "6a8c838e117e26e722b8ab84"
+      },
+      {
+        "name": "paneer tikka masala sandwich",
+        "price": 110.0,
+        "quantity": 2,
+        "image": "/uploads/foods/ac60642c-93b7-4592-b004-1a5c7fddbe21.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "paneer pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/022e9317-9c89-4848-9e4e-18a50f250fee.jpg",
+        "stall_id": "6a8b002d6247bcf4fec6d74f"
+      },
+      {
+        "name": "chocolate milkshake",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/bd77ff96-2924-4ff1-bfb3-229bda0bed8f.jpg",
+        "stall_id": "6a8ac53e576e0db3dbcbad65"
+      }
+    ],
+    "total": 655.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZ604suhmxUX6N",
+    "razorpay_order_id": "order_TZ5zyTjqb4DyhO",
+    "razorpay_signature": "5d43b2404d4a6ee980e8f1bc34ca9b964f97ab2a8f63d4eb07cc6fb91a77d4ff",
+    "payment_date": "07 Sep 2026, 02:52 PM",
+    "payment_amount": 655.0,
+    "status": "Cooking",
+    "created_at": "2026-09-07T14:52:48.005000",
+    "date": "07 Sep 2026, 02:52 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6693,
+    "token": 38,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": "2026-09-07T16:34:24.170386",
+        "readyAt": "2026-09-07T16:34:26.105806"
+      },
+      {
+        "stall_id": "6a8c838e117e26e722b8ab84",
+        "status": "Pending",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null
+      },
+      {
+        "stall_id": "6a8b002d6247bcf4fec6d74f",
+        "status": "Pending",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null
+      },
+      {
+        "stall_id": "6a8ac53e576e0db3dbcbad65",
+        "status": "Pending",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null
+      }
+    ]
+  },
+  {
+    "_id": "6a9e97614562c9f241e7be37",
+    "items": [
+      {
+        "name": "chocolate",
+        "price": 40.0,
+        "quantity": 1,
+        "image": "/uploads/foods/9db024bd-ccc7-4bd0-8975-431ac9977977.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Chicken Pizza",
+        "price": 160.0,
+        "quantity": 1,
+        "image": "/uploads/foods/91d41e09-aab3-4f39-be57-9cf9f46684ad.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      },
+      {
+        "name": "Paneer Pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/f0e3bac7-8208-4026-894a-591054c0c16e.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      },
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 2,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      }
+    ],
+    "total": 750.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZ7WgBgEVbf3Ki",
+    "razorpay_order_id": "order_TZ7WZ9RTNXQR68",
+    "razorpay_signature": "c9815eb68de0eb610256f550e2857b3134baa2750dc3e3360d04d6efd0989fbe",
+    "payment_date": "07 Sep 2026, 04:22 PM",
+    "payment_amount": 750.0,
+    "status": "Cooking",
+    "created_at": "2026-09-07T16:22:17.420000",
+    "date": "07 Sep 2026, 04:22 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 4608,
+    "token": 39,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": "2026-09-07T16:24:08.503693",
+        "readyAt": "2026-09-07T16:24:42.901147"
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-07T16:23:12.984097",
+        "readyAt": "2026-09-07T16:23:21.314595"
+      },
+      {
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-07T16:24:45.623205",
+        "readyAt": "2026-09-07T16:24:46.153950"
+      },
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-07T16:23:19.242092",
+        "readyAt": "2026-09-07T16:23:36.511881"
+      }
+    ]
+  },
+  {
+    "_id": "6a9e9bcb4562c9f241e7be39",
+    "items": [
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T17:18:21.810810",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 2,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      }
+    ],
+    "total": 550.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZ7qaFmbutKW0n",
+    "razorpay_order_id": "order_TZ7qW1yBvo1jJw",
+    "razorpay_signature": "ecf7608df38d70416b519ea6c4e960bb76b733a94903712f4d2a713a1f6cf2a5",
+    "payment_date": "07 Sep 2026, 04:41 PM",
+    "payment_amount": 550.0,
+    "status": "Cooking",
+    "created_at": "2026-09-07T16:41:07.278000",
+    "date": "07 Sep 2026, 04:41 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 1560,
+    "token": 40,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-07T16:44:44.856365",
+        "readyAt": "2026-09-07T16:44:46.390233"
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-07T16:44:39.455785",
+        "readyAt": "2026-09-07T16:44:41.994325"
+      }
+    ]
+  },
+  {
+    "_id": "6a9ea44a0f87a12d204a9ff3",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T17:18:06.865501",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T17:18:06.865501",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T17:18:06.865501",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T17:18:06.865501",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "total": 430.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZ8SqYwVoeWia3",
+    "razorpay_order_id": "order_TZ8SjlBRNEz2Fl",
+    "razorpay_signature": "0b2caff489329bbc77b5cf597a0d038d99d066b811500fbcd3795f93ad7da9ad",
+    "payment_date": "07 Sep 2026, 05:17 PM",
+    "payment_amount": 430.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-07T17:17:22.310000",
+    "date": "07 Sep 2026, 05:17 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6876,
+    "token": 41,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T17:18:06.865501",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T17:18:06.865501",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellationReason": "Cancelled by vendor",
+    "cancelled": true,
+    "cancelledAt": "2026-09-07T17:18:06.865501"
+  },
+  {
+    "_id": "6a9ee3d23b61677e912954d5",
+    "items": [
+      {
+        "name": "chocolate",
+        "price": 40.0,
+        "quantity": 1,
+        "image": "/uploads/foods/9db024bd-ccc7-4bd0-8975-431ac9977977.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T21:50:32.045888",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "name": "Chicken Pizza",
+        "price": 160.0,
+        "quantity": 1,
+        "image": "/uploads/foods/91d41e09-aab3-4f39-be57-9cf9f46684ad.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T21:50:32.045888",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "name": "Paneer Pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/f0e3bac7-8208-4026-894a-591054c0c16e.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T21:50:32.045888",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "total": 360.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZD5D1F55aC9mu",
+    "razorpay_order_id": "order_TZD4Zk8J4nf9VQ",
+    "razorpay_signature": "e3892fb3aa483a3cb2ce8a4900ac75150a9c890cf9f883fd93c0eb61c9522d2b",
+    "payment_date": "07 Sep 2026, 09:48 PM",
+    "payment_amount": 360.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-07T21:48:26.695000",
+    "date": "07 Sep 2026, 09:48 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 2356,
+    "token": 42,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": "2026-09-07T21:49:58.314753",
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T21:50:32.045888",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-07T21:50:32.045888",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellationReason": "Cancelled by vendor",
+    "cancelled": true,
+    "cancelledAt": "2026-09-07T21:50:32.045888"
+  },
+  {
+    "_id": "6a9fdbbf94fbd33edf2badb7",
+    "items": [
+      {
+        "name": "Chicken Pizza",
+        "price": 160.0,
+        "quantity": 1,
+        "image": "/uploads/foods/91d41e09-aab3-4f39-be57-9cf9f46684ad.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T15:26:57.151398",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "total": 180.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZV6Xkk3kQ3j0f",
+    "razorpay_order_id": "order_TZV6TvY7SJGqks",
+    "razorpay_signature": "8ab7a87016fbad71f2de5359a384e523e8413ddb10f6cec66c2e2c183d4d6692",
+    "payment_date": "08 Sep 2026, 03:26 PM",
+    "payment_amount": 180.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-08T15:26:15.523000",
+    "date": "08 Sep 2026, 03:26 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 3619,
+    "token": 43,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T15:26:57.151398",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "cancellationReason": "Item cancelled by vendor",
+    "cancelled": true,
+    "cancelledAt": "2026-09-08T15:26:57.151398"
+  },
+  {
+    "_id": "6a9fdc7d190e43cf782002b7",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T15:29:49.180262",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T15:29:49.180262",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T15:29:49.180262",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "total": 300.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZV9yttqIAj7NO",
+    "razorpay_order_id": "order_TZV9uucD3bz6DX",
+    "razorpay_signature": "3e59f26844327d9676c58fd8a883573a433380ee712ef33ac38c425b4e2e740b",
+    "payment_date": "08 Sep 2026, 03:29 PM",
+    "payment_amount": 300.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-08T15:29:25.095000",
+    "date": "08 Sep 2026, 03:29 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 5342,
+    "token": 44,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T15:29:49.180262",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T15:29:49.180262",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellationReason": "Cancelled by vendor",
+    "cancelled": true,
+    "cancelledAt": "2026-09-08T15:29:49.180262"
+  },
+  {
+    "_id": "6a9fe7fe6d4cf6984fa13fcf",
+    "items": [
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:20:13.323380",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:20:09.573981",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 2,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelled_at": "2026-09-10T06:20:04.887439",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:19:31.016944",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "total": 500.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZVzPUy4TPY2VY",
+    "razorpay_order_id": "order_TZVzHH4SiAxdtS",
+    "razorpay_signature": "b247d058391e45bea05e32b95a603058a02f84bff90cd0f7655ea03fd1a897d0",
+    "payment_date": "08 Sep 2026, 04:18 PM",
+    "payment_amount": 500.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-08T16:18:30.248000",
+    "date": "08 Sep 2026, 04:18 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 5354,
+    "token": 45,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:20:13.323380",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-10T11:50:01.071685",
+        "readyAt": "2026-09-10T11:50:02.062295",
+        "cancelled": false,
+        "cancelledAt": "2026-09-10T06:20:04.887439",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellation_reason": "All stall orders cancelled",
+    "cancelled": true,
+    "cancelled_at": "2026-09-10T06:20:04.887439"
+  },
+  {
+    "_id": "6a9fea4a69f5028861b2929a",
+    "items": [
+      {
+        "name": "chocolate",
+        "price": 40.0,
+        "quantity": 2,
+        "image": "/uploads/foods/9db024bd-ccc7-4bd0-8975-431ac9977977.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:28:51.778554",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Paneer Pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/f0e3bac7-8208-4026-894a-591054c0c16e.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      },
+      {
+        "name": "Chicken Pizza",
+        "price": 160.0,
+        "quantity": 1,
+        "image": "/uploads/foods/91d41e09-aab3-4f39-be57-9cf9f46684ad.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      }
+    ],
+    "total": 400.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZW9Q97R2jauSQ",
+    "razorpay_order_id": "order_TZW9LgGedED2r1",
+    "razorpay_signature": "7c2929548b31cf5496413c1cc2031832c641d3fc290d3d5355d345b07949f226",
+    "payment_date": "08 Sep 2026, 04:28 PM",
+    "payment_amount": 400.0,
+    "status": "Cooking",
+    "created_at": "2026-09-08T16:28:18.040000",
+    "date": "08 Sep 2026, 04:28 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 7232,
+    "token": 46,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:28:51.778554",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-08T16:28:59.316543",
+        "readyAt": "2026-09-08T16:29:00.384254",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6a9fed2478cdbcaa663d04a4",
+    "items": [
+      {
+        "name": "chocolate",
+        "price": 40.0,
+        "quantity": 1,
+        "image": "/uploads/foods/9db024bd-ccc7-4bd0-8975-431ac9977977.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:41:11.045366",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Paneer Pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/f0e3bac7-8208-4026-894a-591054c0c16e.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      },
+      {
+        "name": "Chicken Pizza",
+        "price": 160.0,
+        "quantity": 1,
+        "image": "/uploads/foods/91d41e09-aab3-4f39-be57-9cf9f46684ad.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      }
+    ],
+    "total": 360.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZWMwWNwDkAPax",
+    "razorpay_order_id": "order_TZWMerrext6kUS",
+    "razorpay_signature": "d0741c8da821c5d903f1e527ae05244eb8099d0b545afb3e9eab59dc4238fe74",
+    "payment_date": "08 Sep 2026, 04:40 PM",
+    "payment_amount": 360.0,
+    "status": "Cooking",
+    "created_at": "2026-09-08T16:40:28.628000",
+    "date": "08 Sep 2026, 04:40 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 3092,
+    "token": 47,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:41:11.045366",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-08T16:41:32.833400",
+        "readyAt": "2026-09-08T16:41:34.721028",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6a9fefd04e59d23558e544e6",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 2,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelled_at": "2026-09-08T11:22:52.704575",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelled_at": "2026-09-08T11:22:52.704575",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T16:52:11.553888",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "total": 500.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZWYvPSXsnSb1Z",
+    "razorpay_order_id": "order_TZWYqao4wHiLrp",
+    "razorpay_signature": "94e3056e120bb2fd474caee3ff97df754ebd979297d836b72a0e02bcbdf229ac",
+    "payment_date": "08 Sep 2026, 04:51 PM",
+    "payment_amount": 500.0,
+    "status": "Cooking",
+    "created_at": "2026-09-08T16:51:52.084000",
+    "date": "08 Sep 2026, 04:51 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 4455,
+    "token": 48,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": "2026-09-08T11:22:52.704575",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-08T16:52:18.542575",
+        "readyAt": "2026-09-08T16:52:24.358710",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ],
+    "cancellation_reason": null,
+    "cancelled": false,
+    "cancelled_at": null
+  },
+  {
+    "_id": "6a9ff39c7d0e0e12a46287fd",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelled_at": "2026-09-08T11:38:24.376768",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      }
+    ],
+    "total": 310.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZWq8ZzJtefLfi",
+    "razorpay_order_id": "order_TZWq3elgEIMDuX",
+    "razorpay_signature": "b33061c9541051c0aa3bf03e17865ebf087853ac3cdfda41bc4318cd66322dd8",
+    "payment_date": "08 Sep 2026, 05:08 PM",
+    "payment_amount": 310.0,
+    "status": "Cooking",
+    "created_at": "2026-09-08T17:08:04",
+    "date": "08 Sep 2026, 05:08 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6758,
+    "token": 49,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-08T17:08:35.997974",
+        "readyAt": "2026-09-08T17:08:41.137071",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": "2026-09-08T11:38:24.376768",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellation_reason": null,
+    "cancelled": false,
+    "cancelled_at": null
+  },
+  {
+    "_id": "6a9ff4f11da27609d2abcf31",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelled_at": "2026-09-08T11:44:05.080977",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      }
+    ],
+    "total": 340.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZWwAGr401EcZe",
+    "razorpay_order_id": "order_TZWw5VIy6Zb20C",
+    "razorpay_signature": "0aed8015efd79c5ff809f87f8e8a879c0f3b5bbad61ad669c90cf17010676786",
+    "payment_date": "08 Sep 2026, 05:13 PM",
+    "payment_amount": 340.0,
+    "status": "Cooking",
+    "created_at": "2026-09-08T17:13:45.232000",
+    "date": "08 Sep 2026, 05:13 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 5937,
+    "token": 50,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": "2026-09-08T11:44:05.080977",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-08T17:14:20.791900",
+        "readyAt": "2026-09-08T17:14:31.895374",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ],
+    "cancellation_reason": null,
+    "cancelled": false,
+    "cancelled_at": null
+  },
+  {
+    "_id": "6a9ffc605778561cf8fb8811",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-08T17:46:22.125013",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelled_at": "2026-09-08T12:16:39.197234",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      }
+    ],
+    "total": 430.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZXTgTn05G6Q6u",
+    "razorpay_order_id": "order_TZXTaUJQg1bRI1",
+    "razorpay_signature": "3f24b47660b80d7007b14d5bc6ca6c0eee6384d712a0b2edf65c623a166963b8",
+    "payment_date": "08 Sep 2026, 05:45 PM",
+    "payment_amount": 430.0,
+    "status": "Cooking",
+    "created_at": "2026-09-08T17:45:28.969000",
+    "date": "08 Sep 2026, 05:45 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 2317,
+    "token": 51,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-08T17:46:30.389785",
+        "readyAt": "2026-09-08T17:46:44.637409",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": "2026-09-08T12:16:39.197234",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellation_reason": null,
+    "cancelled": false,
+    "cancelled_at": null
+  },
+  {
+    "_id": "6aa061eb3ef0ccc67f3f8b33",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-09T00:59:46.037811",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelledAt": "2026-09-09T01:00:05.870854",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "total": 430.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZerM8M2AIJi9t",
+    "razorpay_order_id": "order_TZerEAhWK2uils",
+    "razorpay_signature": "4a48002c6a4aace92175a2ed6b9622d8ee52e272f7db0a6fbbbd5477fbdc62ed",
+    "payment_date": "09 Sep 2026, 12:58 AM",
+    "payment_amount": 430.0,
+    "status": "Cooking",
+    "created_at": "2026-09-09T00:58:43.492000",
+    "date": "09 Sep 2026, 12:58 AM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 5086,
+    "token": 52,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-09T01:00:15.772143",
+        "readyAt": "2026-09-09T01:00:17.593135",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-09T01:00:22.290686",
+        "readyAt": "2026-09-09T01:00:23.827217",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aa0f2ae79a67c6a6d5f83b9",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-09T11:17:47.918962",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      }
+    ],
+    "total": 310.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "WALLET",
+    "payment_status": "Paid",
+    "payment_id": null,
+    "razorpay_order_id": null,
+    "razorpay_signature": null,
+    "payment_date": "09 Sep 2026, 11:16 AM",
+    "payment_amount": 310.0,
+    "status": "Cooking",
+    "created_at": "2026-09-09T11:16:22.478000",
+    "date": "09 Sep 2026, 11:16 AM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6579,
+    "token": 53,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-09T11:17:53.471057",
+        "readyAt": "2026-09-09T11:17:55.496426",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-09T11:18:06.835410",
+        "readyAt": "2026-09-09T11:18:09.069572",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aa117aa4b19186e353633b9",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-09T13:56:34.370447",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      }
+    ],
+    "total": 430.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "WALLET",
+    "payment_status": "Paid",
+    "payment_id": null,
+    "razorpay_order_id": null,
+    "razorpay_signature": null,
+    "payment_date": "09 Sep 2026, 01:54 PM",
+    "payment_amount": 430.0,
+    "status": "Cooking",
+    "created_at": "2026-09-09T13:54:10.831000",
+    "date": "09 Sep 2026, 01:54 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 7093,
+    "token": 54,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-10T11:49:35.434930",
+        "readyAt": "2026-09-10T11:49:36.672663",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-09T13:57:00.460817",
+        "readyAt": "2026-09-09T13:57:03.935649",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aa118974b19186e353633bb",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelled_at": "2026-09-10T06:19:49.546577",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      }
+    ],
+    "total": 90.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TZs8b8qyHP8l5R",
+    "razorpay_order_id": "order_TZs8VWlY8yyzzA",
+    "razorpay_signature": "f7959211ff4e92508c4ddb40fa84415c86ba20512882f75985c8fd03a1c646b4",
+    "payment_date": "09 Sep 2026, 01:58 PM",
+    "payment_amount": 90.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-09T13:58:07.376000",
+    "date": "09 Sep 2026, 01:58 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 9993,
+    "token": 55,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-10T11:49:45.473386",
+        "readyAt": "2026-09-10T11:49:46.784698",
+        "cancelled": false,
+        "cancelledAt": "2026-09-10T06:19:49.546577",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellation_reason": "All stall orders cancelled",
+    "cancelled": true,
+    "cancelled_at": "2026-09-10T06:19:49.546577"
+  },
+  {
+    "_id": "6aa11d154b19186e353633be",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-09T14:17:29.793115",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "total": 90.0,
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "WALLET",
+    "payment_status": "Paid",
+    "payment_id": null,
+    "razorpay_order_id": null,
+    "razorpay_signature": null,
+    "payment_date": "09 Sep 2026, 02:17 PM",
+    "payment_amount": 90.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-09T14:17:17.682000",
+    "date": "09 Sep 2026, 02:17 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 2983,
+    "token": 56,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-09T14:17:29.793115",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "cancellationReason": "Item cancelled by vendor",
+    "cancelled": true,
+    "cancelledAt": "2026-09-09T14:17:29.793115"
+  },
+  {
+    "_id": "6aa24c8e11bda0de48e1f45b",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-10T11:53:17.607001",
+        "cancellationReason": "Item cancelled by vendor"
+      },
+      {
+        "name": "Strawberry Juice",
+        "price": 90.0,
+        "quantity": 1,
+        "image": "/uploads/foods/297db0da-e124-44c5-9f43-3f7342520a06.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      },
+      {
+        "name": "Paneer Pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/f0e3bac7-8208-4026-894a-591054c0c16e.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      },
+      {
+        "name": "Chicken Pizza",
+        "price": 160.0,
+        "quantity": 1,
+        "image": "/uploads/foods/91d41e09-aab3-4f39-be57-9cf9f46684ad.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelled_at": "2026-09-10T06:22:55.703699",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelled_at": "2026-09-10T06:22:55.703699",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      }
+    ],
+    "total": 730.0,
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TaEWeLr5j6V4nr",
+    "razorpay_order_id": "order_TaEWXOE5yOp8mx",
+    "razorpay_signature": "24d57d465d6ec462a0e132536090f7a9b0324bce309ad7f5b201a061a34cec78",
+    "payment_date": "10 Sep 2026, 11:52 AM",
+    "payment_amount": 730.0,
+    "status": "Cooking",
+    "created_at": "2026-09-10T11:52:06.984000",
+    "date": "10 Sep 2026, 11:52 AM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 4476,
+    "token": 57,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-10T11:53:07.009626",
+        "readyAt": "2026-09-10T11:53:08.412075",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-10T11:53:26.543402",
+        "readyAt": "2026-09-10T11:53:29.277992",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": "2026-09-10T06:22:55.703699",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellation_reason": null,
+    "cancelled": false,
+    "cancelled_at": null
+  },
+  {
+    "_id": "6aaa4514dd257b7c12a72cae",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      }
+    ],
+    "total": 90.0,
+    "billing": {
+      "subtotal": 70.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 90.0
+    },
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TccrM9Sx2CUZ7j",
+    "razorpay_order_id": "order_TccrFUi7TdvNZW",
+    "razorpay_signature": "0a77492b61422888456adba373d3660d389089b20dfef204377231acf01460d2",
+    "payment_date": "16 Sep 2026, 12:58 PM",
+    "payment_amount": 90.0,
+    "status": "Cooking",
+    "created_at": "2026-09-16T12:58:20.759000",
+    "date": "16 Sep 2026, 12:58 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 2221,
+    "token": 58,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Accepted",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aabf1fb130024133acb3118",
+    "items": [
+      {
+        "name": "chocolate ice cream",
+        "price": 100.0,
+        "quantity": 1,
+        "image": "/uploads/foods/69dd1613-cb48-4440-a328-83b110c19885.jpg",
+        "stall_id": "6a9d8f818b2ff12c85a18d44"
+      },
+      {
+        "name": "Paneer Pizza",
+        "price": 140.0,
+        "quantity": 1,
+        "image": "/uploads/foods/f0e3bac7-8208-4026-894a-591054c0c16e.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "cancelled": true,
+        "cancelled_at": "2026-09-17T14:31:30.127817",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Chicken Pizza",
+        "price": 160.0,
+        "quantity": 1,
+        "image": "/uploads/foods/91d41e09-aab3-4f39-be57-9cf9f46684ad.jpg",
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "cancelled": true,
+        "cancelled_at": "2026-09-17T14:31:30.127817",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelled_at": "2026-09-17T14:00:11.284135",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      },
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "cancelled": true,
+        "cancelled_at": "2026-09-17T14:00:11.284135",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      }
+    ],
+    "total": 670.0,
+    "billing": {
+      "subtotal": 650.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 670.0
+    },
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_Td82OK3UL1bG06",
+    "razorpay_order_id": "order_Td82CWZJ70Fg4M",
+    "razorpay_signature": "5c0b21617292441d5d170cbe63a04b9c5249513851158303681133748351880b",
+    "payment_date": "17 Sep 2026, 07:28 PM",
+    "payment_amount": 670.0,
+    "status": "Cooking",
+    "created_at": "2026-09-17T19:28:19.764000",
+    "date": "17 Sep 2026, 07:28 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 4060,
+    "token": 59,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9d8f818b2ff12c85a18d44",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 10,
+        "cookingStartedAt": "2026-09-17T20:01:37.624800",
+        "readyAt": "2026-09-17T20:01:38.997526",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      },
+      {
+        "stall_id": "6a9e8fd74562c9f241e7be2c",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-17T20:01:25.324618",
+        "readyAt": "2026-09-17T20:01:26.854557",
+        "cancelled": false,
+        "cancelledAt": "2026-09-17T14:31:30.127817",
+        "cancellationReason": "Cancelled by vendor"
+      },
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-17T19:30:06.122305",
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": "2026-09-17T14:00:11.284135",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellation_reason": null,
+    "cancelled": false,
+    "cancelled_at": null
+  },
+  {
+    "_id": "6aabf9fb130024133acb311c",
+    "items": [
+      {
+        "name": "Honey Butter Waff-wich",
+        "price": 130.0,
+        "quantity": 1,
+        "image": "/uploads/foods/c8aff0ae-856c-4fb2-8505-95a0d8c90048.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      },
+      {
+        "name": "Chocolate Waffle",
+        "price": 120.0,
+        "quantity": 1,
+        "image": "/uploads/foods/3b90ce9e-c999-48a8-b14a-80198fd284d1.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      }
+    ],
+    "total": 270.0,
+    "billing": {
+      "subtotal": 250.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 270.0
+    },
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_Td8cQNh3vQtHbd",
+    "razorpay_order_id": "order_Td8cAr9KtvbS3L",
+    "razorpay_signature": "d47f7e29f3b6723e06a3073e7f9c4d323c6e774ae396285affe287786860c820",
+    "payment_date": "17 Sep 2026, 08:02 PM",
+    "payment_amount": 270.0,
+    "status": "Cooking",
+    "created_at": "2026-09-17T20:02:27.220000",
+    "date": "17 Sep 2026, 08:02 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8600,
+    "token": 60,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Placed",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aabfe8f130024133acb311e",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      }
+    ],
+    "total": 90.0,
+    "billing": {
+      "subtotal": 70.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 90.0
+    },
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_Td8wzqcb0woh3J",
+    "razorpay_order_id": "order_Td8wwAEF3MQ9WC",
+    "razorpay_signature": "d2e49e7354f12739b06a96480eb704f11ce76ea0614058d9d8035f95e0e2c341",
+    "payment_date": "17 Sep 2026, 08:21 PM",
+    "payment_amount": 90.0,
+    "status": "Cooking",
+    "created_at": "2026-09-17T20:21:59.482000",
+    "date": "17 Sep 2026, 08:21 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 6683,
+    "token": 61,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Placed",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aac023d238f52e04c51f288",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d"
+      }
+    ],
+    "total": 90.0,
+    "billing": {
+      "subtotal": 70.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 90.0
+    },
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_Td9Db5o0DqzMC8",
+    "razorpay_order_id": "order_Td9DNKLuycYClM",
+    "razorpay_signature": "b92dc9ab5434bd38ad8656654520fb4763c198f9644162360c936c06e3a93261",
+    "payment_date": "17 Sep 2026, 08:37 PM",
+    "payment_amount": 90.0,
+    "status": "Cooking",
+    "created_at": "2026-09-17T20:37:41.170000",
+    "date": "17 Sep 2026, 08:37 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 1661,
+    "token": 62,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Placed",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aac0a7f539c5ac3fe51e026",
+    "items": [
+      {
+        "name": "Mango Juice",
+        "price": 70.0,
+        "quantity": 1,
+        "image": "/uploads/foods/b86ce9cb-937f-4e77-8f79-55a7080ab973.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelled_at": "2026-09-17T15:43:15.615386",
+        "cancellation_reason": "Cancelled by vendor",
+        "status": "Cancelled"
+      }
+    ],
+    "total": 90.0,
+    "billing": {
+      "subtotal": 70.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 90.0
+    },
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_Td9oozI7D3jZIc",
+    "razorpay_order_id": "order_Td9oiPl1VxiGOC",
+    "razorpay_signature": "6501a286da05367c0479b624a34ed106bece0785317213ab1279bbcf4e6338f9",
+    "payment_date": "17 Sep 2026, 09:12 PM",
+    "payment_amount": 90.0,
+    "status": "Completed",
+    "created_at": "2026-09-17T21:12:55.086000",
+    "date": "17 Sep 2026, 09:12 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 9308,
+    "token": 63,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-17T21:13:10.827893",
+        "readyAt": "2026-09-17T21:13:12.699377",
+        "cancelled": false,
+        "cancelledAt": "2026-09-17T15:43:15.615386",
+        "cancellationReason": "Cancelled by vendor"
+      }
+    ],
+    "cancellation_reason": "All stall orders cancelled",
+    "cancelled": true,
+    "cancelled_at": "2026-09-17T15:43:15.615386"
+  },
+  {
+    "_id": "6aad00aa846bc4d4656af60b",
+    "items": [
+      {
+        "name": "honey waffle",
+        "price": 100.0,
+        "quantity": 1,
+        "image": "/uploads/foods/8fcc6ad0-c701-45e2-b84d-d56bd10beeee.jpeg",
+        "stall_id": "6a9e8c9e4562c9f241e7be2b"
+      }
+    ],
+    "total": 120.0,
+    "billing": {
+      "subtotal": 100.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 120.0
+    },
+    "email": "ajaygoli1701@gmail.com",
+    "name": "ajay",
+    "phone": "9347435990",
+    "payment_method": "ONLINE",
+    "payment_status": "Paid",
+    "payment_id": "pay_TdRiPK1RrGF38m",
+    "razorpay_order_id": "order_TdRhXbGZPwXZfR",
+    "razorpay_signature": "31d29a243ed0753b430f8d63841161ae903b76bfa20883f4e218754c73524401",
+    "payment_date": "18 Sep 2026, 02:43 PM",
+    "payment_amount": 120.0,
+    "status": "Completed",
+    "created_at": "2026-09-18T14:43:14.832000",
+    "date": "18 Sep 2026, 02:43 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 2118,
+    "token": 64,
+    "user_email": "ajaygoli1701@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e8c9e4562c9f241e7be2b",
+        "status": "Ready For Pickup",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": "2026-09-18T14:44:28.799589",
+        "readyAt": "2026-09-18T14:44:35.167567",
+        "cancelled": false,
+        "cancelledAt": null,
+        "cancellationReason": null
+      }
+    ]
+  },
+  {
+    "_id": "6aaf8445db76259b3b20a213",
+    "items": [
+      {
+        "name": "strawberry juice",
+        "price": 80.0,
+        "quantity": 1,
+        "image": "/uploads/foods/ee8568a2-07b3-49ff-8f67-808cb1a0bddb.jpg",
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "cancelled": true,
+        "cancelledAt": "2026-09-20T12:30:45.339940",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "total": 100.0,
+    "billing": {
+      "subtotal": 80.0,
+      "delivery_fee": 20.0,
+      "tax_amount": 0.0,
+      "discount": 0.0,
+      "total": 100.0
+    },
+    "email": "23d4@gmail.com",
+    "name": "sama harshitha",
+    "phone": "7330919001",
+    "payment_method": "WALLET",
+    "payment_status": "Paid",
+    "payment_id": null,
+    "razorpay_order_id": null,
+    "razorpay_signature": null,
+    "payment_date": "20 Sep 2026, 12:29 PM",
+    "payment_amount": 100.0,
+    "status": "Cancelled",
+    "created_at": "2026-09-20T12:29:17.545000",
+    "date": "20 Sep 2026, 12:29 PM",
+    "estimated_time": "15-20 mins",
+    "pickup_code": 8580,
+    "token": 65,
+    "user_email": "23d4@gmail.com",
+    "stall_orders": [
+      {
+        "stall_id": "6a9e920b4562c9f241e7be2d",
+        "status": "Cancelled",
+        "estimatedPreparationMinutes": 15,
+        "cookingStartedAt": null,
+        "readyAt": null,
+        "cancelled": true,
+        "cancelledAt": "2026-09-20T12:30:45.339940",
+        "cancellationReason": "Item cancelled by vendor"
+      }
+    ],
+    "cancellationReason": "Item cancelled by vendor",
+    "cancelled": true,
+    "cancelledAt": "2026-09-20T12:30:45.339940"
+  }
+]
