@@ -1939,11 +1939,11 @@ class ChangePasswordData(BaseModel):
 
 
 class OrderItemRequest(BaseModel):
-    """Client only names what it wants and how many — price is never
-    accepted from the client. See create_payment_order / place_order."""
+    """Client identifies the food and its stall.
+    Price is never accepted from the client."""
     name: str = Field(min_length=1)
     quantity: int = Field(gt=0)
-
+    stall_id: str = Field(min_length=1)
 
 class OrderData(BaseModel):
     items: List[OrderItemRequest] = Field(min_length=1)
@@ -6505,30 +6505,40 @@ def get_order_by_token(token: int, current_user: Optional[Dict[str, Any]] = Depe
 
 
 def _price_items_from_db(items: List[OrderItemRequest]) -> tuple[list, float]:
-    """Looks up every item's authoritative price/image from the foods
-    collection. The client only ever supplies a name + quantity — price
-    is never accepted from the request body."""
-    food_names = [item.name for item in items]
-    foods_by_name = {f["name"]: f for f in foods_collection.find({"name": {"$in": food_names}})}
+    """Looks up authoritative food price/image from MongoDB.
+
+    Food identity is determined by both name and stall_id.
+    Price is never accepted from the frontend.
+    """
 
     priced_items = []
     total = 0.0
 
     for item in items:
-        food = foods_by_name.get(item.name)
+        food = foods_collection.find_one({
+            "name": item.name,
+            "stall_id": item.stall_id,
+        })
+
         if not food:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Food item '{item.name}' does not exist"
+                detail=(
+                    f"Food item '{item.name}' does not exist "
+                    f"in the selected stall"
+                ),
             )
+
         price = float(food["price"])
+
         priced_items.append({
-    "name": item.name,
-    "price": price,
-    "quantity": item.quantity,
-    "image": food.get("image", ""),
-    "stall_id": str(food.get("stall_id", "")),
-})
+            "name": item.name,
+            "price": price,
+            "quantity": item.quantity,
+            "image": food.get("image", ""),
+            "stall_id": str(food.get("stall_id", "")),
+        })
+
         total += price * item.quantity
 
     return priced_items, round(total, 2)
@@ -8501,12 +8511,13 @@ def get_cart_summary(
         # ---------------------------------------------------------
 
         order_items = [
-            OrderItemRequest(
-                name=item.name,
-                quantity=item.quantity,
-            )
-            for item in data.items
-        ]
+    OrderItemRequest(
+        name=item.name,
+        quantity=item.quantity,
+        stall_id=item.stall_id,
+    )
+    for item in data.items
+]
 
         print(
             "🛒 Cart summary items:",

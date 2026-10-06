@@ -467,16 +467,11 @@ export default function CartPage() {
                   `Bearer ${token}`,
               },
               body: JSON.stringify({
-                items: items.map(
-                  (item) => ({
-                    name:
-                      item.name,
-                    quantity:
-                      Number(
-                        item.quantity
-                      ),
-                  })
-                ),
+                items: items.map(item => ({
+                  name: item.name,
+                  quantity: Number(item.quantity),
+                  stall_id: item.stall_id,
+                })),
               }),
               cache:
                 "no-store",
@@ -838,16 +833,11 @@ export default function CartPage() {
                   `Bearer ${token}`,
               },
               body: JSON.stringify({
-                items: items.map(
-                  (item) => ({
-                    name:
-                      item.name,
-                    quantity:
-                      Number(
-                        item.quantity
-                      ),
-                  })
-                ),
+                items: items.map(item => ({
+                  name: item.name,
+                  quantity: Number(item.quantity),
+                  stall_id: item.stall_id,
+                })),
                 name:
                   profile.name,
                 phone:
@@ -1042,16 +1032,11 @@ export default function CartPage() {
                   `Bearer ${token}`,
               },
               body: JSON.stringify({
-                items: items.map(
-                  (item) => ({
-                    name:
-                      item.name,
-                    quantity:
-                      Number(
-                        item.quantity
-                      ),
-                  })
-                ),
+                items: items.map(item => ({
+                  name: item.name,
+                  quantity: Number(item.quantity),
+                  stall_id: item.stall_id,
+                })),
                 name:
                   profile.name,
                 phone:

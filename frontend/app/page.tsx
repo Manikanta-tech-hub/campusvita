@@ -6,14 +6,12 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
-  ChevronRight,
   MapPin,
   RefreshCw,
   Search,
   ShoppingCart,
   Store,
   UtensilsCrossed,
-  WifiOff,
   X,
 } from "lucide-react";
 
@@ -891,26 +889,7 @@ export default function Home() {
           )}
         </section>
 
-        {/* ======================================================
-            FOOTER CONTEXT
-            ====================================================== */}
 
-        {activeStalls.length > 0 && (
-          <div className="mt-12 flex items-center justify-center gap-3">
-            <div className="h-px w-8 bg-[var(--border)] sm:w-16" />
-
-            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-[10px]">
-              <WifiOff
-                size={11}
-                className="hidden"
-              />
-
-              Live campus availability
-            </div>
-
-            <div className="h-px w-8 bg-[var(--border)] sm:w-16" />
-          </div>
-        )}
       </div>
 
       {/* ========================================================
@@ -1209,39 +1188,7 @@ function StallCard({
           {isOpen ? "Open now" : "Closed"}
         </div>
 
-        {/* ====================================================
-            OPEN ARROW
-        ==================================================== */}
-
-        {isOpen && (
-          <div
-            className="
-              absolute
-              bottom-3.5
-              right-3.5
-              flex
-              h-9
-              w-9
-              items-center
-              justify-center
-              rounded-full
-              border
-              border-white/20
-              bg-black/45
-              text-white
-              shadow-lg
-              backdrop-blur-md
-              transition-all
-              duration-300
-              group-hover:translate-x-0.5
-              group-hover:bg-[var(--brand)]
-              max-sm:bg-black/50
-            "
-            aria-hidden="true"
-          >
-            <ChevronRight size={18} strokeWidth={2.4} />
-          </div>
-        )}
+        
       </div>
 
       {/* ======================================================

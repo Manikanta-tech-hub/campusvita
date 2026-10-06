@@ -44,7 +44,7 @@ type Food = {
   available: boolean;
   is_veg: boolean | null;
 };
-
+const [foods, setFoods] = useState<Food[]>([]);
 type StallFoodsResponse = {
   success: boolean;
   stall: Stall;
