@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlertCircle,
   ArrowRight,
+  CheckCircle2,
   ChevronRight,
   MapPin,
+  RefreshCw,
   Search,
   ShoppingCart,
+  Store,
   UtensilsCrossed,
+  WifiOff,
   X,
 } from "lucide-react";
 
@@ -22,6 +27,10 @@ import {
   listenNotifications,
 } from "./notifications";
 
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://127.0.0.1:8000";
+
 type Stall = {
   _id: string;
   name: string;
@@ -34,44 +43,30 @@ type Stall = {
 export default function Home() {
   const router = useRouter();
 
+  // ============================================================
+  // STATE
+  // ============================================================
+
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   // ============================================================
-  // LIVE CART
-  // ============================================================
-  //
-  // IMPORTANT:
-  // This uses the SAME CartContext used by the Stall Page.
-  //
-  // Therefore:
-  //
-  // Stall Page -> add item -> CartContext updates
-  // Home Page  -> automatically sees the updated cart
-  //
-  // No separate cart state is created here.
+  // CART
   // ============================================================
 
   const { cartItems } = useCart();
 
-  // ============================================================
-  // LIVE CART ITEM COUNT
-  // ============================================================
-
   const cartItemCount = useMemo(() => {
     return cartItems.reduce(
-      (total, item) =>
-        total + Number(item.quantity || 0),
+      (total, item) => total + Number(item.quantity || 0),
       0
     );
   }, [cartItems]);
 
-  const cartLabel =
-    cartItemCount === 1
-      ? "item"
-      : "items";
+  const cartLabel = cartItemCount === 1 ? "item" : "items";
 
   // ============================================================
   // AUTHENTICATION
@@ -86,29 +81,27 @@ export default function Home() {
   }, []);
 
   // ============================================================
-  // STALL DATA
+  // LOAD STALLS
   // ============================================================
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadStalls = async () => {
+  const loadStalls = useCallback(
+    async (isRefresh = false) => {
       try {
-        if (!cancelled) {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
           setLoading(true);
-          setError("");
         }
 
-        const response = await fetch(
-          "http://127.0.0.1:8000/stalls",
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
-            cache: "no-store",
-          }
-        );
+        setError("");
+
+        const response = await fetch(`${API_URL}/stalls`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        });
 
         if (!response.ok) {
           throw new Error(
@@ -121,38 +114,27 @@ export default function Home() {
         console.log("🏪 Live stalls:", data);
 
         if (!Array.isArray(data?.stalls)) {
-          throw new Error(
-            "Invalid stalls response from server"
-          );
+          throw new Error("Invalid stalls response from server");
         }
 
-        if (!cancelled) {
-          setStalls(data.stalls);
-        }
+        setStalls(data.stalls);
       } catch (err) {
-        console.error(
-          "❌ Failed to load stalls:",
-          err
+        console.error("❌ Failed to load stalls:", err);
+
+        setError(
+          "We couldn't load the campus stalls right now. Please try again."
         );
-
-        if (!cancelled) {
-          setError(
-            "Unable to load food stalls."
-          );
-        }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        setLoading(false);
+        setRefreshing(false);
       }
-    };
+    },
+    []
+  );
 
+  useEffect(() => {
     void loadStalls();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }, [loadStalls]);
 
   // ============================================================
   // NOTIFICATIONS
@@ -168,10 +150,10 @@ export default function Home() {
         if (!cancelled) {
           listenNotifications();
         }
-      } catch (error) {
+      } catch (notificationError) {
         console.log(
-          "Notification error:",
-          error
+          "Notification setup error:",
+          notificationError
         );
       }
     };
@@ -184,19 +166,15 @@ export default function Home() {
   }, []);
 
   // ============================================================
-  // REAL BACKEND DATA
+  // REAL STALL DATA
   // ============================================================
 
   const activeStalls = useMemo(() => {
-    return stalls.filter(
-      (stall) => stall.active !== false
-    );
+    return stalls.filter((stall) => stall.active !== false);
   }, [stalls]);
 
   const openStalls = useMemo(() => {
-    return activeStalls.filter(
-      (stall) => stall.is_open
-    );
+    return activeStalls.filter((stall) => stall.is_open);
   }, [activeStalls]);
 
   // ============================================================
@@ -204,17 +182,14 @@ export default function Home() {
   // ============================================================
 
   const filteredStalls = useMemo(() => {
-    const query =
-      searchQuery.trim().toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
 
     if (!query) {
       return activeStalls;
     }
 
     return activeStalls.filter((stall) => {
-      const stallName =
-        stall.name?.toLowerCase() ?? "";
-
+      const stallName = stall.name?.toLowerCase() ?? "";
       const stallDescription =
         stall.description?.toLowerCase() ?? "";
 
@@ -223,33 +198,21 @@ export default function Home() {
         stallDescription.includes(query)
       );
     });
-  }, [
-    activeStalls,
-    searchQuery,
-  ]);
+  }, [activeStalls, searchQuery]);
 
-  // ============================================================
-  // PREMIUM HOME BANNER
-  // ============================================================
-
-  const heroImage =
-    "/images/campus-canteen-banner.jpeg";
+  const hasSearch = searchQuery.trim().length > 0;
 
   // ============================================================
   // STALL NAVIGATION
   // ============================================================
 
-  const handleStallClick = (
-    stall: Stall
-  ) => {
+  const handleStallClick = (stall: Stall) => {
     if (!stall.is_open) {
       return;
     }
 
     router.push(
-      `/stall/${encodeURIComponent(
-        stall._id
-      )}`
+      `/stall/${encodeURIComponent(stall._id)}`
     );
   };
 
@@ -262,7 +225,7 @@ export default function Home() {
   };
 
   // ============================================================
-  // OPEN CART
+  // CART
   // ============================================================
 
   const handleOpenCart = () => {
@@ -275,13 +238,19 @@ export default function Home() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="px-6 text-center">
-          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-orange-500" />
+      <main
+        className="
+          min-h-screen
+          bg-[var(--background)]
+          text-[var(--text-primary)]
+          transition-colors
+          duration-200
+        "
+      >
+        <Navbar />
 
-          <p className="text-sm text-zinc-400">
-            Loading food stalls...
-          </p>
+        <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-5 sm:px-6 sm:pt-8 lg:px-10">
+          <HomeSkeleton />
         </div>
       </main>
     );
@@ -292,533 +261,660 @@ export default function Home() {
   // ============================================================
 
   return (
-    <main className="min-h-screen bg-black text-white">
-
-      {/* ========================================================
-          NAVBAR
-          ======================================================== */}
-
+    <main
+      className="
+        min-h-screen
+        overflow-x-clip
+        bg-[var(--background)]
+        text-[var(--text-primary)]
+        selection:bg-orange-500/20
+        transition-colors
+        duration-200
+      "
+    >
       <Navbar />
 
-      <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-5 sm:px-6 sm:pb-32 sm:pt-8 lg:px-10">
+      {/* ========================================================
+          MAIN CONTENT
+          ======================================================== */}
+
+      <div className="mx-auto w-full max-w-7xl px-4 pb-32 pt-5 sm:px-6 sm:pt-8 lg:px-10">
 
         {/* ======================================================
-            SEARCH BOX
+            TOP INTRO
             ====================================================== */}
 
-        <section className="mb-5">
-          <div className="relative">
+        <section className="mb-6">
+          <div className="flex flex-col gap-5 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
 
+            <div className="min-w-0">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.35)]" />
+
+                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Campus dining
+                </span>
+              </div>
+
+              <h1
+                className="
+                  max-w-3xl
+                  text-[clamp(2rem,5vw,3.8rem)]
+                  font-black
+                  leading-[0.98]
+                  tracking-[-0.04em]
+                  text-[var(--text-primary)]
+                "
+              >
+                What are you{" "}
+                <span className="text-[var(--brand)]">
+                  craving?
+                </span>
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
+                Explore the food stalls on campus and order
+                directly from the places serving right now.
+              </p>
+            </div>
+
+            {/* LIVE STATUS */}
+
+            <div
+              className="
+                flex
+                shrink-0
+                items-center
+                gap-2
+                self-start
+                rounded-full
+                border
+                border-[var(--border)]
+                bg-[var(--surface)]
+                px-3.5
+                py-2.5
+                shadow-[var(--shadow-soft)]
+                lg:self-end
+              "
+            >
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-30" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+              </span>
+
+              <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                Live availability
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ======================================================
+            SEARCH
+            ====================================================== */}
+
+        <section className="mb-7">
+          <div className="relative">
             <Search
-              size={20}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+              size={21}
+              strokeWidth={2}
+              className="
+                pointer-events-none
+                absolute
+                left-4
+                top-1/2
+                -translate-y-1/2
+                text-[var(--text-muted)]
+                sm:left-5
+              "
+              aria-hidden="true"
             />
 
             <input
               type="search"
               value={searchQuery}
               onChange={(event) =>
-                setSearchQuery(
-                  event.target.value
-                )
+                setSearchQuery(event.target.value)
               }
-              placeholder="Search food stalls..."
-              aria-label="Search food stalls"
-              className="h-14 w-full rounded-2xl border border-zinc-800 bg-zinc-950 pl-12 pr-12 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
+              placeholder="Search stalls or food descriptions..."
+              aria-label="Search campus food stalls"
+              className="
+                h-14
+                w-full
+                rounded-2xl
+                border
+                border-[var(--border)]
+                bg-[var(--surface)]
+                pl-12
+                pr-12
+                text-sm
+                text-[var(--text-primary)]
+                shadow-[var(--shadow-soft)]
+                outline-none
+                transition-all
+                duration-200
+                placeholder:text-[var(--text-muted)]
+                hover:border-[var(--border-strong)]
+                focus:border-[var(--brand)]
+                focus:ring-4
+                focus:ring-orange-500/10
+                sm:h-16
+                sm:pl-14
+                sm:text-base
+              "
             />
 
-            {searchQuery && (
+            {hasSearch && (
               <button
                 type="button"
                 onClick={clearSearch}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-white"
+                className="
+                  absolute
+                  right-3
+                  top-1/2
+                  flex
+                  h-9
+                  w-9
+                  -translate-y-1/2
+                  items-center
+                  justify-center
+                  rounded-xl
+                  text-[var(--text-muted)]
+                  transition-colors
+                  hover:bg-[var(--surface-secondary)]
+                  hover:text-[var(--text-primary)]
+                  focus:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-[var(--brand)]
+                  sm:right-4
+                "
               >
                 <X size={18} />
               </button>
             )}
           </div>
 
-          {searchQuery.trim() && (
-            <div className="mt-2 px-1">
-              <p className="text-xs text-zinc-500">
+          {hasSearch && (
+            <div className="mt-3 flex items-center justify-between px-1">
+              <p className="text-xs text-[var(--text-muted)]">
                 {filteredStalls.length}{" "}
                 {filteredStalls.length === 1
                   ? "stall"
                   : "stalls"}{" "}
                 found
               </p>
+
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="
+                  text-xs
+                  font-semibold
+                  text-[var(--brand)]
+                  transition-colors
+                  hover:text-[var(--brand-hover)]
+                "
+              >
+                Clear
+              </button>
             </div>
           )}
         </section>
 
         {/* ======================================================
-            PREMIUM HERO BANNER
+            HERO
             ====================================================== */}
 
-        <section className="mb-9">
-          <div className="group relative isolate overflow-hidden rounded-[28px] border border-zinc-800/80 bg-zinc-950 shadow-2xl shadow-black/40">
+        {!hasSearch && (
+          <section className="mb-8">
+            <div
+              className="
+                group
+                relative
+                isolate
+                min-h-[280px]
+                overflow-hidden
+                rounded-[28px]
+                border
+                border-[var(--border)]
+                bg-[var(--surface)]
+                shadow-[var(--shadow-card)]
+                sm:min-h-[320px]
+                lg:min-h-[350px]
+              "
+            >
+              {/* IMAGE */}
 
-            {/* REAL LOCAL BANNER IMAGE */}
+              <img
+                src="/images/campus-canteen-banner.jpeg"
+                alt="Campus canteen"
+                className="
+                  absolute
+                  inset-0
+                  h-full
+                  w-full
+                  object-cover
+                  object-center
+                  transition-transform
+                  duration-700
+                  ease-out
+                  group-hover:scale-[1.025]
+                "
+                onError={(event) => {
+                  console.error(
+                    "❌ CampusVita banner image failed to load."
+                  );
 
-            <img
-              src={heroImage}
-              alt="Campus canteen"
-              className="absolute inset-0 z-0 h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.025]"
-              onError={(event) => {
-                console.error(
-                  "❌ CampusVita banner image failed to load:",
-                  heroImage
-                );
+                  event.currentTarget.style.display = "none";
+                }}
+              />
 
-                event.currentTarget.style.display =
-                  "none";
-              }}
-            />
+              {/* LIGHT/DARK IMAGE OVERLAYS */}
 
-            {/* IMAGE DARK OVERLAY */}
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  bg-gradient-to-r
+                  from-white/95
+                  via-white/75
+                  to-white/10
+                  dark:from-black
+                  dark:via-black/75
+                  dark:to-black/20
+                "
+              />
 
-            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-r from-black/90 via-black/65 to-black/20" />
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  bg-gradient-to-t
+                  from-white/80
+                  via-transparent
+                  to-white/20
+                  dark:from-black/80
+                  dark:to-black/20
+                "
+              />
 
-            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/10 to-black/10" />
+              {/* CONTENT */}
 
-            {/* HERO CONTENT */}
+              <div
+                className="
+                  relative
+                  z-10
+                  flex
+                  min-h-[280px]
+                  flex-col
+                  justify-between
+                  p-6
+                  sm:min-h-[320px]
+                  sm:p-9
+                  lg:min-h-[350px]
+                  lg:p-12
+                "
+              >
+                <div>
+                  <div
+                    className="
+                      inline-flex
+                      items-center
+                      gap-2
+                      rounded-full
+                      border
+                      border-black/10
+                      bg-white/75
+                      px-3
+                      py-1.5
+                      shadow-sm
+                      backdrop-blur-md
+                      dark:border-white/10
+                      dark:bg-black/35
+                    "
+                  >
+                    <MapPin
+                      size={14}
+                      className="text-[var(--brand)]"
+                    />
 
-            <div className="relative z-20 flex min-h-[210px] flex-col justify-center px-6 py-8 sm:min-h-[240px] sm:px-9 sm:py-10 lg:min-h-[270px] lg:px-12">
+                    <span
+                      className="
+                        text-[10px]
+                        font-bold
+                        uppercase
+                        tracking-[0.16em]
+                        text-zinc-800
+                        dark:text-white/85
+                        sm:text-xs
+                      "
+                    >
+                      Campus Canteen
+                    </span>
+                  </div>
 
-              {/* CAMPUS CANTEEN LABEL */}
+                  <h2
+                    className="
+                      mt-5
+                      max-w-3xl
+                      text-3xl
+                      font-black
+                      leading-[1.02]
+                      tracking-[-0.035em]
+                      text-zinc-950
+                      sm:text-4xl
+                      lg:text-5xl
+                      dark:text-white
+                    "
+                  >
+                    Your campus food,
+                    <br className="hidden sm:block" />
+                    <span className="text-[var(--brand)]">
+                      all in one place.
+                    </span>
+                  </h2>
 
-              <div className="mb-4 flex items-center gap-2">
-                <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1.5 backdrop-blur-md">
+                  <p
+                    className="
+                      mt-4
+                      max-w-xl
+                      text-sm
+                      leading-6
+                      text-zinc-700
+                      sm:text-base
+                      dark:text-zinc-200
+                    "
+                  >
+                    Browse active stalls, check what is
+                    accepting orders, and choose where you
+                    want to eat next.
+                  </p>
+                </div>
 
-                  <MapPin
-                    size={13}
-                    className="text-orange-400"
+                {/* LIVE STATS */}
+
+                <div className="mt-7 flex flex-wrap gap-2.5">
+                  <HeroStat
+                    icon={
+                      <Store
+                        size={15}
+                        strokeWidth={2}
+                      />
+                    }
+                    value={activeStalls.length}
+                    label={
+                      activeStalls.length === 1
+                        ? "active stall"
+                        : "active stalls"
+                    }
                   />
 
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 sm:text-xs">
-                    Campus Canteen
-                  </span>
-
-                </div>
-              </div>
-
-              {/* REAL DYNAMIC STALL COUNT */}
-
-              <h1 className="max-w-2xl text-3xl font-black leading-[1.05] tracking-tight text-white sm:text-4xl lg:text-5xl">
-                Delicious food from{" "}
-                <span className="text-orange-400">
-                  {activeStalls.length}
-                </span>{" "}
-                {activeStalls.length === 1
-                  ? "amazing stall"
-                  : "amazing stalls"}
-              </h1>
-
-              {/* DESCRIPTION */}
-
-              <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-200 sm:text-base">
-                Discover fresh food, explore menus,
-                and order directly from your campus
-                food stalls.
-              </p>
-
-              {/* REAL OPEN STALL COUNT */}
-
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-
-                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
-
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
-
-                  <span className="text-xs font-medium text-white/90">
-                    {openStalls.length}{" "}
-                    {openStalls.length === 1
-                      ? "stall"
-                      : "stalls"}{" "}
-                    accepting orders
-                  </span>
-
-                </div>
-
-                <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md sm:flex">
-
-                  <UtensilsCrossed
-                    size={13}
-                    className="text-orange-400"
+                  <HeroStat
+                    icon={
+                      <CheckCircle2
+                        size={15}
+                        strokeWidth={2}
+                      />
+                    }
+                    value={openStalls.length}
+                    label="open now"
                   />
-
-                  <span className="text-xs font-medium text-white/80">
-                    Fresh campus food
-                  </span>
-
                 </div>
-
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* ======================================================
-            ERROR
+            ERROR / RETRY
             ====================================================== */}
 
         {error && (
-          <div className="mb-7 rounded-2xl border border-red-900/50 bg-red-950/30 p-4 text-sm text-red-400">
-            {error}
-          </div>
+          <section
+            role="alert"
+            className="
+              mb-8
+              overflow-hidden
+              rounded-2xl
+              border
+              border-red-200
+              bg-red-50
+              dark:border-red-900/50
+              dark:bg-red-950/20
+            "
+          >
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-500/10">
+                  <AlertCircle
+                    size={19}
+                    className="text-red-600 dark:text-red-400"
+                  />
+                </div>
+
+                <div>
+                  <h2 className="text-sm font-semibold text-red-700 dark:text-red-300">
+                    Something went wrong
+                  </h2>
+
+                  <p className="mt-1 text-xs leading-5 text-red-600/80 dark:text-red-400/80 sm:text-sm">
+                    {error}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void loadStalls(true)}
+                disabled={refreshing}
+                className="
+                  inline-flex
+                  h-10
+                  shrink-0
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-xl
+                  border
+                  border-red-200
+                  bg-white
+                  px-4
+                  text-xs
+                  font-semibold
+                  text-red-700
+                  transition-all
+                  hover:bg-red-50
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                  focus:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-red-500
+                  dark:border-red-900/60
+                  dark:bg-red-950/30
+                  dark:text-red-300
+                  dark:hover:bg-red-900/30
+                "
+              >
+                <RefreshCw
+                  size={15}
+                  className={
+                    refreshing
+                      ? "animate-spin"
+                      : ""
+                  }
+                />
+
+                Try again
+              </button>
+            </div>
+          </section>
         )}
 
         {/* ======================================================
-            ALL STALLS
+            STALL SECTION HEADER
             ====================================================== */}
 
         <section>
-
-          {/* STALL HEADER */}
-
-          <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
-
+          <div className="mb-5 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
+              <div className="flex items-center gap-2">
+                <h2
+                  className="
+                    text-2xl
+                    font-bold
+                    tracking-[-0.025em]
+                    text-[var(--text-primary)]
+                    sm:text-3xl
+                  "
+                >
+                  {hasSearch
+                    ? "Search results"
+                    : "Explore campus stalls"}
+                </h2>
 
-              <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                {searchQuery.trim()
-                  ? "Search Results"
-                  : "All Stalls"}
-              </h2>
+                {!hasSearch &&
+                  openStalls.length > 0 && (
+                    <span
+                      className="
+                        hidden
+                        rounded-full
+                        bg-green-100
+                        px-2.5
+                        py-1
+                        text-[10px]
+                        font-bold
+                        uppercase
+                        tracking-wider
+                        text-green-700
+                        sm:inline-flex
+                        dark:bg-green-500/10
+                        dark:text-green-400
+                      "
+                    >
+                      {openStalls.length} open
+                    </span>
+                  )}
+              </div>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                {searchQuery.trim()
-                  ? "Matching food stalls from campus"
-                  : "Select a stall to explore its menu"}
+              <p className="mt-1.5 text-sm text-[var(--text-muted)]">
+                {hasSearch
+                  ? "Matching active campus stalls"
+                  : "Choose a stall to explore its menu"}
               </p>
-
             </div>
 
-            {/* REAL RESULT / STALL COUNT */}
+            {/* REFRESH */}
 
-            <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5">
+            <button
+              type="button"
+              onClick={() => void loadStalls(true)}
+              disabled={refreshing}
+              aria-label="Refresh campus stalls"
+              className="
+                inline-flex
+                h-10
+                shrink-0
+                items-center
+                justify-center
+                gap-2
+                self-start
+                rounded-xl
+                border
+                border-[var(--border)]
+                bg-[var(--surface)]
+                px-3.5
+                text-xs
+                font-semibold
+                text-[var(--text-secondary)]
+                shadow-sm
+                transition-all
+                hover:border-[var(--border-strong)]
+                hover:bg-[var(--surface-secondary)]
+                hover:text-[var(--text-primary)]
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+                sm:self-auto
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-[var(--brand)]
+              "
+            >
+              <RefreshCw
+                size={15}
+                className={
+                  refreshing
+                    ? "animate-spin"
+                    : ""
+                }
+              />
 
-              <span className="text-sm font-semibold text-zinc-300">
-                {searchQuery.trim()
-                  ? filteredStalls.length
-                  : activeStalls.length}
+              <span className="hidden sm:inline">
+                Refresh
               </span>
-
-              <span className="text-xs text-zinc-600">
-                {searchQuery.trim()
-                  ? filteredStalls.length === 1
-                    ? "result"
-                    : "results"
-                  : activeStalls.length === 1
-                    ? "stall"
-                    : "stalls"}
-              </span>
-
-            </div>
-
+            </button>
           </div>
 
-          {/* ====================================================
-              EMPTY STATE
-              ==================================================== */}
+          {/* NO ACTIVE STALLS */}
 
-          {activeStalls.length === 0 &&
-            !error && (
-              <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-10 text-center shadow-xl">
-
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900">
-
-                  <UtensilsCrossed
-                    size={28}
-                    className="text-zinc-600"
-                  />
-
-                </div>
-
-                <h3 className="text-xl font-semibold text-white">
-                  No food stalls available
-                </h3>
-
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-                  There are currently no active food
-                  stalls available.
-                </p>
-
-              </div>
-            )}
-
-          {/* ====================================================
-              SEARCH EMPTY STATE
-              ==================================================== */}
-
-          {activeStalls.length > 0 &&
-            searchQuery.trim() &&
-            filteredStalls.length === 0 && (
-              <div className="rounded-[28px] border border-zinc-800 bg-zinc-950 p-10 text-center shadow-xl">
-
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900">
-
-                  <Search
-                    size={28}
-                    className="text-zinc-600"
-                  />
-
-                </div>
-
-                <h3 className="text-xl font-semibold text-white">
-                  No stalls found
-                </h3>
-
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-500">
-
-                  No active food stall matches{" "}
-
-                  <span className="font-medium text-zinc-300">
-                    &quot;
-                    {searchQuery.trim()}
-                    &quot;
-                  </span>
-
-                  .
-
-                </p>
-
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="mt-5 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-400"
-                >
-                  Clear Search
-                </button>
-
-              </div>
-            )}
-
-          {/* ====================================================
-              REAL STALL GRID
-              ==================================================== */}
-
-          {filteredStalls.length > 0 && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-
-              {filteredStalls.map((stall) => {
-
-                const isOpen =
-                  stall.is_open;
-
-                return (
-                  <button
-                    key={stall._id}
-                    type="button"
-                    disabled={!isOpen}
-                    onClick={() =>
-                      handleStallClick(stall)
-                    }
-                    aria-label={
-                      isOpen
-                        ? `Open ${stall.name}`
-                        : `${stall.name} is closed`
-                    }
-                    className={`group relative overflow-hidden rounded-[22px] border text-left outline-none transition-all duration-300 ${
-                      isOpen
-                        ? "cursor-pointer border-zinc-800 bg-zinc-900 hover:-translate-y-1 hover:border-orange-500/70 hover:shadow-xl hover:shadow-orange-500/10 focus-visible:ring-2 focus-visible:ring-orange-500"
-                        : "cursor-not-allowed border-zinc-900 bg-zinc-950"
-                    }`}
-                  >
-
-                    {/* STALL IMAGE */}
-
-                    <div className="relative aspect-square w-full overflow-hidden bg-zinc-950">
-
-                      {stall.image ? (
-                        <img
-                          src={getImageUrl(
-                            stall.image
-                          )}
-                          alt={stall.name}
-                          loading="lazy"
-                          className={`h-full w-full object-cover transition-all duration-500 ${
-                            isOpen
-                              ? "group-hover:scale-105"
-                              : "brightness-[0.2] grayscale"
-                          }`}
-                        />
-                      ) : (
-                        <div
-                          className={`flex h-full w-full items-center justify-center ${
-                            isOpen
-                              ? "bg-zinc-900"
-                              : "bg-black"
-                          }`}
-                        >
-
-                          <UtensilsCrossed
-                            size={38}
-                            className={
-                              isOpen
-                                ? "text-zinc-600"
-                                : "text-zinc-800"
-                            }
-                          />
-
-                        </div>
-                      )}
-
-                      {/* IMAGE GRADIENT */}
-
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                      {/* OPEN / CLOSED STATUS */}
-
-                      <div
-                        className={`absolute right-2.5 top-2.5 flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10px] font-bold shadow-lg backdrop-blur-md sm:right-3 sm:top-3 sm:px-3 sm:text-xs ${
-                          isOpen
-                            ? "bg-green-500/95 text-white"
-                            : "bg-zinc-800/95 text-zinc-300"
-                        }`}
-                      >
-
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${
-                            isOpen
-                              ? "bg-white"
-                              : "bg-red-500"
-                          }`}
-                        />
-
-                        {isOpen
-                          ? "Open"
-                          : "Closed"}
-
-                      </div>
-
-                    </div>
-
-                    {/* STALL INFORMATION */}
-
-                    <div className="p-3.5 sm:p-4">
-
-                      <div className="flex items-start justify-between gap-2">
-
-                        <h3
-                          className={`line-clamp-1 text-sm font-bold sm:text-base ${
-                            isOpen
-                              ? "text-white"
-                              : "text-zinc-500"
-                          }`}
-                        >
-                          {stall.name}
-                        </h3>
-
-                        {isOpen && (
-                          <ChevronRight
-                            size={17}
-                            className="mt-0.5 shrink-0 text-zinc-600 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-orange-400"
-                          />
-                        )}
-
-                      </div>
-
-                      {/* REAL DESCRIPTION */}
-
-                      {stall.description && (
-                        <p
-                          className={`mt-1.5 line-clamp-2 text-[11px] leading-4 sm:text-xs ${
-                            isOpen
-                              ? "text-zinc-500"
-                              : "text-zinc-700"
-                          }`}
-                        >
-                          {stall.description}
-                        </p>
-                      )}
-
-                      {/* ORDER STATUS */}
-
-                      <div className="mt-3 flex items-center gap-1.5">
-
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            isOpen
-                              ? "bg-green-500"
-                              : "bg-red-500"
-                          }`}
-                        />
-
-                        <span
-                          className={`text-[10px] font-medium leading-4 sm:text-xs ${
-                            isOpen
-                              ? "text-green-400"
-                              : "text-zinc-600"
-                          }`}
-                        >
-                          {isOpen
-                            ? "Accepting orders"
-                            : "Currently closed"}
-                        </span>
-
-                      </div>
-
-                    </div>
-
-                  </button>
-                );
-              })}
-
-            </div>
+          {activeStalls.length === 0 && !error && (
+            <EmptyStallsState />
           )}
 
+          {/* NO SEARCH RESULTS */}
+
+          {activeStalls.length > 0 &&
+            hasSearch &&
+            filteredStalls.length === 0 && (
+              <SearchEmptyState
+                query={searchQuery.trim()}
+                onClear={clearSearch}
+              />
+            )}
+
+          {/* STALL GRID */}
+
+          {filteredStalls.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredStalls.map((stall) => (
+                <StallCard
+                  key={stall._id}
+                  stall={stall}
+                  onOpen={() =>
+                    handleStallClick(stall)
+                  }
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* ======================================================
-            BOTTOM CONTEXT
+            FOOTER CONTEXT
             ====================================================== */}
 
         {activeStalls.length > 0 && (
-          <div className="mt-10 flex items-center justify-center gap-2 text-center">
+          <div className="mt-12 flex items-center justify-center gap-3">
+            <div className="h-px w-8 bg-[var(--border)] sm:w-16" />
 
-            <div className="h-px w-8 bg-zinc-800" />
+            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)] sm:text-[10px]">
+              <WifiOff
+                size={11}
+                className="hidden"
+              />
 
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-700">
-              Campus food • Live availability
-            </span>
+              Live campus availability
+            </div>
 
-            <div className="h-px w-8 bg-zinc-800" />
-
+            <div className="h-px w-8 bg-[var(--border)] sm:w-16" />
           </div>
         )}
-
       </div>
 
       {/* ========================================================
-          GLOBAL FLOATING CART
-          ========================================================
-
-          IMPORTANT:
-          This is outside the main page content.
-
-          Therefore it is NOT affected by:
-          - Stall grid
-          - Hero banner
-          - Search section
-          - Page width
-          - Desktop grid columns
-          - Mobile grid
-          - Content overflow
-
-          It is positioned relative to the viewport.
-
-          MOBILE:
-          bottom-[76px]
-          -> keeps it above the bottom navigation.
-
-          DESKTOP:
-          md:bottom-6
-          -> moves it down to the normal bottom-right position.
-
-          z-50:
-          -> keeps it above the page content.
+          FLOATING CART
           ======================================================== */}
 
       {cartItemCount > 0 && (
@@ -828,11 +924,10 @@ export default function Home() {
             bottom-[76px]
             right-4
             z-50
+            sm:right-6
             md:bottom-6
-            md:right-6
           "
         >
-
           <button
             type="button"
             onClick={handleOpenCart}
@@ -841,38 +936,33 @@ export default function Home() {
               group
               flex
               h-[58px]
-              w-[142px]
+              min-w-[142px]
               items-center
-              rounded-[16px]
-              bg-orange-500
+              rounded-2xl
+              border
+              border-orange-400/30
+              bg-[var(--brand)]
               px-3
               text-white
-              shadow-lg
-              shadow-orange-500/25
+              shadow-[0_16px_45px_rgba(249,115,22,0.22)]
               transition-all
               duration-200
-              hover:bg-orange-400
+              hover:-translate-y-0.5
+              hover:bg-[var(--brand-hover)]
+              hover:shadow-[0_20px_50px_rgba(249,115,22,0.30)]
               active:scale-[0.97]
               focus:outline-none
               focus-visible:ring-2
               focus-visible:ring-orange-300
               focus-visible:ring-offset-2
-              focus-visible:ring-offset-black
+              focus-visible:ring-offset-[var(--background)]
             "
           >
-
-            {/* ==================================================
-                CART ICON
-                ================================================== */}
-
             <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-
               <ShoppingCart
                 size={22}
                 strokeWidth={2.2}
               />
-
-              {/* LIVE ITEM COUNT BADGE */}
 
               <span
                 className="
@@ -880,55 +970,634 @@ export default function Home() {
                   -right-1
                   -top-1
                   flex
-                  h-[17px]
-                  min-w-[17px]
+                  h-[18px]
+                  min-w-[18px]
                   items-center
                   justify-center
                   rounded-full
+                  border-2
+                  border-[var(--brand)]
                   bg-white
                   px-1
                   text-[9px]
-                  font-bold
+                  font-black
                   leading-none
-                  text-orange-500
+                  text-orange-600
                 "
               >
                 {cartItemCount}
               </span>
-
             </div>
 
-            {/* ==================================================
-                CART TEXT
-                ================================================== */}
-
             <div className="ml-1 flex min-w-0 flex-1 flex-col items-start justify-center leading-none">
-
               <span className="text-[13px] font-bold">
                 Cart
               </span>
 
-              <span className="mt-[5px] text-[10px] font-medium text-white/80">
+              <span className="mt-1.5 text-[10px] font-medium text-white/75">
                 {cartItemCount} {cartLabel}
               </span>
-
             </div>
-
-            {/* ==================================================
-                ARROW
-                ================================================== */}
 
             <ArrowRight
               size={18}
               strokeWidth={2.5}
-              className="ml-1 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+              className="ml-2 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
             />
-
           </button>
-
         </div>
       )}
-
     </main>
+  );
+}
+
+/* ================================================================
+   STALL CARD
+================================================================ */
+
+function StallCard({
+  stall,
+  onOpen,
+}: {
+  stall: Stall;
+  onOpen: () => void;
+}) {
+  const isOpen = stall.is_open;
+
+  return (
+    <button
+      type="button"
+      disabled={!isOpen}
+      onClick={onOpen}
+      aria-label={
+        isOpen
+          ? `Open ${stall.name}`
+          : `${stall.name} is currently closed`
+      }
+      className={`
+        group
+        relative
+        flex
+        w-full
+        flex-col
+        overflow-hidden
+        rounded-[22px]
+        border
+        text-left
+        outline-none
+        transition-all
+        duration-300
+        ${
+          isOpen
+            ? `
+              cursor-pointer
+              border-[var(--border)]
+              bg-[var(--surface)]
+              shadow-[var(--shadow-soft)]
+              hover:-translate-y-1
+              hover:border-[var(--brand)]
+              hover:shadow-[var(--shadow-card)]
+              focus-visible:ring-2
+              focus-visible:ring-[var(--brand)]
+              focus-visible:ring-offset-2
+              focus-visible:ring-offset-[var(--background)]
+            `
+            : `
+              cursor-not-allowed
+              border-[var(--border)]
+              bg-[var(--surface)]
+            `
+        }
+      `}
+    >
+      {/* ======================================================
+          IMAGE
+      ====================================================== */}
+
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[var(--surface-secondary)]">
+        {stall.image ? (
+          <img
+            src={getImageUrl(stall.image)}
+            alt={stall.name}
+            loading="lazy"
+            className={`
+              h-full
+              w-full
+              object-cover
+              transition-transform
+              duration-500
+              ease-out
+              ${
+                isOpen
+                  ? "group-hover:scale-[1.04]"
+                  : "grayscale-[20%] brightness-[0.78]"
+              }
+            `}
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+
+              const fallback =
+                event.currentTarget.parentElement?.querySelector(
+                  "[data-stall-image-fallback]"
+                );
+
+              if (fallback instanceof HTMLElement) {
+                fallback.classList.remove("hidden");
+              }
+            }}
+          />
+        ) : null}
+
+        {/* IMAGE FALLBACK */}
+
+        <div
+          data-stall-image-fallback
+          className={`
+            ${
+              stall.image ? "hidden" : "flex"
+            }
+            absolute
+            inset-0
+            items-center
+            justify-center
+            bg-[var(--surface-secondary)]
+          `}
+        >
+          <div
+            className="
+              flex
+              h-16
+              w-16
+              items-center
+              justify-center
+              rounded-2xl
+              border
+              border-[var(--border)]
+              bg-[var(--surface)]
+              text-[var(--text-muted)]
+              shadow-sm
+            "
+          >
+            <UtensilsCrossed size={28} strokeWidth={1.8} />
+          </div>
+        </div>
+
+        {/* IMAGE BOTTOM GRADIENT */}
+
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-x-0
+            bottom-0
+            h-24
+            bg-gradient-to-t
+            from-black/45
+            to-transparent
+          "
+        />
+
+        {/* ====================================================
+            STATUS BADGE
+        ==================================================== */}
+
+        <div
+          className={`
+            absolute
+            left-3.5
+            top-3.5
+            inline-flex
+            items-center
+            gap-2
+            rounded-full
+            border
+            px-3
+            py-1.5
+            text-[10px]
+            font-bold
+            tracking-wide
+            backdrop-blur-md
+            sm:text-[11px]
+            ${
+              isOpen
+                ? `
+                  border-white/15
+                  bg-black/55
+                  text-white
+                `
+                : `
+                  border-[var(--border)]
+                  bg-[var(--surface)]/95
+                  text-[var(--text-secondary)]
+                `
+            }
+          `}
+        >
+          <span
+            className={`
+              h-1.5
+              w-1.5
+              rounded-full
+              ${
+                isOpen
+                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.65)]"
+                  : "bg-red-400"
+              }
+            `}
+          />
+
+          {isOpen ? "Open now" : "Closed"}
+        </div>
+
+        {/* ====================================================
+            OPEN ARROW
+        ==================================================== */}
+
+        {isOpen && (
+          <div
+            className="
+              absolute
+              bottom-3.5
+              right-3.5
+              flex
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-white/20
+              bg-black/45
+              text-white
+              shadow-lg
+              backdrop-blur-md
+              transition-all
+              duration-300
+              group-hover:translate-x-0.5
+              group-hover:bg-[var(--brand)]
+              max-sm:bg-black/50
+            "
+            aria-hidden="true"
+          >
+            <ChevronRight size={18} strokeWidth={2.4} />
+          </div>
+        )}
+      </div>
+
+      {/* ======================================================
+          CONTENT
+      ====================================================== */}
+
+      <div className="flex flex-1 flex-col p-4 sm:p-[18px]">
+        {/* NAME + DESCRIPTION */}
+
+        <div className="min-w-0">
+          <h3
+            className={`
+              line-clamp-1
+              text-[17px]
+              font-bold
+              leading-6
+              tracking-[-0.02em]
+              ${
+                isOpen
+                  ? "text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)]"
+              }
+            `}
+          >
+            {stall.name}
+          </h3>
+
+          {stall.description ? (
+            <p
+              className="
+                mt-1.5
+                line-clamp-2
+                min-h-[40px]
+                text-[12px]
+                leading-5
+                text-[var(--text-secondary)]
+                sm:text-[13px]
+              "
+            >
+              {stall.description}
+            </p>
+          ) : (
+            <p className="mt-1.5 min-h-[40px] text-[12px] leading-5 text-[var(--text-muted)]">
+              Explore the menu from this campus stall.
+            </p>
+          )}
+        </div>
+
+        {/* ====================================================
+            FOOTER
+        ==================================================== */}
+
+        <div
+          className="
+            mt-4
+            flex
+            items-center
+            justify-between
+            border-t
+            border-[var(--border)]
+            pt-3.5
+          "
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className={`
+                h-1.5
+                w-1.5
+                shrink-0
+                rounded-full
+                ${
+                  isOpen
+                    ? "bg-emerald-500"
+                    : "bg-[var(--text-muted)]"
+                }
+              `}
+            />
+
+            <span
+              className={`
+                truncate
+                text-[11px]
+                font-semibold
+                sm:text-xs
+                ${
+                  isOpen
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-[var(--text-muted)]"
+                }
+              `}
+            >
+              {isOpen
+                ? "Accepting orders"
+                : "Currently unavailable"}
+            </span>
+          </div>
+
+          {isOpen && (
+            <span
+              className="
+                ml-3
+                shrink-0
+                text-[11px]
+                font-bold
+                text-[var(--brand)]
+                transition-transform
+                duration-200
+                group-hover:translate-x-0.5
+                sm:text-xs
+              "
+            >
+              View menu
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/* ================================================================
+   HERO STAT
+================================================================ */
+
+function HeroStat({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+}) {
+  return (
+    <div
+      className="
+        inline-flex
+        items-center
+        gap-2.5
+        rounded-full
+        border
+        border-black/10
+        bg-white/75
+        px-3.5
+        py-2
+        shadow-sm
+        backdrop-blur-md
+        dark:border-white/10
+        dark:bg-black/35
+      "
+    >
+      <span className="text-[var(--brand)]">
+        {icon}
+      </span>
+
+      <span className="text-xs font-bold text-zinc-950 dark:text-white">
+        {value}
+      </span>
+
+      <span className="text-xs text-zinc-600 dark:text-white/65">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/* ================================================================
+   EMPTY STALLS
+================================================================ */
+
+function EmptyStallsState() {
+  return (
+    <div
+      className="
+        rounded-[28px]
+        border
+        border-[var(--border)]
+        bg-[var(--surface)]
+        p-8
+        text-center
+        shadow-[var(--shadow-card)]
+        sm:p-12
+      "
+    >
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-secondary)]">
+        <Store
+          size={28}
+          className="text-[var(--text-muted)]"
+        />
+      </div>
+
+      <h3 className="mt-5 text-xl font-bold text-[var(--text-primary)]">
+        No active stalls right now
+      </h3>
+
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
+        There are currently no active food stalls
+        available on campus. Please check again later.
+      </p>
+    </div>
+  );
+}
+
+/* ================================================================
+   SEARCH EMPTY
+================================================================ */
+
+function SearchEmptyState({
+  query,
+  onClear,
+}: {
+  query: string;
+  onClear: () => void;
+}) {
+  return (
+    <div
+      className="
+        rounded-[28px]
+        border
+        border-[var(--border)]
+        bg-[var(--surface)]
+        p-8
+        text-center
+        shadow-[var(--shadow-card)]
+        sm:p-12
+      "
+    >
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-secondary)]">
+        <Search
+          size={28}
+          className="text-[var(--text-muted)]"
+        />
+      </div>
+
+      <h3 className="mt-5 text-xl font-bold text-[var(--text-primary)]">
+        No stalls found
+      </h3>
+
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
+        Nothing matched{" "}
+        <span className="font-semibold text-[var(--text-primary)]">
+          &quot;{query}&quot;
+        </span>
+        .
+      </p>
+
+      <button
+        type="button"
+        onClick={onClear}
+        className="
+          mt-5
+          inline-flex
+          h-10
+          items-center
+          justify-center
+          rounded-xl
+          bg-[var(--brand)]
+          px-4
+          text-sm
+          font-semibold
+          text-white
+          shadow-[0_10px_25px_rgba(249,115,22,0.2)]
+          transition-all
+          hover:-translate-y-0.5
+          hover:bg-[var(--brand-hover)]
+          focus:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-orange-400
+          focus-visible:ring-offset-2
+          focus-visible:ring-offset-[var(--background)]
+        "
+      >
+        Clear search
+      </button>
+    </div>
+  );
+}
+
+/* ================================================================
+   HOME SKELETON
+================================================================ */
+
+function HomeSkeleton() {
+  return (
+    <div
+      className="animate-pulse"
+      aria-label="Loading campus food"
+      aria-busy="true"
+    >
+      {/* INTRO */}
+
+      <div className="mb-6">
+        <div className="h-3 w-28 rounded-full bg-[var(--surface-secondary)]" />
+
+        <div className="mt-3 h-10 w-72 max-w-full rounded-xl bg-[var(--surface-secondary)] sm:h-14 sm:w-[460px]" />
+
+        <div className="mt-3 h-4 w-full max-w-xl rounded-full bg-[var(--surface-secondary)]" />
+      </div>
+
+      {/* SEARCH */}
+
+      <div className="mb-7 h-14 rounded-2xl bg-[var(--surface)] ring-1 ring-[var(--border)] sm:h-16" />
+
+      {/* HERO */}
+
+      <div className="mb-8 h-[280px] rounded-[28px] bg-[var(--surface-secondary)] sm:h-[320px] lg:h-[350px]" />
+
+      {/* SECTION HEADER */}
+
+      <div className="mb-5 flex items-end justify-between">
+        <div>
+          <div className="h-7 w-56 rounded-lg bg-[var(--surface-secondary)]" />
+          <div className="mt-2 h-3 w-64 rounded-full bg-[var(--surface-secondary)]" />
+        </div>
+
+        <div className="h-10 w-20 rounded-xl bg-[var(--surface-secondary)]" />
+      </div>
+
+      {/* CARDS */}
+
+      <div
+  className="
+    grid
+    grid-cols-1
+    gap-5
+    sm:grid-cols-2
+    lg:grid-cols-3
+    xl:grid-cols-4
+    xl:gap-6
+  "
+>
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div
+            key={index}
+            className="
+              overflow-hidden
+              rounded-[24px]
+              border
+              border-[var(--border)]
+              bg-[var(--surface)]
+            "
+          >
+            <div className="aspect-[16/10] bg-[var(--surface-secondary)]" />
+
+            <div className="space-y-3 p-5">
+              <div className="h-5 w-3/4 rounded-md bg-[var(--surface-secondary)]" />
+
+              <div className="h-3 w-full rounded-full bg-[var(--surface-secondary)]" />
+
+              <div className="h-3 w-2/3 rounded-full bg-[var(--surface-secondary)]" />
+
+              <div className="mt-4 h-8 w-full rounded-lg bg-[var(--surface-secondary)]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

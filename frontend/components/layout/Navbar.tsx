@@ -96,22 +96,71 @@ export default function Navbar({
     <>
       {/* ========================================================
           DESKTOP / TOP NAVBAR
-
-          Theme and Logout buttons have been removed.
           ======================================================== */}
 
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-
+      <header
+        className="
+          sticky
+          top-0
+          z-50
+          border-b
+          border-[var(--border)]
+          bg-[var(--navbar)]
+          shadow-[var(--shadow-soft)]
+          backdrop-blur-xl
+          transition-colors
+          duration-200
+        "
+      >
+        <div
+          className="
+            mx-auto
+            flex
+            h-16
+            max-w-7xl
+            items-center
+            justify-between
+            px-4
+            sm:px-6
+          "
+        >
           {/* ====================================================
               LOGO
               ==================================================== */}
 
           <Link
             href="/"
-            className="flex items-center gap-2 text-2xl font-bold text-orange-600"
+            aria-label="CampusVita home"
+            className="
+              group
+              flex
+              items-center
+              gap-2
+              rounded-xl
+              px-1
+              py-1
+              text-xl
+              font-bold
+              text-[var(--brand)]
+              transition-all
+              duration-200
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-[var(--brand)]
+              focus-visible:ring-offset-2
+              focus-visible:ring-offset-[var(--background)]
+              sm:text-2xl
+            "
           >
-            <ChefHat size={28} />
+            <ChefHat
+              size={28}
+              strokeWidth={2.3}
+              className="
+                transition-transform
+                duration-200
+                group-hover:rotate-[-5deg]
+              "
+            />
 
             <span>CampusVita</span>
           </Link>
@@ -120,7 +169,15 @@ export default function Navbar({
               DESKTOP NAVIGATION
               ==================================================== */}
 
-          <nav className="hidden items-center gap-3 md:flex">
+          <nav
+            aria-label="Main navigation"
+            className="
+              hidden
+              items-center
+              gap-1
+              md:flex
+            "
+          >
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -129,39 +186,92 @@ export default function Navbar({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300 ${
+                  aria-current={
                     active
-                      ? "bg-orange-500 font-semibold text-white shadow-lg"
-                      : "text-gray-700 hover:bg-orange-100 hover:text-orange-600 dark:text-gray-300 dark:hover:bg-zinc-800"
-                  }`}
+                      ? "page"
+                      : undefined
+                  }
+                  className={`
+                    group
+                    relative
+                    flex
+                    items-center
+                    gap-2
+                    rounded-xl
+                    px-4
+                    py-2.5
+                    text-sm
+                    transition-all
+                    duration-200
+                    focus-visible:outline-none
+                    focus-visible:ring-2
+                    focus-visible:ring-[var(--brand)]
+                    ${
+                      active
+                        ? `
+                          bg-[var(--brand)]
+                          font-semibold
+                          text-white
+                          shadow-md
+                          shadow-orange-500/15
+                        `
+                        : `
+                          font-medium
+                          text-[var(--text-secondary)]
+                          hover:bg-[var(--brand-soft)]
+                          hover:text-[var(--brand)]
+                        `
+                    }
+                  `}
                 >
-                  <Icon size={18} />
+                  <Icon
+                    size={18}
+                    strokeWidth={
+                      active ? 2.4 : 2
+                    }
+                  />
 
                   <span>{item.label}</span>
+
+                  {/* Dark theme secondary accent */}
+                  {active && (
+                    <span
+                      aria-hidden="true"
+                      className="
+                        absolute
+                        bottom-1
+                        left-1/2
+                        hidden
+                        h-0.5
+                        w-4
+                        -translate-x-1/2
+                        rounded-full
+                        bg-white/70
+                        dark:block
+                      "
+                    />
+                  )}
                 </Link>
               );
             })}
           </nav>
-
         </div>
       </header>
 
       {/* ========================================================
           MOBILE FLOATING CART
-
-          IMPORTANT:
-          This entire cart button is controlled by showCart.
-
-          showCart = false
-          → Cart button does not render.
-
-          showCart = true
-          → Cart button behaves normally.
           ======================================================== */}
 
       {showCart && hasItemsInCart && (
-        <div className="fixed bottom-[76px] right-4 z-[60] md:hidden">
-
+        <div
+          className="
+            fixed
+            bottom-[76px]
+            right-4
+            z-[60]
+            md:hidden
+          "
+        >
           <Link
             href="/cart"
             aria-label={`Open cart with ${cartCount} ${
@@ -169,15 +279,34 @@ export default function Navbar({
                 ? "item"
                 : "items"
             }`}
-            className="group flex items-center gap-3 rounded-2xl border border-orange-400/30 bg-orange-500 px-4 py-3 text-white shadow-2xl shadow-black/40 transition-all duration-300 hover:bg-orange-600 active:scale-95"
+            className="
+              group
+              flex
+              items-center
+              gap-3
+              rounded-2xl
+              border
+              border-orange-400/30
+              bg-[var(--brand)]
+              px-4
+              py-3
+              text-white
+              shadow-xl
+              shadow-black/20
+              transition-all
+              duration-200
+              hover:bg-[var(--brand-hover)]
+              active:scale-[0.97]
+              focus-visible:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-[var(--brand)]
+              focus-visible:ring-offset-2
+              focus-visible:ring-offset-[var(--background)]
+            "
           >
-
-            {/* ==================================================
-                CART ICON
-                ================================================== */}
+            {/* CART ICON */}
 
             <div className="relative flex items-center justify-center">
-
               <ShoppingCart
                 size={22}
                 strokeWidth={2.5}
@@ -185,18 +314,32 @@ export default function Navbar({
 
               {/* CART COUNT */}
 
-              <span className="absolute -right-2 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 shadow-sm">
+              <span
+                className="
+                  absolute
+                  -right-2
+                  -top-2
+                  flex
+                  h-[18px]
+                  min-w-[18px]
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                  px-1
+                  text-[10px]
+                  font-bold
+                  text-orange-600
+                  shadow-sm
+                "
+              >
                 {cartCount}
               </span>
-
             </div>
 
-            {/* ==================================================
-                CART TEXT
-                ================================================== */}
+            {/* CART TEXT */}
 
             <div className="flex flex-col leading-none">
-
               <span className="text-sm font-bold">
                 Cart
               </span>
@@ -207,34 +350,46 @@ export default function Navbar({
                   ? "item"
                   : "items"}
               </span>
-
             </div>
 
-            {/* ==================================================
-                ARROW
-                ================================================== */}
+            {/* ARROW */}
 
             <ArrowRight
               size={20}
               strokeWidth={2.5}
-              className="transition-transform duration-300 group-hover:translate-x-1"
+              className="
+                transition-transform
+                duration-200
+                group-hover:translate-x-1
+              "
             />
-
           </Link>
-
         </div>
       )}
 
       {/* ========================================================
           MOBILE BOTTOM NAVIGATION
-
-          Home | Orders | Wallet | Profile
           ======================================================== */}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
-
+      <nav
+        aria-label="Mobile navigation"
+        className="
+          fixed
+          bottom-0
+          left-0
+          right-0
+          z-50
+          border-t
+          border-[var(--border)]
+          bg-[var(--navbar)]
+          shadow-[0_-4px_20px_rgba(0,0,0,0.06)]
+          backdrop-blur-xl
+          transition-colors
+          duration-200
+          md:hidden
+        "
+      >
         <div className="grid h-16 grid-cols-4">
-
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -243,24 +398,73 @@ export default function Navbar({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative flex flex-col items-center justify-center text-xs transition-all duration-200 ${
+                aria-current={
                   active
-                    ? "text-orange-600"
-                    : "text-gray-500 hover:text-orange-500"
-                }`}
+                    ? "page"
+                    : undefined
+                }
+                className={`
+                  group
+                  relative
+                  flex
+                  flex-col
+                  items-center
+                  justify-center
+                  gap-0.5
+                  text-xs
+                  transition-all
+                  duration-200
+                  focus-visible:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-inset
+                  focus-visible:ring-[var(--brand)]
+                  ${
+                    active
+                      ? `
+                        font-semibold
+                        text-[var(--brand)]
+                      `
+                      : `
+                        font-medium
+                        text-[var(--text-muted)]
+                        hover:text-[var(--brand)]
+                      `
+                  }
+                `}
               >
+                <Icon
+                  size={20}
+                  strokeWidth={
+                    active ? 2.5 : 2
+                  }
+                  className="
+                    transition-transform
+                    duration-200
+                    group-active:scale-90
+                  "
+                />
 
-                <Icon size={20} />
+                <span>{item.label}</span>
 
-                <span className="mt-1">
-                  {item.label}
-                </span>
+                {/* Active indicator */}
 
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="
+                      absolute
+                      bottom-1
+                      h-1
+                      w-5
+                      rounded-full
+                      bg-[var(--brand)]
+                    "
+                  />
+                )}
               </Link>
             );
           })}
         </div>
-
       </nav>
     </>
   );

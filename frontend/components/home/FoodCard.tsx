@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, UtensilsCrossed } from "lucide-react";
 import { getImageUrl } from "@/app/lib/getImageUrl";
 
 type Props = {
@@ -25,69 +25,152 @@ export default function FoodCard({
   onDecrease,
 }: Props) {
   return (
-    <article className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:border-orange-400 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-      {/* FOOD IMAGE */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100 dark:bg-zinc-800">
-        <img
-          src={getImageUrl(image)}
-          alt={name}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-        />
+    <article
+      className="
+        group
+        min-w-0
+        overflow-hidden
+        rounded-2xl
+        border
+        border-[var(--border)]
+        bg-[var(--surface)]
+        transition-all
+        duration-200
+        hover:-translate-y-0.5
+        hover:border-[var(--border-strong)]
+        hover:shadow-[var(--shadow-soft)]
+      "
+    >
+      {/* IMAGE */}
 
-        {/* VEG / NON-VEG BADGE */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-[var(--surface-secondary)]">
+
+        {image ? (
+          <img
+            src={getImageUrl(image)}
+            alt={name}
+            loading="lazy"
+            className="
+              h-full
+              w-full
+              object-cover
+              transition-transform
+              duration-500
+              group-hover:scale-[1.035]
+            "
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+
+              const fallback =
+                event.currentTarget.parentElement?.querySelector(
+                  "[data-food-fallback]"
+                );
+
+              if (fallback instanceof HTMLElement) {
+                fallback.classList.remove("hidden");
+              }
+            }}
+          />
+        ) : null}
+
+        <div
+          data-food-fallback
+          className={`
+            ${
+              image ? "hidden" : "flex"
+            }
+            absolute
+            inset-0
+            items-center
+            justify-center
+            bg-[var(--surface-secondary)]
+          `}
+        >
+          <UtensilsCrossed
+            size={28}
+            strokeWidth={1.5}
+            className="text-[var(--text-muted)]"
+          />
+        </div>
+
+        {/* VEG INDICATOR */}
+
         {isVeg !== null && (
-          <div className="absolute right-3 top-3 rounded-full bg-black/80 px-2.5 py-1">
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`h-2.5 w-2.5 rounded-full border-2 ${
+          <div className="absolute left-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-md bg-white/95 shadow-sm dark:bg-black/85">
+            <span
+              className={`
+                h-2.5
+                w-2.5
+                rounded-full
+                border-2
+                ${
                   isVeg
-                    ? "border-green-500 bg-green-500"
-                    : "border-red-500 bg-red-500"
-                }`}
-              />
-
-              <span
-                className={`text-[10px] font-bold tracking-wide ${
-                  isVeg
-                    ? "text-green-400"
-                    : "text-red-400"
-                }`}
-              >
-                {isVeg ? "VEG" : "NON-VEG"}
-              </span>
-            </div>
+                    ? "border-green-600 bg-green-500"
+                    : "border-red-600 bg-red-500"
+                }
+              `}
+              aria-label={
+                isVeg
+                  ? "Vegetarian"
+                  : "Non-vegetarian"
+              }
+            />
           </div>
         )}
       </div>
 
       {/* CONTENT */}
-      <div className="flex min-h-[108px] flex-col p-3">
-        <h2 className="line-clamp-2 text-sm font-semibold leading-5 text-gray-900 dark:text-white sm:text-base">
+
+      <div className="p-3">
+
+        <h3 className="line-clamp-2 min-h-[40px] text-sm font-bold leading-5 tracking-[-0.01em] text-[var(--text-primary)] sm:text-[15px]">
           {name}
-        </h2>
+        </h3>
 
-        <div className="mt-auto flex items-center justify-between gap-2 pt-3">
-          <p className="text-base font-bold text-orange-500 sm:text-lg">
+        <div className="mt-3 flex items-center justify-between gap-2">
+
+          <span className="text-[15px] font-extrabold text-[var(--text-primary)]">
             ₹{price}
-          </p>
+          </span>
 
-          {/* QUANTITY CONTROL */}
           {quantity > 0 ? (
             <div
-              className="flex h-9 items-center overflow-hidden rounded-xl border border-orange-500 bg-orange-500 text-white shadow-sm"
+              className="
+                flex
+                h-9
+                items-center
+                overflow-hidden
+                rounded-lg
+                border
+                border-[var(--brand)]
+                bg-[var(--brand)]
+                text-white
+              "
               aria-label={`${quantity} ${name} in cart`}
             >
               <button
                 type="button"
                 onClick={onDecrease}
                 aria-label={`Decrease ${name} quantity`}
-                className="flex h-full w-8 items-center justify-center transition-colors hover:bg-orange-600 active:bg-orange-700"
+                className="
+                  flex
+                  h-full
+                  w-8
+                  items-center
+                  justify-center
+                  transition-colors
+                  hover:bg-[var(--brand-hover)]
+                  active:bg-[var(--brand-hover)]
+                  focus:outline-none
+                "
               >
-                <Minus size={15} strokeWidth={2.5} />
+                <Minus
+                  size={14}
+                  strokeWidth={2.5}
+                />
               </button>
 
-              <span className="min-w-7 text-center text-sm font-bold">
+              <span className="min-w-6 text-center text-xs font-extrabold">
                 {quantity}
               </span>
 
@@ -95,9 +178,22 @@ export default function FoodCard({
                 type="button"
                 onClick={onIncrease}
                 aria-label={`Increase ${name} quantity`}
-                className="flex h-full w-8 items-center justify-center transition-colors hover:bg-orange-600 active:bg-orange-700"
+                className="
+                  flex
+                  h-full
+                  w-8
+                  items-center
+                  justify-center
+                  transition-colors
+                  hover:bg-[var(--brand-hover)]
+                  active:bg-[var(--brand-hover)]
+                  focus:outline-none
+                "
               >
-                <Plus size={15} strokeWidth={2.5} />
+                <Plus
+                  size={14}
+                  strokeWidth={2.5}
+                />
               </button>
             </div>
           ) : (
@@ -105,11 +201,34 @@ export default function FoodCard({
               type="button"
               onClick={onAddToCart}
               aria-label={`Add ${name} to cart`}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-500 bg-orange-500 text-white shadow-sm transition-all hover:bg-orange-600 active:scale-95 active:bg-orange-700"
+              className="
+                flex
+                h-9
+                min-w-9
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-[var(--brand)]
+                bg-[var(--surface)]
+                px-2.5
+                text-[var(--brand)]
+                transition-all
+                hover:bg-[var(--brand)]
+                hover:text-white
+                active:scale-95
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-[var(--brand)]
+              "
             >
-              <Plus size={19} strokeWidth={2.75} />
+              <Plus
+                size={18}
+                strokeWidth={2.6}
+              />
             </button>
           )}
+
         </div>
       </div>
     </article>

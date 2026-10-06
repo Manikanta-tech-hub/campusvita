@@ -1,24 +1,39 @@
 import type { Metadata, Viewport } from "next";
-import "./globals.css";
-import ThemeProvider from "@/components/providers/ThemeProvider";
 import { Inter } from "next/font/google";
+import "./globals.css";
 
-import { Toaster } from "react-hot-toast";
-
+import ThemeProvider from "@/components/providers/ThemeProvider";
 import { CartProvider } from "../context/CartContext";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "CampusVita",
-  description: "Smart Campus Food Ordering System",
+  title: {
+    default: "CampusVita",
+    template: "%s | CampusVita",
+  },
+  description: "Smart campus food ordering system",
   manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f97316",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    {
+      media: "(prefers-color-scheme: light)",
+      color: "#fafafa",
+    },
+    {
+      media: "(prefers-color-scheme: dark)",
+      color: "#09090b",
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -27,22 +42,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-    lang="en"
-    suppressHydrationWarning
-  >
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-      <ThemeProvider>
-        <CartProvider>
+        <ThemeProvider>
+          <CartProvider>
+            <Toaster
+              position="top-center"
+              reverseOrder={false}
+              toastOptions={{
+                duration: 3000,
+              }}
+            />
 
-          <Toaster
-            position="top-center"
-            reverseOrder={false}
-          />
-
-          {children}
-
-        </CartProvider>
+            {children}
+          </CartProvider>
         </ThemeProvider>
       </body>
     </html>

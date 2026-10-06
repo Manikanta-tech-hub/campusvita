@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* =========================================================
-   GLOBAL RESET
+   CAMPUSVITA DESIGN SYSTEM
+   70 / 20 / 10 THEME
 ========================================================= */
 
 *,
@@ -10,13 +11,195 @@
   box-sizing: border-box;
 }
 
+/* =========================================================
+   LIGHT THEME
+========================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* 70% — Primary canvas */
+  --background: #f8fafc;
+  --foreground: #18181b;
+
+  /* 20% — Secondary surfaces */
+  --surface: #ffffff;
+  --surface-secondary: #fff7ed;
+  --surface-tertiary: #fef3c7;
+
+  /* Text */
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --text-subtle: #a1a1aa;
+
+  /* Borders */
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+
+  /* 10% — Brand */
+  --brand: #f97316;
+  --brand-hover: #ea580c;
+  --brand-active: #c2410c;
+
+  /* Brand surfaces */
+  --brand-soft: #fff7ed;
+  --brand-soft-strong: #ffedd5;
+
+  /* Success */
+  --success: #16a34a;
+  --success-soft: #f0fdf4;
+
+  /* Warning */
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+
+  /* Danger */
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+
+  /* Info */
+  --info: #2563eb;
+  --info-soft: #eff6ff;
+
+  /* Cards */
+  --card: #ffffff;
+  --card-hover: #fffaf5;
+
+  /* Inputs */
+  --input: #ffffff;
+  --input-hover: #fffaf5;
+  --input-border: #d4d4d8;
+  --input-focus: #f97316;
+
+  /* Navbar */
+  --navbar: rgba(255, 255, 255, 0.92);
+  --navbar-border: rgba(228, 228, 231, 0.9);
+
+  /* Overlay */
+  --overlay: rgba(15, 23, 42, 0.45);
+
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-card:
+    0 8px 30px rgba(15, 23, 42, 0.06);
+  --shadow-elevated:
+    0 18px 50px rgba(15, 23, 42, 0.1);
+
+  /* Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+}
+
+/* =========================================================
+   DARK THEME
+========================================================= */
+
+.dark {
+  color-scheme: dark;
+
+  /* 70% — Primary canvas */
+  --background: #09090b;
+  --foreground: #fafafa;
+
+  /* 20% — Charcoal surfaces */
+  --surface: #18181b;
+  --surface-secondary: #1f1f23;
+  --surface-tertiary: #27272a;
+
+  /* Text */
+  --text-primary: #fafafa;
+  --text-secondary: #d4d4d8;
+  --text-muted: #a1a1aa;
+  --text-subtle: #71717a;
+
+  /* Borders */
+  --border: #27272a;
+  --border-strong: #3f3f46;
+
+  /* Orange remains the CampusVita brand */
+  --brand: #fb923c;
+  --brand-hover: #fdba74;
+  --brand-active: #f97316;
+
+  /* Orange surfaces */
+  --brand-soft: rgba(249, 115, 22, 0.12);
+  --brand-soft-strong: rgba(249, 115, 22, 0.2);
+
+  /*
+     10% ACCENT
+     Green gives dark mode its own identity.
+  */
+
+  --accent: #22c55e;
+  --accent-hover: #4ade80;
+  --accent-active: #16a34a;
+
+  --accent-soft: rgba(34, 197, 94, 0.12);
+  --accent-soft-strong: rgba(34, 197, 94, 0.2);
+
+  /* Success */
+  --success: #22c55e;
+  --success-soft: rgba(34, 197, 94, 0.12);
+
+  /* Warning */
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.12);
+
+  /* Danger */
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.12);
+
+  /* Info */
+  --info: #60a5fa;
+  --info-soft: rgba(96, 165, 250, 0.12);
+
+  /* Cards */
+  --card: #18181b;
+  --card-hover: #202024;
+
+  /* Inputs */
+  --input: #18181b;
+  --input-hover: #202024;
+  --input-border: #3f3f46;
+  --input-focus: #fb923c;
+
+  /* Navbar */
+  --navbar: rgba(9, 9, 11, 0.92);
+  --navbar-border: rgba(39, 39, 42, 0.9);
+
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.72);
+
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  --shadow-card:
+    0 8px 30px rgba(0, 0, 0, 0.28);
+
+  --shadow-elevated:
+    0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+/* =========================================================
+   HTML / BODY
+========================================================= */
+
 html {
   width: 100%;
   min-width: 100%;
   margin: 0;
   padding: 0;
+
   overflow-x: clip;
-  background: #1a0d07;
+
+  background: var(--background);
+  color: var(--foreground);
+
+  scroll-behavior: smooth;
 }
 
 body {
@@ -24,71 +207,96 @@ body {
   min-width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
+
   margin: 0;
   padding: 0;
+
   overflow-x: clip;
-  background: #1a0d07;
+
+  background: var(--background);
+  color: var(--foreground);
+
   font-family: Arial, Helvetica, sans-serif;
-  color: #171717;
+
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 /* =========================================================
-   PREVENT HORIZONTAL OVERFLOW
-========================================================= */
-
-body,
-main,
-section,
-div {
-  max-width: 100%;
-}
-
-/* =========================================================
-   ROOT VARIABLES
-========================================================= */
-
-:root {
-  --background: #1a0d07;
-  --foreground: #171717;
-}
-
-.dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-}
-
-/* =========================================================
-   TAILWIND THEME
+   TAILWIND TOKENS
 ========================================================= */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
+
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-active: var(--brand-active);
+  --color-brand-soft: var(--brand-soft);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-soft: var(--accent-soft);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-input: var(--input);
+  --color-input-hover: var(--input-hover);
+  --color-input-border: var(--input-border);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 /* =========================================================
-   MOBILE SAFARI FIXES
+   TYPOGRAPHY
 ========================================================= */
 
-html,
-body {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-primary);
 }
 
-/* Prevent accidental horizontal scrolling */
+p {
+  color: var(--text-secondary);
+}
 
-@supports (overflow: clip) {
-  html,
-  body {
-    overflow-x: clip;
-  }
+::selection {
+  background: var(--brand);
+  color: white;
 }
 
 /* =========================================================
-   INPUT RESET
+   LINKS
+========================================================= */
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* =========================================================
+   FORM ELEMENTS
 ========================================================= */
 
 input,
@@ -98,11 +306,138 @@ select {
   font: inherit;
 }
 
+input,
+textarea,
+select {
+  color: var(--text-primary);
+  background-color: var(--input);
+  border-color: var(--input-border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-subtle);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+}
+
 /* =========================================================
-   IMAGE SAFETY
+   BUTTONS
+========================================================= */
+
+button {
+  color: inherit;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   IMAGES / SVG
 ========================================================= */
 
 img,
 svg {
+  max-width: 100%;
+}
+
+img {
+  display: block;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* =========================================================
+   SAFE AREA
+========================================================= */
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================================
+   MOBILE SAFARI
+========================================================= */
+
+html,
+body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* =========================================================
+   GLOBAL WIDTH SAFETY
+========================================================= */
+
+body,
+main,
+section,
+div {
   max-width: 100%;
 }

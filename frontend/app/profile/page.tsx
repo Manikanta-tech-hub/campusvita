@@ -32,7 +32,6 @@ import {
 } from "lucide-react";
 
 import { getImageUrl } from "@/app/lib/getImageUrl";
-
 import {
   getAccessToken,
   clearSession,
@@ -49,12 +48,9 @@ type Profile = {
   name: string;
   email: string;
   phone: string;
-
   profile_image: string;
-
   total_orders: number;
   total_spent: number;
-
   is_verified: boolean;
   notifications: boolean;
   theme: string;
@@ -68,12 +64,9 @@ const EMPTY: Profile = {
   name: "",
   email: "",
   phone: "",
-
   profile_image: "",
-
   total_orders: 0,
   total_spent: 0,
-
   is_verified: false,
   notifications: true,
   theme: "dark",
@@ -92,9 +85,7 @@ function apiError(value: unknown, fallback: string) {
     return (
       value
         .map((x) => {
-          if (typeof x === "string") {
-            return x;
-          }
+          if (typeof x === "string") return x;
 
           if (x && typeof x === "object") {
             const o = x as Record<string, unknown>;
@@ -139,7 +130,11 @@ function Skeleton({
 }) {
   return (
     <div
-      className={`animate-pulse rounded-xl bg-zinc-800/80 ${className}`}
+      className={`
+        animate-pulse rounded-2xl
+        bg-[var(--surface-secondary)]
+        ${className}
+      `}
     />
   );
 }
@@ -258,28 +253,22 @@ export default function ProfilePage() {
         name: String(s?.name ?? ""),
         email: String(s?.email ?? ""),
         phone: String(s?.phone ?? ""),
-
         profile_image: String(
           s?.profile_image ?? ""
         ),
-
         total_orders: Number(
           s?.total_orders ?? 0
         ),
-
         total_spent: Number(
           s?.total_spent ?? 0
         ),
-
         is_verified: Boolean(
           s?.is_verified ??
             s?.verified ??
             false
         ),
-
         notifications:
           s?.notifications !== false,
-
         theme: String(
           s?.theme ?? "dark"
         ),
@@ -401,23 +390,18 @@ export default function ProfilePage() {
         `${API_URL}/profile`,
         {
           method: "PUT",
-
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type":
               "application/json",
           },
-
           body: JSON.stringify({
             name: draft.name.trim(),
             phone: draft.phone.trim(),
-
             profile_image:
               profile.profile_image,
-
             notifications:
               profile.notifications,
-
             theme: profile.theme,
           }),
         }
@@ -449,28 +433,22 @@ export default function ProfilePage() {
 
       const next: Profile = {
         ...profile,
-
         name: String(
           s?.name ?? draft.name
         ),
-
         email: String(
           s?.email ?? profile.email
         ),
-
         phone: String(
           s?.phone ?? draft.phone
         ),
-
         profile_image: String(
           s?.profile_image ??
             profile.profile_image
         ),
-
         notifications:
           s?.notifications ??
           profile.notifications,
-
         theme: String(
           s?.theme ??
             profile.theme
@@ -548,11 +526,9 @@ export default function ProfilePage() {
         `${API_URL}/profile/upload-image`,
         {
           method: "POST",
-
           headers: {
             Authorization: `Bearer ${token}`,
           },
-
           body: fd,
         }
       );
@@ -675,244 +651,352 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#090a0a] px-4 pt-6 text-white">
-        <div className="mx-auto max-w-md space-y-4">
+      <main className="min-h-screen bg-[var(--background)] px-4 pb-10 pt-6 text-[var(--text-primary)] sm:px-5">
+        <div className="mx-auto max-w-3xl space-y-5">
 
-          <div className="flex justify-between">
-            <Skeleton className="h-8 w-32" />
-
-            <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-10 w-10 rounded-xl" />
           </div>
 
-          <Skeleton className="h-36" />
+          <Skeleton className="h-48 rounded-3xl" />
 
-          <Skeleton className="h-5 w-36" />
+          <Skeleton className="h-6 w-40" />
 
-          <div className="grid grid-cols-2 gap-3">
-            <Skeleton className="h-28" />
-
-            <Skeleton className="h-28" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-32 rounded-3xl" />
+            <Skeleton className="h-32 rounded-3xl" />
           </div>
 
-          <Skeleton className="h-20" />
-
-          <Skeleton className="h-64" />
-
-          <Skeleton className="h-56" />
-
+          <Skeleton className="h-20 rounded-3xl" />
+          <Skeleton className="h-56 rounded-3xl" />
+          <Skeleton className="h-64 rounded-3xl" />
         </div>
       </main>
     );
   }
 
-  /* ============================================================
-     PAGE UI
-  ============================================================ */
-
   return (
-    <main className="min-h-screen bg-[#090a0a] px-3 pb-[96px] pt-5 text-white sm:px-5">
+    <main className="min-h-screen bg-[var(--background)] px-3 pb-[96px] pt-5 text-[var(--text-primary)] transition-colors duration-200 sm:px-5 sm:pt-8 md:pb-10">
 
-      <div className="mx-auto max-w-md">
+      <div className="mx-auto max-w-3xl">
 
-        {/* HEADER */}
+        {/* ======================================================
+            HEADER
+        ====================================================== */}
 
-        <header className="relative mb-4 flex h-9 items-center justify-center">
+        <header className="mb-6 flex items-center justify-between">
 
-          <div className="text-[29px] font-extrabold">
-            <span>Campus</span>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--brand)]">
+              Account
+            </p>
 
-            <span className="text-orange-500">
-              Vita
-            </span>
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Profile
+            </h1>
+
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Manage your CampusVita account.
+            </p>
           </div>
 
           <button
+            type="button"
             onClick={() =>
               router.push("/settings")
             }
             aria-label="Open settings"
-            className="absolute right-0 rounded-full p-2 active:scale-95"
+            className="
+              flex h-11 w-11 items-center justify-center
+              rounded-xl
+              border border-[var(--border)]
+              bg-[var(--surface)]
+              text-[var(--text-secondary)]
+              shadow-sm
+              transition
+              hover:border-[var(--brand)]
+              hover:bg-[var(--brand-soft)]
+              hover:text-[var(--brand)]
+              active:scale-95
+              focus:outline-none
+              focus:ring-2
+              focus:ring-[var(--brand)]
+            "
           >
-            <Settings size={24} />
+            <Settings size={21} />
           </button>
 
         </header>
 
-        {/* ERROR */}
+        {/* ======================================================
+            ERROR
+        ====================================================== */}
 
         {error && (
-          <div className="mb-4 rounded-2xl border border-red-900/60 bg-[#171919] p-4 text-center">
+          <div
+            className="
+              mb-5 rounded-3xl
+              border border-red-500/25
+              bg-red-500/10
+              p-5
+            "
+          >
+            <div className="flex items-start gap-3">
 
-            <p className="font-semibold">
-              Unable to load profile
-            </p>
+              <div className="mt-0.5 text-red-500">
+                <RefreshCw size={19} />
+              </div>
 
-            <p className="mt-1 text-xs text-zinc-400">
-              {error}
-            </p>
+              <div className="min-w-0 flex-1">
 
-            <button
-              onClick={() =>
-                void loadProfile()
-              }
-              className="mt-3 inline-flex items-center gap-2 rounded-xl border border-orange-500 px-4 py-2 text-sm text-orange-400"
-            >
-              <RefreshCw size={15} />
+                <p className="font-semibold">
+                  Unable to load profile
+                </p>
 
-              Retry
-            </button>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                  {error}
+                </p>
 
+                <button
+                  type="button"
+                  onClick={() =>
+                    void loadProfile()
+                  }
+                  className="
+                    mt-4 inline-flex items-center gap-2
+                    rounded-xl
+                    border border-[var(--brand)]
+                    px-4 py-2
+                    text-sm font-semibold
+                    text-[var(--brand)]
+                    transition
+                    hover:bg-[var(--brand-soft)]
+                    active:scale-95
+                  "
+                >
+                  <RefreshCw size={15} />
+                  Retry
+                </button>
+
+              </div>
+            </div>
           </div>
         )}
 
-        {/* PROFILE CARD */}
+        {/* ======================================================
+            PROFILE HERO
+        ====================================================== */}
 
-        <section className="rounded-[24px] border border-zinc-800 bg-[#171919] p-4 shadow-xl">
+        <section
+          className="
+            overflow-hidden rounded-[28px]
+            border border-[var(--border)]
+            bg-[var(--surface)]
+            shadow-[var(--shadow-card)]
+          "
+        >
 
-          <div className="flex gap-4">
+          <div className="h-24 bg-[var(--surface-secondary)] sm:h-28" />
 
-            <div className="relative shrink-0">
+          <div className="relative px-5 pb-5 sm:px-7 sm:pb-7">
 
-              <div className="h-[116px] w-[116px] rounded-full border-2 border-orange-500 p-1">
+            <div className="-mt-14 flex flex-col gap-5 sm:-mt-16 sm:flex-row sm:items-end">
 
-                {profile.profile_image ? (
-                  <img
-                    src={getImageUrl(
-                      profile.profile_image
-                    )}
-                    alt="Profile photo"
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-3xl font-bold text-orange-400">
-                    {initials}
-                  </div>
-                )}
+              {/* Avatar */}
+
+              <div className="relative shrink-0 self-start">
+
+                <div
+                  className="
+                    h-28 w-28 rounded-full
+                    border-4 border-[var(--surface)]
+                    bg-[var(--surface-secondary)]
+                    p-1
+                    shadow-lg
+                    sm:h-32 sm:w-32
+                  "
+                >
+                  {profile.profile_image ? (
+                    <img
+                      src={getImageUrl(
+                        profile.profile_image
+                      )}
+                      alt="Profile photo"
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="
+                        flex h-full w-full
+                        items-center justify-center
+                        rounded-full
+                        bg-[var(--brand-soft)]
+                        text-3xl font-extrabold
+                        text-[var(--brand)]
+                      "
+                    >
+                      {initials}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    fileRef.current?.click()
+                  }
+                  disabled={uploading}
+                  aria-label="Change profile photo"
+                  className="
+                    absolute bottom-0 right-0
+                    flex h-10 w-10 items-center justify-center
+                    rounded-full
+                    bg-[var(--brand)]
+                    text-white
+                    shadow-lg
+                    transition
+                    hover:brightness-95
+                    active:scale-90
+                    disabled:opacity-60
+                    focus:outline-none
+                    focus:ring-2
+                    focus:ring-[var(--brand)]
+                    focus:ring-offset-2
+                    focus:ring-offset-[var(--surface)]
+                  "
+                >
+                  {uploading ? (
+                    <RefreshCw
+                      size={18}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <Camera size={18} />
+                  )}
+                </button>
+
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={uploadImage}
+                  className="hidden"
+                />
 
               </div>
 
-              <button
-                onClick={() =>
-                  fileRef.current?.click()
-                }
-                disabled={uploading}
-                aria-label="Change profile photo"
-                className="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 shadow-lg active:scale-90"
-              >
-                {uploading ? (
-                  <RefreshCw
-                    size={18}
-                    className="animate-spin"
-                  />
-                ) : (
-                  <Camera size={19} />
-                )}
-              </button>
+              {/* User information */}
 
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={uploadImage}
-                className="hidden"
-              />
+              <div className="min-w-0 flex-1">
 
-            </div>
+                <div className="flex flex-wrap items-center gap-2">
 
-            <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-2xl font-extrabold tracking-tight">
+                    {profile.name || "Not added"}
+                  </h2>
 
-              <div className="flex items-center gap-2">
+                  {profile.is_verified && (
+                    <span
+                      className="
+                        inline-flex items-center gap-1
+                        rounded-full
+                        bg-[var(--brand-soft)]
+                        px-2.5 py-1
+                        text-[11px] font-bold
+                        text-[var(--brand)]
+                      "
+                    >
+                      <CheckCircle2 size={13} />
+                      Verified
+                    </span>
+                  )}
 
-                <h1 className="truncate text-[22px] font-bold">
-                  {profile.name || "Not added"}
-                </h1>
+                </div>
 
-                {profile.is_verified && (
-                  <CheckCircle2
-                    size={20}
-                    className="shrink-0 text-orange-500"
-                    fill="currentColor"
-                  />
-                )}
+                <p className="mt-2 flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                  <Phone size={16} />
+                  {profile.phone || "Phone number not added"}
+                </p>
+
+                <p className="mt-1 flex items-center gap-2 truncate text-sm text-[var(--text-muted)]">
+                  <Mail size={16} />
+                  {profile.email || "Email not available"}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => openEdit()}
+                  className="
+                    mt-4 inline-flex items-center gap-2
+                    rounded-xl
+                    border border-[var(--border)]
+                    bg-[var(--surface-secondary)]
+                    px-4 py-2.5
+                    text-xs font-bold
+                    text-[var(--text-primary)]
+                    transition
+                    hover:border-[var(--brand)]
+                    hover:bg-[var(--brand-soft)]
+                    hover:text-[var(--brand)]
+                    active:scale-95
+                  "
+                >
+                  <Pencil size={14} />
+                  Edit Profile
+                </button>
 
               </div>
-
-              <p className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
-                <Phone size={17} />
-
-                {profile.phone || "Not added"}
-              </p>
-
-              <button
-                onClick={() => openEdit()}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-orange-500 px-3.5 py-2 text-xs font-semibold text-orange-400 active:scale-95"
-              >
-                <Pencil size={14} />
-
-                Edit Profile
-              </button>
-
             </div>
-
           </div>
-
         </section>
 
-        {/* ACTIVITY */}
+        {/* ======================================================
+            ACTIVITY
+        ====================================================== */}
 
-        <section className="mt-4">
+        <section className="mt-7">
 
-          <h2 className="mb-2 px-1 text-lg font-bold">
-            Your Activity
-          </h2>
-
-          <div className="grid grid-cols-2 gap-3">
-
-            <div className="rounded-[22px] border border-zinc-800 bg-[#171919] p-4 text-center">
-
-              <ShoppingBag
-                className="mx-auto text-orange-500"
-                size={27}
-              />
-
-              <p className="mt-2 text-[29px] font-bold">
-                {profile.total_orders || 0}
+          <div className="mb-3 flex items-end justify-between px-1">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--brand)]">
+                Overview
               </p>
 
-              <p className="mt-1 text-sm text-zinc-300">
-                Total Orders
-              </p>
-
+              <h2 className="mt-1 text-xl font-extrabold">
+                Your Activity
+              </h2>
             </div>
-
-            <div className="rounded-[22px] border border-zinc-800 bg-[#171919] p-4 text-center">
-
-              <IndianRupee
-                className="mx-auto text-orange-500"
-                size={27}
-              />
-
-              <p className="mt-2 text-[27px] font-bold">
-                ₹
-                {Number(
-                  profile.total_spent || 0
-                ).toLocaleString("en-IN")}
-              </p>
-
-              <p className="mt-1 text-sm text-zinc-300">
-                Total Spent
-              </p>
-
-            </div>
-
           </div>
 
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+
+            <StatCard
+              icon={<ShoppingBag size={22} />}
+              value={String(
+                profile.total_orders || 0
+              )}
+              label="Total Orders"
+            />
+
+            <StatCard
+              icon={<IndianRupee size={22} />}
+              value={`₹${Number(
+                profile.total_spent || 0
+              ).toLocaleString("en-IN")}`}
+              label="Total Spent"
+            />
+
+          </div>
         </section>
 
-        {/* APP VERSION */}
+        {/* ======================================================
+            APP VERSION
+        ====================================================== */}
 
         <button
+          type="button"
           onClick={() =>
             version?.updateAvailable &&
             version.updateUrl
@@ -923,11 +1007,37 @@ export default function ProfilePage() {
                 )
               : undefined
           }
-          className="mt-4 flex w-full items-center gap-3 rounded-[22px] border border-zinc-800 bg-[#171919] p-3.5 text-left"
+          disabled={!version?.updateAvailable}
+          className="
+            mt-5 flex w-full items-center gap-4
+            rounded-[24px]
+            border border-[var(--border)]
+            bg-[var(--surface)]
+            p-4 text-left
+            shadow-[var(--shadow-card)]
+            transition
+            hover:border-[var(--brand)]
+            hover:bg-[var(--surface-secondary)]
+            disabled:cursor-default
+          "
         >
 
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300">
-            <RefreshCw size={22} />
+          <div
+            className="
+              flex h-12 w-12 shrink-0 items-center justify-center
+              rounded-2xl
+              bg-[var(--brand-soft)]
+              text-[var(--brand)]
+            "
+          >
+            <RefreshCw
+              size={21}
+              className={
+                version?.updateAvailable
+                  ? "animate-pulse"
+                  : ""
+              }
+            />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -936,11 +1046,11 @@ export default function ProfilePage() {
               {version?.updateAvailable
                 ? "App update available"
                 : versionError
-                ? "Update check unavailable"
-                : "You're up to date"}
+                  ? "Update check unavailable"
+                  : "You're up to date"}
             </p>
 
-            <p className="mt-0.5 truncate text-xs text-zinc-400">
+            <p className="mt-1 truncate text-xs text-[var(--text-secondary)]">
               {versionError ||
                 (version?.updateAvailable
                   ? `A newer version ${version.latestVersion} is available`
@@ -953,24 +1063,34 @@ export default function ProfilePage() {
           </div>
 
           <ChevronRight
-            size={21}
-            className="text-zinc-400"
+            size={20}
+            className="shrink-0 text-[var(--text-muted)]"
           />
 
         </button>
 
-        {/* ABOUT YOU */}
+        {/* ======================================================
+            ABOUT YOU
+        ====================================================== */}
 
-        <section className="mt-5">
+        <section className="mt-7">
 
-          <h2 className="mb-2 px-1 text-lg font-bold">
-            About You
-          </h2>
+          <SectionHeading
+            eyebrow="Personal"
+            title="About You"
+          />
 
-          <div className="overflow-hidden rounded-[22px] border border-zinc-800 bg-[#171919]">
+          <div
+            className="
+              overflow-hidden rounded-[24px]
+              border border-[var(--border)]
+              bg-[var(--surface)]
+              shadow-[var(--shadow-card)]
+            "
+          >
 
             <InfoRow
-              icon={<User size={21} />}
+              icon={<User size={20} />}
               label="Full Name"
               value={profile.name}
               onClick={() =>
@@ -979,7 +1099,7 @@ export default function ProfilePage() {
             />
 
             <InfoRow
-              icon={<Mail size={21} />}
+              icon={<Mail size={20} />}
               label="Email"
               value={profile.email}
               onClick={() =>
@@ -988,7 +1108,7 @@ export default function ProfilePage() {
             />
 
             <InfoRow
-              icon={<Phone size={21} />}
+              icon={<Phone size={20} />}
               label="Phone Number"
               value={profile.phone}
               onClick={() =>
@@ -998,125 +1118,163 @@ export default function ProfilePage() {
             />
 
           </div>
-
         </section>
 
-        {/* ACCOUNT */}
+        {/* ======================================================
+            ACCOUNT
+        ====================================================== */}
 
-        <section className="mt-5">
+        <section className="mt-7">
 
-          <h2 className="mb-2 px-1 text-lg font-bold">
-            Account
-          </h2>
+          <SectionHeading
+            eyebrow="More"
+            title="Account"
+          />
 
-          <div className="overflow-hidden rounded-[22px] border border-zinc-800 bg-[#171919]">
+          <div
+            className="
+              overflow-hidden rounded-[24px]
+              border border-[var(--border)]
+              bg-[var(--surface)]
+              shadow-[var(--shadow-card)]
+            "
+          >
 
             <AccountRow
-              icon={<Heart size={22} />}
+              icon={<Heart size={21} />}
               title="Favorites"
               subtitle="Your saved food items"
               href="/favorites"
             />
 
             <AccountRow
-              icon={<Receipt size={22} />}
+              icon={<Receipt size={21} />}
               title="Payment History"
               subtitle="View your transactions"
               href="/wallet/transactions"
             />
 
             <AccountRow
-              icon={<HelpCircle size={22} />}
+              icon={<HelpCircle size={21} />}
               title="About Us"
               subtitle="Learn more about CampusVita"
               href="/about"
             />
 
             <button
+              type="button"
               onClick={shareApp}
               disabled={shareBusy}
-              className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-zinc-900 disabled:opacity-60"
+              className="
+                flex w-full items-center gap-3
+                border-t border-[var(--border)]
+                px-4 py-4 text-left
+                transition
+                hover:bg-[var(--surface-secondary)]
+                disabled:opacity-60
+              "
             >
 
-              <span className="text-orange-500">
-
+              <span className="text-[var(--brand)]">
                 {shareBusy ? (
                   <RefreshCw
-                    size={22}
+                    size={21}
                     className="animate-spin"
                   />
                 ) : (
-                  <Share2 size={22} />
+                  <Share2 size={21} />
                 )}
-
               </span>
 
               <span className="min-w-0 flex-1">
-
                 <span className="block text-sm font-semibold">
                   Share the App
                 </span>
 
-                <span className="mt-0.5 block text-xs text-zinc-400">
+                <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">
                   Invite your friends to CampusVita
                 </span>
-
               </span>
 
               <ChevronRight
-                size={21}
-                className="text-zinc-400"
+                size={20}
+                className="text-[var(--text-muted)]"
               />
 
             </button>
 
           </div>
-
         </section>
 
-        {/* LOGOUT */}
+        {/* ======================================================
+            LOGOUT
+        ====================================================== */}
 
         <button
+          type="button"
           onClick={() =>
             setLogoutOpen(true)
           }
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[20px] border border-zinc-800 bg-[#171919] py-3.5 font-semibold text-orange-500 active:scale-[0.99]"
+          className="
+            mt-5 flex w-full items-center justify-center gap-2
+            rounded-[20px]
+            border border-red-500/20
+            bg-[var(--surface)]
+            py-3.5
+            font-semibold
+            text-red-500
+            shadow-sm
+            transition
+            hover:border-red-500/40
+            hover:bg-red-500/5
+            active:scale-[0.99]
+          "
         >
-          <LogOut size={21} />
-
+          <LogOut size={20} />
           Logout
         </button>
 
-        {/* BOTTOM NAVIGATION */}
+        {/* ======================================================
+            MOBILE BOTTOM NAVIGATION
+        ====================================================== */}
 
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-800 bg-[#0c0d0d]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">
-
+        <nav
+          className="
+            fixed bottom-0 left-0 right-0 z-40
+            border-t border-[var(--border)]
+            bg-[var(--surface)]/95
+            pb-[env(safe-area-inset-bottom)]
+            backdrop-blur-xl
+            md:hidden
+          "
+        >
           <div className="mx-auto grid h-[68px] max-w-md grid-cols-3">
 
             <Bottom
               href="/"
-              icon={<Home size={23} />}
+              icon={<Home size={22} />}
               label="Home"
             />
 
             <Bottom
               href="/orders"
-              icon={<ShoppingBag size={23} />}
+              icon={<ShoppingBag size={22} />}
               label="Orders"
             />
 
             <Bottom
               href="/profile"
-              icon={<User size={23} />}
+              icon={<User size={22} />}
               label="Profile"
               active
             />
 
           </div>
-
         </nav>
 
-        {/* EDIT PROFILE MODAL */}
+        {/* ======================================================
+            EDIT PROFILE MODAL
+        ====================================================== */}
 
         {editOpen && (
           <Modal
@@ -1126,30 +1284,41 @@ export default function ProfilePage() {
             }
           >
 
-            <div className="flex items-center justify-between border-b border-zinc-800 p-5">
-
+            <div
+              className="
+                flex items-center justify-between
+                border-b border-[var(--border)]
+                px-5 py-5
+              "
+            >
               <div>
-
                 <h2 className="text-lg font-bold">
                   Edit Profile
                 </h2>
 
-                <p className="mt-1 text-xs text-zinc-400">
-                  Saved to your authenticated account.
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  Changes are saved to your authenticated account.
                 </p>
-
               </div>
 
               <button
+                type="button"
                 onClick={() =>
                   setEditOpen(false)
                 }
                 aria-label="Close"
                 disabled={saving}
+                className="
+                  rounded-xl p-2
+                  text-[var(--text-secondary)]
+                  transition
+                  hover:bg-[var(--surface-secondary)]
+                  hover:text-[var(--text-primary)]
+                  disabled:opacity-50
+                "
               >
-                <X size={21} />
+                <X size={20} />
               </button>
-
             </div>
 
             <div className="space-y-4 p-5">
@@ -1200,16 +1369,27 @@ export default function ProfilePage() {
               <div className="flex gap-3 pt-2">
 
                 <button
+                  type="button"
                   onClick={() =>
                     setEditOpen(false)
                   }
                   disabled={saving}
-                  className="flex-1 rounded-xl border border-zinc-700 py-3 text-sm"
+                  className="
+                    flex-1 rounded-xl
+                    border border-[var(--border)]
+                    bg-[var(--surface-secondary)]
+                    py-3
+                    text-sm font-semibold
+                    transition
+                    hover:bg-[var(--surface)]
+                    disabled:opacity-50
+                  "
                 >
                   Cancel
                 </button>
 
                 <button
+                  type="button"
                   onClick={() =>
                     void saveProfile()
                   }
@@ -1217,23 +1397,32 @@ export default function ProfilePage() {
                     saving ||
                     editField === "email"
                   }
-                  className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-bold disabled:opacity-60"
+                  className="
+                    flex-1 rounded-xl
+                    bg-[var(--brand)]
+                    py-3
+                    text-sm font-bold
+                    text-white
+                    transition
+                    hover:brightness-95
+                    disabled:opacity-60
+                  "
                 >
                   {saving
                     ? "Saving..."
                     : editField === "email"
-                    ? "Email cannot be changed"
-                    : "Save changes"}
+                      ? "Email cannot be changed"
+                      : "Save changes"}
                 </button>
 
               </div>
-
             </div>
-
           </Modal>
         )}
 
-        {/* LOGOUT MODAL */}
+        {/* ======================================================
+            LOGOUT MODAL
+        ====================================================== */}
 
         {logoutOpen && (
           <Modal
@@ -1241,48 +1430,139 @@ export default function ProfilePage() {
               setLogoutOpen(false)
             }
           >
+            <div className="p-6 text-center">
 
-            <div className="p-5 text-center">
-
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-500/10 text-orange-500">
-                <LogOut size={24} />
+              <div
+                className="
+                  mx-auto flex h-12 w-12 items-center justify-center
+                  rounded-2xl
+                  bg-red-500/10
+                  text-red-500
+                "
+              >
+                <LogOut size={23} />
               </div>
 
               <h2 className="mt-4 text-lg font-bold">
                 Sign out of CampusVita?
               </h2>
 
-              <p className="mt-2 text-sm text-zinc-400">
+              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
                 You will need to sign in again to access your account.
               </p>
 
-              <div className="mt-5 flex gap-3">
+              <div className="mt-6 flex gap-3">
 
                 <button
+                  type="button"
                   onClick={() =>
                     setLogoutOpen(false)
                   }
-                  className="flex-1 rounded-xl border border-zinc-700 py-3 text-sm"
+                  className="
+                    flex-1 rounded-xl
+                    border border-[var(--border)]
+                    bg-[var(--surface-secondary)]
+                    py-3
+                    text-sm font-semibold
+                    transition
+                    hover:bg-[var(--surface)]
+                  "
                 >
                   Cancel
                 </button>
 
                 <button
+                  type="button"
                   onClick={logout}
-                  className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-bold"
+                  className="
+                    flex-1 rounded-xl
+                    bg-red-500
+                    py-3
+                    text-sm font-bold
+                    text-white
+                    transition
+                    hover:brightness-95
+                  "
                 >
                   Logout
                 </button>
 
               </div>
-
             </div>
-
           </Modal>
         )}
 
       </div>
     </main>
+  );
+}
+
+/* ============================================================
+   SECTION HEADING
+============================================================ */
+
+function SectionHeading({
+  eyebrow,
+  title,
+}: {
+  eyebrow: string;
+  title: string;
+}) {
+  return (
+    <div className="mb-3 px-1">
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--brand)]">
+        {eyebrow}
+      </p>
+
+      <h2 className="mt-1 text-xl font-extrabold">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/* ============================================================
+   STAT CARD
+============================================================ */
+
+function StatCard({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}) {
+  return (
+    <div
+      className="
+        rounded-[24px]
+        border border-[var(--border)]
+        bg-[var(--surface)]
+        p-5
+        shadow-[var(--shadow-card)]
+      "
+    >
+      <div
+        className="
+          flex h-10 w-10 items-center justify-center
+          rounded-xl
+          bg-[var(--brand-soft)]
+          text-[var(--brand)]
+        "
+      >
+        {icon}
+      </div>
+
+      <p className="mt-4 truncate text-2xl font-extrabold tracking-tight sm:text-3xl">
+        {value}
+      </p>
+
+      <p className="mt-1 text-sm text-[var(--text-secondary)]">
+        {label}
+      </p>
+    </div>
   );
 }
 
@@ -1305,29 +1585,46 @@ function InfoRow({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-zinc-900 ${
-        last
-          ? ""
-          : "border-b border-zinc-800"
-      }`}
+      className={`
+        flex w-full items-center gap-3
+        px-4 py-4 text-left
+        transition
+        hover:bg-[var(--surface-secondary)]
+        ${
+          last
+            ? ""
+            : "border-b border-[var(--border)]"
+        }
+      `}
     >
-      <span className="text-zinc-300">
+      <span
+        className="
+          flex h-9 w-9 shrink-0 items-center justify-center
+          rounded-xl
+          bg-[var(--surface-secondary)]
+          text-[var(--text-secondary)]
+        "
+      >
         {icon}
       </span>
 
       <span className="min-w-0 flex-1">
 
-        <span className="block text-sm text-zinc-200">
+        <span className="block text-sm font-semibold">
           {label}
         </span>
 
         <span
-          className={`mt-0.5 block truncate text-sm ${
-            value
-              ? "text-zinc-300"
-              : "text-zinc-500"
-          }`}
+          className={`
+            mt-0.5 block truncate text-sm
+            ${
+              value
+                ? "text-[var(--text-secondary)]"
+                : "text-[var(--text-muted)]"
+            }
+          `}
         >
           {value || "Not added"}
         </span>
@@ -1335,8 +1632,8 @@ function InfoRow({
       </span>
 
       <ChevronRight
-        size={20}
-        className="text-zinc-500"
+        size={19}
+        className="shrink-0 text-[var(--text-muted)]"
       />
     </button>
   );
@@ -1359,12 +1656,26 @@ function AccountRow({
 }) {
   return (
     <button
+      type="button"
       onClick={() =>
         window.location.assign(href)
       }
-      className="flex w-full items-center gap-3 border-b border-zinc-800 px-4 py-3.5 text-left last:border-0 active:bg-zinc-900"
+      className="
+        flex w-full items-center gap-3
+        border-b border-[var(--border)]
+        px-4 py-4 text-left
+        transition
+        hover:bg-[var(--surface-secondary)]
+      "
     >
-      <span className="text-orange-500">
+      <span
+        className="
+          flex h-10 w-10 shrink-0 items-center justify-center
+          rounded-xl
+          bg-[var(--brand-soft)]
+          text-[var(--brand)]
+        "
+      >
         {icon}
       </span>
 
@@ -1374,15 +1685,15 @@ function AccountRow({
           {title}
         </span>
 
-        <span className="mt-0.5 block text-xs text-zinc-400">
+        <span className="mt-1 block text-xs text-[var(--text-secondary)]">
           {subtitle}
         </span>
 
       </span>
 
       <ChevronRight
-        size={21}
-        className="text-zinc-400"
+        size={20}
+        className="shrink-0 text-[var(--text-muted)]"
       />
     </button>
   );
@@ -1405,17 +1716,23 @@ function Bottom({
 }) {
   return (
     <button
+      type="button"
       onClick={() =>
         window.location.assign(href)
       }
-      className={`flex flex-col items-center justify-center gap-1 text-xs active:scale-95 ${
-        active
-          ? "text-orange-500"
-          : "text-zinc-500"
-      }`}
+      className={`
+        flex flex-col items-center justify-center gap-1
+        text-xs
+        transition
+        active:scale-95
+        ${
+          active
+            ? "font-semibold text-[var(--brand)]"
+            : "text-[var(--text-muted)]"
+        }
+      `}
     >
       {icon}
-
       <span>{label}</span>
     </button>
   );
@@ -1445,7 +1762,7 @@ function Field({
   return (
     <label className="block">
 
-      <span className="mb-1.5 block text-xs font-semibold text-zinc-300">
+      <span className="mb-1.5 block text-xs font-semibold text-[var(--text-secondary)]">
         {label}
       </span>
 
@@ -1455,11 +1772,27 @@ function Field({
         onChange={(e) =>
           onChange?.(e.target.value)
         }
-        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-3 text-sm text-white outline-none focus:border-orange-500 disabled:text-zinc-500"
+        className="
+          w-full rounded-xl
+          border border-[var(--border)]
+          bg-[var(--surface-secondary)]
+          px-3.5 py-3
+          text-sm
+          text-[var(--text-primary)]
+          placeholder:text-[var(--text-muted)]
+          outline-none
+          transition
+          focus:border-[var(--brand)]
+          focus:bg-[var(--surface)]
+          focus:ring-2
+          focus:ring-[var(--brand-soft)]
+          disabled:cursor-not-allowed
+          disabled:text-[var(--text-muted)]
+        "
       />
 
       {hint && (
-        <span className="mt-1 block text-[11px] text-zinc-500">
+        <span className="mt-1.5 block text-[11px] leading-5 text-[var(--text-muted)]">
           {hint}
         </span>
       )}
@@ -1480,18 +1813,34 @@ function Modal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center">
-
+    <div
+      className="
+        fixed inset-0 z-[100]
+        flex items-end justify-center
+        bg-black/60 p-3
+        backdrop-blur-sm
+        sm:items-center
+      "
+    >
       <button
+        type="button"
         aria-label="Close dialog"
         onClick={onClose}
         className="absolute inset-0"
       />
 
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-[26px] border border-zinc-800 bg-[#151717] shadow-2xl">
+      <div
+        className="
+          relative z-10 w-full max-w-md
+          overflow-hidden rounded-[28px]
+          border border-[var(--border)]
+          bg-[var(--surface)]
+          text-[var(--text-primary)]
+          shadow-2xl
+        "
+      >
         {children}
       </div>
-
     </div>
   );
 }

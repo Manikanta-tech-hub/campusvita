@@ -64,23 +64,16 @@ const API_URL =
 // ============================================================
 
 export default function OrdersPage() {
-  // ============================================================
-  // STATE
-  // ============================================================
-
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Prevent duplicate refund requests while one is being processed.
   const [refundingToken, setRefundingToken] =
     useState<number | null>(null);
 
-  // Used only for the order options modal.
   const [selectedOrder, setSelectedOrder] =
     useState<number | null>(null);
 
-  // Used only for expanding/collapsing order details.
   const [expandedOrder, setExpandedOrder] =
     useState<number | null>(null);
 
@@ -98,7 +91,7 @@ export default function OrdersPage() {
   const { addToCart } = useCart();
 
   // ============================================================
-  // GET AUTH TOKEN
+  // AUTH
   // ============================================================
 
   const getToken = () => {
@@ -140,10 +133,6 @@ export default function OrdersPage() {
           }
         );
 
-        // ======================================================
-        // AUTH ERROR
-        // ======================================================
-
         if (response.status === 401) {
           toast.error(
             "Your session has expired. Please login again."
@@ -153,17 +142,11 @@ export default function OrdersPage() {
           return;
         }
 
-        // ======================================================
-        // OTHER API ERRORS
-        // ======================================================
-
         if (!response.ok) {
-          let errorMessage =
-            "Failed to load orders";
+          let errorMessage = "Failed to load orders";
 
           try {
-            const errorData =
-              await response.json();
+            const errorData = await response.json();
 
             errorMessage =
               errorData.detail ||
@@ -176,26 +159,14 @@ export default function OrdersPage() {
           throw new Error(errorMessage);
         }
 
-        // ======================================================
-        // PARSE RESPONSE
-        // ======================================================
-
         const data = await response.json();
 
-        console.log(
-          "✅ Orders API response:",
-          data
-        );
-
-        // ======================================================
-        // NORMALIZE ORDERS
-        // ======================================================
+        console.log("✅ Orders API response:", data);
 
         if (Array.isArray(data.orders)) {
-          const normalizedOrders =
-            [...data.orders]
-              .filter(Boolean)
-              .reverse();
+          const normalizedOrders = [...data.orders]
+            .filter(Boolean)
+            .reverse();
 
           setOrders(normalizedOrders);
 
@@ -249,22 +220,17 @@ export default function OrdersPage() {
     });
 
     socket.on("connect", () => {
-      console.log(
-        "✅ Orders socket connected"
-      );
+      console.log("✅ Orders socket connected");
     });
 
-    socket.on(
-      "order_update",
-      (updatedOrder) => {
-        console.log(
-          "🔄 Order update received:",
-          updatedOrder
-        );
+    socket.on("order_update", (updatedOrder) => {
+      console.log(
+        "🔄 Order update received:",
+        updatedOrder
+      );
 
-        fetchOrders();
-      }
-    );
+      fetchOrders();
+    });
 
     socket.on("disconnect", () => {
       console.log(
@@ -289,16 +255,17 @@ export default function OrdersPage() {
   // ============================================================
 
   useEffect(() => {
-    const hasProcessingRefund = orders.some((order) =>
-      [
-        "PENDING",
-        "INITIATED",
-        "PROCESSING",
-      ].includes(
-        (order.refund_status || "")
-          .trim()
-          .toUpperCase()
-      )
+    const hasProcessingRefund = orders.some(
+      (order) =>
+        [
+          "PENDING",
+          "INITIATED",
+          "PROCESSING",
+        ].includes(
+          (order.refund_status || "")
+            .trim()
+            .toUpperCase()
+        )
     );
 
     if (!hasProcessingRefund) {
@@ -318,9 +285,7 @@ export default function OrdersPage() {
   // REORDER
   // ============================================================
 
-  const handleReorder = (
-    items: OrderItem[]
-  ) => {
+  const handleReorder = (items: OrderItem[]) => {
     if (!items || items.length === 0) {
       toast.error(
         "No items available for reorder"
@@ -338,9 +303,7 @@ export default function OrdersPage() {
       });
     });
 
-    toast.success(
-      "Items added to cart 🚀"
-    );
+    toast.success("Items added to cart 🚀");
   };
 
   // ============================================================
@@ -393,7 +356,8 @@ export default function OrdersPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            reason: "Customer requested cancellation",
+            reason:
+              "Customer requested cancellation",
           }),
         }
       );
@@ -401,7 +365,9 @@ export default function OrdersPage() {
       const data = await response.json();
 
       if (response.status === 401) {
-        toast.error("Your session has expired");
+        toast.error(
+          "Your session has expired"
+        );
         return;
       }
 
@@ -448,18 +414,12 @@ export default function OrdersPage() {
       const token = getToken();
 
       if (!token) {
-        toast.error(
-          "Please login again"
-        );
-
+        toast.error("Please login again");
         return;
       }
 
       if (!orderId) {
-        toast.error(
-          "Invalid order ID"
-        );
-
+        toast.error("Invalid order ID");
         return;
       }
 
@@ -474,14 +434,12 @@ export default function OrdersPage() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (response.status === 401) {
         toast.error(
           "Your session has expired"
         );
-
         return;
       }
 
@@ -510,9 +468,7 @@ export default function OrdersPage() {
         error
       );
 
-      toast.error(
-        "Failed to delete order"
-      );
+      toast.error("Failed to delete order");
     }
   };
 
@@ -549,9 +505,7 @@ Total: ₹${order.total}
           text,
         });
       } else {
-        await navigator.clipboard.writeText(
-          text
-        );
+        await navigator.clipboard.writeText(text);
 
         toast.success(
           "Order copied to clipboard"
@@ -579,10 +533,7 @@ Total: ₹${order.total}
     }
 
     if (!selectedFoodName) {
-      toast.error(
-        "Food item not found"
-      );
-
+      toast.error("Food item not found");
       return;
     }
 
@@ -590,10 +541,7 @@ Total: ₹${order.total}
       const token = getToken();
 
       if (!token) {
-        toast.error(
-          "Please login again"
-        );
-
+        toast.error("Please login again");
         return;
       }
 
@@ -607,17 +555,14 @@ Total: ₹${order.total}
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            food_name:
-              selectedFoodName,
-            rating:
-              selectedRating,
+            food_name: selectedFoodName,
+            rating: selectedRating,
             feedback,
           }),
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
         toast.error(
@@ -644,9 +589,7 @@ Total: ₹${order.total}
         error
       );
 
-      toast.error(
-        "Failed to submit rating"
-      );
+      toast.error("Failed to submit rating");
     }
   };
 
@@ -654,51 +597,49 @@ Total: ₹${order.total}
   // STATUS STYLE
   // ============================================================
 
-  const getStatusStyle = (
-    status: string
-  ) => {
+  const getStatusStyle = (status: string) => {
     const normalizedStatus =
-      (status || "")
-        .trim()
-        .toLowerCase();
+      (status || "").trim().toLowerCase();
 
     if (
-      normalizedStatus ===
-        "completed" ||
-      normalizedStatus ===
-        "delivered"
+      normalizedStatus === "completed" ||
+      normalizedStatus === "delivered"
     ) {
       return {
-        dot: "bg-green-500",
-        text: "text-green-400",
+        dot: "bg-emerald-500",
+        badge:
+          "bg-emerald-500/10 border-emerald-500/20",
+        text:
+          "text-emerald-700 dark:text-emerald-400",
         label: "Delivered",
       };
     }
 
     if (
-      normalizedStatus ===
-        "cancelled" ||
-      normalizedStatus ===
-        "canceled"
+      normalizedStatus === "cancelled" ||
+      normalizedStatus === "canceled"
     ) {
       return {
         dot: "bg-red-500",
-        text: "text-red-400",
+        badge:
+          "bg-red-500/10 border-red-500/20",
+        text:
+          "text-red-700 dark:text-red-400",
         label: "Cancelled",
       };
     }
 
     if (
-      normalizedStatus ===
-        "preparing" ||
-      normalizedStatus ===
-        "cooking"
+      normalizedStatus === "preparing" ||
+      normalizedStatus === "cooking"
     ) {
       return {
         dot: "bg-orange-500",
-        text: "text-orange-400",
-        label:
-          status || "Preparing",
+        badge:
+          "bg-orange-500/10 border-orange-500/20",
+        text:
+          "text-orange-700 dark:text-orange-400",
+        label: status || "Preparing",
       };
     }
 
@@ -708,17 +649,21 @@ Total: ₹${order.total}
     ) {
       return {
         dot: "bg-blue-500",
-        text: "text-blue-400",
-        label:
-          status || "Ready",
+        badge:
+          "bg-blue-500/10 border-blue-500/20",
+        text:
+          "text-blue-700 dark:text-blue-400",
+        label: status || "Ready",
       };
     }
 
     return {
-      dot: "bg-gray-400",
-      text: "text-gray-300",
-      label:
-        status || "Unknown",
+      dot: "bg-zinc-400",
+      badge:
+        "bg-zinc-500/10 border-zinc-500/20",
+      text:
+        "text-[var(--text-secondary)]",
+      label: status || "Unknown",
     };
   };
 
@@ -736,8 +681,9 @@ Total: ₹${order.total}
 
     if (normalizedStatus === "PROCESSED") {
       return {
-        dot: "bg-green-500",
-        text: "text-green-400",
+        dot: "bg-emerald-500",
+        text:
+          "text-emerald-700 dark:text-emerald-400",
         label: "Refund Completed",
       };
     }
@@ -749,7 +695,8 @@ Total: ₹${order.total}
     ) {
       return {
         dot: "bg-orange-500",
-        text: "text-orange-400",
+        text:
+          "text-orange-700 dark:text-orange-400",
         label: "Refund Processing",
       };
     }
@@ -757,20 +704,21 @@ Total: ₹${order.total}
     if (normalizedStatus === "FAILED") {
       return {
         dot: "bg-red-500",
-        text: "text-red-400",
+        text:
+          "text-red-700 dark:text-red-400",
         label: "Refund Failed",
       };
     }
 
     return {
-      dot: "bg-gray-400",
-      text: "text-gray-300",
+      dot: "bg-zinc-400",
+      text: "text-[var(--text-secondary)]",
       label: "Refund Status Unknown",
     };
   };
 
   // ============================================================
-  // THUMBNAIL HELPERS
+  // THUMBNAILS
   // ============================================================
 
   const getVisibleItems = (
@@ -802,11 +750,8 @@ Total: ₹${order.total}
   // OPEN RATING
   // ============================================================
 
-  const openRating = (
-    order: Order
-  ) => {
-    const firstItem =
-      order.items?.[0];
+  const openRating = (order: Order) => {
+    const firstItem = order.items?.[0];
 
     if (!firstItem) {
       toast.error(
@@ -816,10 +761,7 @@ Total: ₹${order.total}
       return;
     }
 
-    setSelectedFoodName(
-      firstItem.name
-    );
-
+    setSelectedFoodName(firstItem.name);
     setSelectedRating(0);
     setFeedback("");
     setShowRatingModal(true);
@@ -833,7 +775,7 @@ Total: ₹${order.total}
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-black px-4 pb-28 pt-5 text-white sm:px-6 sm:pt-8 md:px-10 md:pb-10">
+      <main className="min-h-screen bg-[var(--background)] px-4 pb-28 pt-5 text-[var(--text-primary)] transition-colors duration-300 sm:px-6 sm:pt-8 md:px-10 md:pb-10">
 
         <div className="mx-auto w-full max-w-4xl">
 
@@ -844,20 +786,27 @@ Total: ₹${order.total}
           <div className="flex items-center justify-between gap-4">
 
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <PackageCheck
-                  size={22}
-                  className="shrink-0 text-orange-500"
-                />
 
-                <h1 className="truncate text-2xl font-bold sm:text-3xl">
-                  Order History
-                </h1>
+              <div className="flex items-center gap-2.5">
+
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-soft)] text-[var(--brand)]">
+                  <PackageCheck size={21} />
+                </div>
+
+                <div className="min-w-0">
+
+                  <h1 className="truncate text-2xl font-bold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+                    Order History
+                  </h1>
+
+                  <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                    Your recent CampusVita orders
+                  </p>
+
+                </div>
+
               </div>
 
-              <p className="mt-1 text-sm text-zinc-500">
-                Your recent CampusVita orders
-              </p>
             </div>
 
             <button
@@ -865,7 +814,7 @@ Total: ₹${order.total}
               onClick={handleRefresh}
               disabled={refreshing}
               aria-label="Refresh orders"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 transition-all hover:border-orange-500 hover:text-orange-500 disabled:opacity-50"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] shadow-sm transition-all hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw
                 size={18}
@@ -884,16 +833,22 @@ Total: ₹${order.total}
           {/* ================================================== */}
 
           {loading ? (
-            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
+            <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-[var(--shadow-card)]">
 
-              <RefreshCw
-                size={32}
-                className="mx-auto animate-spin text-orange-500"
-              />
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)]">
+                <RefreshCw
+                  size={25}
+                  className="animate-spin text-[var(--brand)]"
+                />
+              </div>
 
-              <p className="mt-4 text-sm text-zinc-400">
+              <p className="mt-4 text-sm font-medium text-[var(--text-secondary)]">
                 Loading your orders...
               </p>
+
+              <div className="mx-auto mt-5 h-1.5 w-32 overflow-hidden rounded-full bg-[var(--surface-secondary)]">
+                <div className="h-full w-1/2 animate-pulse rounded-full bg-[var(--brand)]" />
+              </div>
 
             </div>
           ) : orders.length === 0 ? (
@@ -902,18 +857,17 @@ Total: ₹${order.total}
             /* EMPTY STATE */
             /* ================================================= */
 
-            <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center sm:p-12">
+            <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-[var(--shadow-card)] sm:p-12">
 
-              <PackageCheck
-                size={52}
-                className="mx-auto text-zinc-600"
-              />
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--surface-secondary)] text-[var(--text-muted)]">
+                <PackageCheck size={42} />
+              </div>
 
-              <h2 className="mt-5 text-xl font-bold">
+              <h2 className="mt-5 text-xl font-bold tracking-tight text-[var(--text-primary)]">
                 No Orders Yet
               </h2>
 
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
                 Your completed and current
                 orders will appear here.
               </p>
@@ -922,7 +876,7 @@ Total: ₹${order.total}
                 type="button"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="mt-6 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold transition-all hover:bg-orange-600 disabled:opacity-50"
+                className="mt-6 rounded-xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {refreshing
                   ? "Refreshing..."
@@ -933,7 +887,7 @@ Total: ₹${order.total}
           ) : (
 
             /* ================================================= */
-            /* COMPACT ORDER LIST */
+            /* ORDER LIST */
             /* ================================================= */
 
             <div className="mt-5 flex flex-col gap-3 sm:mt-7 sm:gap-4">
@@ -956,8 +910,7 @@ Total: ₹${order.total}
                     );
 
                   const isExpanded =
-                    expandedOrder ===
-                    index;
+                    expandedOrder === index;
 
                   const isCompleted =
                     [
@@ -978,7 +931,7 @@ Total: ₹${order.total}
                         order.order_id ||
                         `${order.token}-${index}`
                       }
-                      className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm transition-all duration-200 hover:border-zinc-700"
+                      className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--brand)]/30"
                     >
 
                       {/* ====================================== */}
@@ -994,7 +947,7 @@ Total: ₹${order.total}
                               : index
                           )
                         }
-                        className="w-full text-left active:scale-[0.995]"
+                        className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand)]"
                       >
 
                         <div className="p-4 sm:p-5">
@@ -1011,21 +964,19 @@ Total: ₹${order.total}
                                 />
 
                                 <span
-                                  className={`text-sm font-semibold ${statusStyle.text}`}
+                                  className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold ${statusStyle.badge} ${statusStyle.text}`}
                                 >
-                                  {
-                                    statusStyle.label
-                                  }
+                                  {statusStyle.label}
                                 </span>
 
                               </div>
 
-                              <p className="mt-1.5 truncate text-xs text-zinc-500">
+                              <p className="mt-2 truncate text-xs text-[var(--text-muted)]">
                                 {order.date ||
                                   "Date unavailable"}
                               </p>
 
-                              <p className="mt-1 text-xs font-medium text-zinc-400">
+                              <p className="mt-1 text-xs font-semibold text-[var(--text-secondary)]">
                                 {order.token
                                   ? `Token #${order.token}`
                                   : `Order #${order.order_id}`}
@@ -1035,7 +986,7 @@ Total: ₹${order.total}
 
                             <div className="shrink-0 text-right">
 
-                              <p className="text-lg font-bold text-white sm:text-xl">
+                              <p className="text-lg font-bold tracking-tight text-[var(--text-primary)] sm:text-xl">
                                 ₹
                                 {Number(
                                   order.total ||
@@ -1043,7 +994,7 @@ Total: ₹${order.total}
                                 ).toFixed(2)}
                               </p>
 
-                              <p className="mt-1 text-[11px] text-zinc-500">
+                              <p className="mt-1 text-[11px] text-[var(--text-muted)]">
                                 {
                                   order
                                     .items
@@ -1072,7 +1023,7 @@ Total: ₹${order.total}
                                 ) => (
                                   <div
                                     key={`${order.order_id}-${item.name}-${itemIndex}`}
-                                    className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 sm:h-14 sm:w-14"
+                                    className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] shadow-sm sm:h-14 sm:w-14"
                                   >
                                     {item.image ? (
                                       <img
@@ -1094,7 +1045,7 @@ Total: ₹${order.total}
 
                               {remainingItems >
                                 0 && (
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-xs font-bold text-zinc-300 sm:h-14 sm:w-14">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-secondary)] text-xs font-bold text-[var(--text-secondary)] sm:h-14 sm:w-14">
                                   +
                                   {
                                     remainingItems
@@ -1108,20 +1059,22 @@ Total: ₹${order.total}
                           {/* BOTTOM */}
                           <div className="mt-4 flex items-center justify-between">
 
-                            <span className="text-xs text-zinc-500">
+                            <span className="text-xs font-medium text-[var(--text-muted)]">
                               {isExpanded
                                 ? "Hide details"
                                 : "View order details"}
                             </span>
 
-                            <ChevronDown
-                              size={17}
-                              className={`text-orange-500 transition-transform duration-200 ${
-                                isExpanded
-                                  ? "rotate-180"
-                                  : ""
-                              }`}
-                            />
+                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-soft)]">
+                              <ChevronDown
+                                size={17}
+                                className={`text-[var(--brand)] transition-transform duration-200 ${
+                                  isExpanded
+                                    ? "rotate-180"
+                                    : ""
+                                }`}
+                              />
+                            </span>
 
                           </div>
 
@@ -1134,16 +1087,16 @@ Total: ₹${order.total}
                       {/* ====================================== */}
 
                       {isExpanded && (
-                        <div className="border-t border-zinc-800 bg-zinc-900/40 px-4 pb-4 pt-4 sm:px-5">
+                        <div className="border-t border-[var(--border)] bg-[var(--surface-secondary)]/60 px-4 pb-4 pt-4 sm:px-5">
 
                           {/* ITEMS */}
                           <div>
 
-                            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
                               Ordered Items
                             </p>
 
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-2">
 
                               {order.items.map(
                                 (
@@ -1152,10 +1105,10 @@ Total: ₹${order.total}
                                 ) => (
                                   <div
                                     key={`${item.name}-${itemIndex}`}
-                                    className="flex items-center gap-3"
+                                    className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3"
                                   >
 
-                                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[var(--surface-secondary)]">
 
                                       {item.image ? (
                                         <img
@@ -1178,13 +1131,13 @@ Total: ₹${order.total}
 
                                     <div className="min-w-0 flex-1">
 
-                                      <p className="truncate text-sm font-medium text-white">
+                                      <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
                                         {
                                           item.name
                                         }
                                       </p>
 
-                                      <p className="mt-0.5 text-xs text-zinc-500">
+                                      <p className="mt-0.5 text-xs text-[var(--text-muted)]">
                                         Qty{" "}
                                         {
                                           item.quantity
@@ -1199,7 +1152,7 @@ Total: ₹${order.total}
 
                                     </div>
 
-                                    <p className="shrink-0 text-sm font-semibold text-zinc-200">
+                                    <p className="shrink-0 text-sm font-bold text-[var(--text-primary)]">
                                       ₹
                                       {(
                                         Number(
@@ -1224,12 +1177,12 @@ Total: ₹${order.total}
                           {/* INFORMATION */}
                           <div className="mt-5 grid grid-cols-2 gap-2">
 
-                            <div className="rounded-xl bg-zinc-900 p-3">
-                              <p className="text-[11px] text-zinc-500">
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                              <p className="text-[11px] font-medium text-[var(--text-muted)]">
                                 Token
                               </p>
 
-                              <p className="mt-1 text-sm font-semibold text-white">
+                              <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
                                 #
                                 {
                                   order.token
@@ -1237,12 +1190,12 @@ Total: ₹${order.total}
                               </p>
                             </div>
 
-                            <div className="rounded-xl bg-zinc-900 p-3">
-                              <p className="text-[11px] text-zinc-500">
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                              <p className="text-[11px] font-medium text-[var(--text-muted)]">
                                 Pickup Code
                               </p>
 
-                              <p className="mt-1 text-sm font-semibold text-white">
+                              <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
                                 {
                                   order.pickup_code ??
                                   "N/A"
@@ -1251,12 +1204,12 @@ Total: ₹${order.total}
                             </div>
 
                             {order.payment_method && (
-                              <div className="rounded-xl bg-zinc-900 p-3">
-                                <p className="text-[11px] text-zinc-500">
+                              <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                                <p className="text-[11px] font-medium text-[var(--text-muted)]">
                                   Payment
                                 </p>
 
-                                <p className="mt-1 truncate text-sm font-semibold text-white">
+                                <p className="mt-1 truncate text-sm font-bold text-[var(--text-primary)]">
                                   {
                                     order.payment_method
                                   }
@@ -1264,13 +1217,13 @@ Total: ₹${order.total}
                               </div>
                             )}
 
-                            <div className="rounded-xl bg-zinc-900 p-3">
-                              <p className="text-[11px] text-zinc-500">
+                            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                              <p className="text-[11px] font-medium text-[var(--text-muted)]">
                                 Status
                               </p>
 
                               <p
-                                className={`mt-1 truncate text-sm font-semibold ${statusStyle.text}`}
+                                className={`mt-1 truncate text-sm font-bold ${statusStyle.text}`}
                               >
                                 {
                                   statusStyle.label
@@ -1279,12 +1232,13 @@ Total: ₹${order.total}
                             </div>
 
                             {order.refund_status && (
-                              <div className="col-span-2 rounded-xl bg-zinc-900 p-3">
-                                <p className="text-[11px] text-zinc-500">
+                              <div className="col-span-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                                <p className="text-[11px] font-medium text-[var(--text-muted)]">
                                   Refund
                                 </p>
 
                                 <div className="mt-1 flex items-center gap-2">
+
                                   <span
                                     className={`h-2 w-2 shrink-0 rounded-full ${
                                       getRefundStatusStyle(
@@ -1294,7 +1248,7 @@ Total: ₹${order.total}
                                   />
 
                                   <p
-                                    className={`truncate text-sm font-semibold ${
+                                    className={`truncate text-sm font-bold ${
                                       getRefundStatusStyle(
                                         order.refund_status
                                       ).text
@@ -1306,17 +1260,20 @@ Total: ₹${order.total}
                                       ).label
                                     }
                                   </p>
+
                                 </div>
 
                                 {order.refund_amount_paise &&
                                   order.refund_amount_paise > 0 && (
-                                    <p className="mt-1 text-xs text-zinc-500">
+                                    <p className="mt-1 text-xs text-[var(--text-muted)]">
                                       Amount: ₹
                                       {(
-                                        order.refund_amount_paise / 100
+                                        order.refund_amount_paise /
+                                        100
                                       ).toFixed(2)}
                                     </p>
                                   )}
+
                               </div>
                             )}
 
@@ -1325,20 +1282,23 @@ Total: ₹${order.total}
                           {/* ACTIONS */}
                           <div className="mt-5 grid grid-cols-2 gap-2">
 
-                            {order.refund_eligible === true && (
+                            {order.refund_eligible ===
+                              true && (
                               <button
                                 type="button"
                                 disabled={
-                                  refundingToken === order.token
+                                  refundingToken ===
+                                  order.token
                                 }
                                 onClick={() =>
                                   handleRequestRefund(
                                     order
                                   )
                                 }
-                                className="col-span-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-3 text-sm font-bold text-red-400 transition-all hover:border-red-500/50 hover:bg-red-500/15 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                                className="col-span-2 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-3 text-sm font-bold text-red-700 transition-all hover:border-red-500/40 hover:bg-red-500/15 dark:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                               >
-                                {refundingToken === order.token
+                                {refundingToken ===
+                                order.token
                                   ? "Processing Refund..."
                                   : "Cancel & Request Refund"}
                               </button>
@@ -1351,7 +1311,7 @@ Total: ₹${order.total}
                                   order.items
                                 )
                               }
-                              className="rounded-xl bg-orange-500 px-3 py-3 text-sm font-bold text-white transition-all hover:bg-orange-600 active:scale-[0.98]"
+                              className="rounded-xl bg-[var(--brand)] px-3 py-3 text-sm font-bold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
                             >
                               Reorder
                             </button>
@@ -1364,7 +1324,7 @@ Total: ₹${order.total}
                                     order
                                   )
                                 }
-                                className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm font-bold text-white transition-all hover:border-orange-500 hover:text-orange-500 active:scale-[0.98]"
+                                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
                               >
                                 Rate Order
                               </button>
@@ -1378,7 +1338,7 @@ Total: ₹${order.total}
                                     order
                                   )
                                 }
-                                className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm font-bold text-white transition-all hover:border-orange-500 hover:text-orange-500 active:scale-[0.98]"
+                                className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-3 text-sm font-bold text-[var(--text-primary)] transition-all hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
                               >
                                 Share
                               </button>
@@ -1394,7 +1354,7 @@ Total: ₹${order.total}
                                 index
                               )
                             }
-                            className="mt-3 w-full rounded-xl border border-zinc-800 py-2.5 text-xs font-semibold text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-300"
+                            className="mt-3 w-full rounded-xl border border-[var(--border)] py-2.5 text-xs font-semibold text-[var(--text-muted)] transition-colors hover:border-[var(--brand)]/40 hover:bg-[var(--brand-soft)] hover:text-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
                           >
                             More Order Options
                           </button>
@@ -1419,29 +1379,36 @@ Total: ₹${order.total}
 
       {selectedOrder !== null &&
         orders[selectedOrder] && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
 
-            <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl sm:rounded-3xl sm:p-8">
+            <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-[var(--text-primary)] shadow-2xl sm:rounded-3xl sm:p-8">
 
               <div className="flex items-center justify-between">
 
-                <h2 className="text-xl font-bold sm:text-2xl">
-                  Order Options
-                </h2>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--brand)]">
+                    Order
+                  </p>
+
+                  <h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+                    Order Options
+                  </h2>
+                </div>
 
                 <button
                   type="button"
                   onClick={() =>
                     setSelectedOrder(null)
                   }
-                  className="rounded-xl p-2 transition-colors hover:bg-zinc-800"
+                  aria-label="Close order options"
+                  className="rounded-xl border border-transparent p-2 text-[var(--text-secondary)] transition-colors hover:border-[var(--border)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
                 >
                   <X size={20} />
                 </button>
 
               </div>
 
-              <div className="mt-6 flex flex-col gap-3">
+              <div className="mt-6 flex flex-col gap-2">
 
                 <button
                   type="button"
@@ -1452,10 +1419,12 @@ Total: ₹${order.total}
                       ].order_id
                     )
                   }
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-red-400 transition-colors hover:bg-red-500/10"
+                  className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-red-700 transition-colors hover:border-red-500/20 hover:bg-red-500/10 dark:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 >
                   <Trash2 size={20} />
-                  Delete Order
+                  <span className="font-semibold">
+                    Delete Order
+                  </span>
                 </button>
 
                 <button
@@ -1467,10 +1436,12 @@ Total: ₹${order.total}
                       ]
                     )
                   }
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-green-400 transition-colors hover:bg-green-500/10"
+                  className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-emerald-700 transition-colors hover:border-emerald-500/20 hover:bg-emerald-500/10 dark:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                 >
                   <Share2 size={20} />
-                  Share Order
+                  <span className="font-semibold">
+                    Share Order
+                  </span>
                 </button>
 
               </div>
@@ -1485,27 +1456,31 @@ Total: ₹${order.total}
       {/* ====================================================== */}
 
       {showRatingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
 
-          <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl sm:rounded-3xl sm:p-8">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-[var(--text-primary)] shadow-2xl sm:rounded-3xl sm:p-8">
 
             <div className="flex items-center justify-between">
 
-              <h2 className="text-xl font-bold sm:text-2xl">
-                Rate Order
-              </h2>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--brand)]">
+                  Feedback
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+                  Rate Order
+                </h2>
+              </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  setShowRatingModal(
-                    false
-                  );
-
+                  setShowRatingModal(false);
                   setSelectedRating(0);
                   setFeedback("");
                 }}
-                className="rounded-xl p-2 transition-colors hover:bg-zinc-800"
+                aria-label="Close rating modal"
+                className="rounded-xl border border-transparent p-2 text-[var(--text-secondary)] transition-colors hover:border-[var(--border)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
               >
                 <X size={20} />
               </button>
@@ -1526,7 +1501,7 @@ Total: ₹${order.total}
                         star
                       )
                     }
-                    className="transition-transform hover:scale-110"
+                    className="rounded-lg p-1 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
                     aria-label={`Rate ${star} stars`}
                   >
                     <Star
@@ -1535,7 +1510,7 @@ Total: ₹${order.total}
                         star <=
                         selectedRating
                           ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-500"
+                          : "text-[var(--text-muted)]"
                       }
                     />
                   </button>
@@ -1544,24 +1519,28 @@ Total: ₹${order.total}
 
             </div>
 
+            <p className="mt-3 text-center text-xs text-[var(--text-muted)]">
+              {selectedRating === 0
+                ? "Tap a star to rate your experience"
+                : `${selectedRating} out of 5 stars`}
+            </p>
+
             {/* FEEDBACK */}
 
             <textarea
               placeholder="Write feedback..."
               value={feedback}
               onChange={(e) =>
-                setFeedback(
-                  e.target.value
-                )
+                setFeedback(e.target.value)
               }
-              className="mt-7 w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800 p-4 text-sm outline-none transition-colors focus:border-orange-500"
+              className="mt-6 w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--input)] p-4 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] transition-colors focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/15"
               rows={4}
             />
 
             <button
               type="button"
               onClick={handleRateOrder}
-              className="mt-4 w-full rounded-xl bg-orange-500 py-3.5 text-sm font-bold transition-all hover:bg-orange-600 active:scale-[0.98]"
+              className="mt-4 w-full rounded-xl bg-[var(--brand)] py-3.5 text-sm font-bold text-white shadow-sm transition-all hover:brightness-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
             >
               Submit Rating
             </button>
