@@ -122,19 +122,19 @@ export default function OrdersChart() {
       subtitle="Orders received from the database"
     >
       {loading && (
-        <div className="flex h-[300px] w-full items-center justify-center text-sm text-zinc-400">
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-text-secondary">
           Loading orders...
         </div>
       )}
 
       {!loading && error && (
-        <div className="flex h-[300px] w-full items-center justify-center text-sm text-red-400">
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-danger">
           Failed to load order data.
         </div>
       )}
 
       {!loading && !error && chartData.length === 0 && (
-        <div className="flex h-[300px] w-full items-center justify-center text-sm text-zinc-400">
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-text-secondary">
           No orders found.
         </div>
       )}
@@ -157,33 +157,39 @@ export default function OrdersChart() {
               }}
             >
               <CartesianGrid
-                stroke="#27272a"
+                stroke="var(--border)"
                 vertical={false}
               />
 
               <XAxis
                 dataKey="day"
-                stroke="#71717a"
+                stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
               />
 
               <YAxis
                 allowDecimals={false}
-                stroke="#71717a"
+                stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
               />
 
               <Tooltip
                 cursor={{
-                  fill: "rgba(255,255,255,0.04)",
+                  fill: "var(--brand-soft)",
                 }}
                 contentStyle={{
-                  background: "#18181b",
-                  border: "1px solid #27272a",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
                   borderRadius: 14,
-                  color: "#fff",
+                  color: "var(--text-primary)",
+                }}
+                labelStyle={{
+                  color: "var(--text-primary)",
+                }}
+                itemStyle={{
+                  color: "var(--text-primary)",
                 }}
                 formatter={(value) => [
                   `${Number(value)} orders`,
@@ -193,7 +199,7 @@ export default function OrdersChart() {
 
               <Bar
                 dataKey="orders"
-                fill="#FF6B35"
+                fill="var(--brand)"
                 radius={[8, 8, 0, 0]}
                 isAnimationActive={false}
               />

@@ -260,6 +260,15 @@ body {
   --color-input-hover: var(--input-hover);
   --color-input-border: var(--input-border);
 
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-danger-soft: var(--danger-soft);
+  --color-success-soft: var(--success-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-info-soft: var(--info-soft);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -440,4 +449,172 @@ main,
 section,
 div {
   max-width: 100%;
+}
+/* =========================================================
+   CAMPUSVITA ADMIN — LIGHT THEME COMPATIBILITY
+   Converts legacy hard-coded dark admin classes into
+   the existing CampusVita light-theme design tokens.
+   Dark theme remains unchanged.
+========================================================= */
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+/* ---------- DARK BACKGROUNDS → LIGHT SURFACES ---------- */
+
+html:not(.dark) .bg-black {
+  background-color: var(--background) !important;
+}
+
+html:not(.dark) .bg-zinc-950,
+html:not(.dark) .bg-zinc-900 {
+  background-color: var(--surface) !important;
+}
+
+html:not(.dark) .bg-zinc-800 {
+  background-color: var(--surface-tertiary) !important;
+}
+
+html:not(.dark) .bg-zinc-700 {
+  background-color: var(--border-strong) !important;
+}
+
+/* Existing hard-coded admin surfaces */
+
+html:not(.dark) .bg-\[\#0b0b0d\],
+html:not(.dark) .bg-\[\#0c1017\],
+html:not(.dark) .bg-\[\#0b0c10\],
+html:not(.dark) .bg-\[\#111113\],
+html:not(.dark) .bg-\[\#11151d\],
+html:not(.dark) .bg-\[\#12131a\],
+html:not(.dark) .bg-\[\#151a23\],
+html:not(.dark) .bg-\[\#181c25\] {
+  background-color: var(--surface) !important;
+}
+
+/* ---------- BORDERS ---------- */
+
+html:not(.dark) .border-zinc-800,
+html:not(.dark) .border-zinc-800\/70 {
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) .border-zinc-700 {
+  border-color: var(--input-border) !important;
+}
+
+/* ---------- PRIMARY TEXT ---------- */
+
+html:not(.dark) .text-white {
+  color: var(--text-primary) !important;
+}
+
+/*
+   Keep white text on CampusVita brand buttons.
+   This prevents orange buttons from becoming dark text.
+*/
+html:not(.dark) .bg-orange-400.text-white,
+html:not(.dark) .bg-orange-500.text-white,
+html:not(.dark) .bg-orange-600.text-white,
+html:not(.dark) .bg-orange-700.text-white {
+  color: #ffffff !important;
+}
+
+/* ---------- SECONDARY TEXT ---------- */
+
+html:not(.dark) .text-gray-300,
+html:not(.dark) .text-gray-400,
+html:not(.dark) .text-zinc-300,
+html:not(.dark) .text-zinc-400 {
+  color: var(--text-secondary) !important;
+}
+
+html:not(.dark) .text-gray-500,
+html:not(.dark) .text-zinc-500 {
+  color: var(--text-muted) !important;
+}
+
+html:not(.dark) .text-gray-600,
+html:not(.dark) .text-zinc-600,
+html:not(.dark) .text-zinc-700 {
+  color: var(--text-subtle) !important;
+}
+
+/* ---------- INPUTS / SELECTS ---------- */
+
+html:not(.dark) input.bg-zinc-800,
+html:not(.dark) input.bg-zinc-900,
+html:not(.dark) select.bg-zinc-800,
+html:not(.dark) select.bg-zinc-900,
+html:not(.dark) textarea.bg-zinc-800,
+html:not(.dark) textarea.bg-zinc-900 {
+  background-color: var(--input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: var(--text-subtle) !important;
+}
+
+/* Hard-coded admin input backgrounds */
+
+html:not(.dark) input.bg-\[\#0b0b0d\],
+html:not(.dark) input.bg-\[\#0c1017\],
+html:not(.dark) input.bg-\[\#11151d\],
+html:not(.dark) textarea.bg-\[\#0b0b0d\],
+html:not(.dark) textarea.bg-\[\#0c1017\],
+html:not(.dark) select.bg-\[\#0c1017\] {
+  background-color: var(--input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
+
+/* ---------- TABLES ---------- */
+
+html:not(.dark) thead.bg-zinc-800 {
+  background-color: var(--surface-tertiary) !important;
+}
+
+html:not(.dark) tbody tr {
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) tbody tr:hover {
+  background-color: var(--card-hover) !important;
+}
+
+/* ---------- HOVER STATES ---------- */
+
+html:not(.dark) .hover\:bg-zinc-700:hover {
+  background-color: var(--surface-tertiary) !important;
+}
+
+html:not(.dark) .hover\:bg-zinc-800:hover {
+  background-color: var(--surface-tertiary) !important;
+}
+
+/* ---------- ADMIN MODALS ---------- */
+
+html:not(.dark) .bg-black\/70 {
+  background-color: var(--overlay) !important;
+}
+
+html:not(.dark) .bg-zinc-900.border-zinc-800 {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+}
+
+/* ---------- DIVIDERS ---------- */
+
+html:not(.dark) .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border) !important;
+}
+
+/* ---------- LIGHT THEME SHADOWS ---------- */
+
+html:not(.dark) .shadow-2xl {
+  box-shadow: var(--shadow-elevated) !important;
 }

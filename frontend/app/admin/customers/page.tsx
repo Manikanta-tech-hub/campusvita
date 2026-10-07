@@ -136,10 +136,6 @@ export default function CustomerManagementPage() {
       setLoading(true);
       setError("");
 
-      /*
-       * getCustomers must accept:
-       * page, limit, search, status, sort
-       */
       const data = (await getCustomers(
         page,
         limit,
@@ -207,9 +203,7 @@ export default function CustomerManagementPage() {
     setPage(1);
   }
 
-  function handleCustomerClick(
-    customer: Customer
-  ) {
+  function handleCustomerClick(customer: Customer) {
     setSelectedCustomer(customer);
     setOpenMenu(null);
   }
@@ -255,15 +249,12 @@ export default function CustomerManagementPage() {
       type: "text/csv;charset=utf-8;",
     });
 
-    const url =
-      URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
 
-    const link =
-      document.createElement("a");
+    const link = document.createElement("a");
 
     link.href = url;
-    link.download =
-      "campusvita-customers.csv";
+    link.download = "campusvita-customers.csv";
 
     document.body.appendChild(link);
     link.click();
@@ -278,20 +269,20 @@ export default function CustomerManagementPage() {
 
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary">
             Customer Management
           </h1>
 
           <div className="mt-2 flex items-center gap-2 text-sm">
-            <span className="text-zinc-500">
+            <span className="text-text-muted">
               Dashboard
             </span>
 
-            <span className="text-zinc-700">
+            <span className="text-border-strong">
               /
             </span>
 
-            <span className="text-orange-400">
+            <span className="text-brand">
               Customer Management
             </span>
           </div>
@@ -300,7 +291,7 @@ export default function CustomerManagementPage() {
         <div className="relative w-full xl:w-80">
           <Search
             size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
           />
 
           <input
@@ -309,7 +300,7 @@ export default function CustomerManagementPage() {
               handleSearch(e.target.value)
             }
             placeholder="Search customers..."
-            className="h-12 w-full rounded-2xl border border-zinc-800 bg-[#11151d] pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500/60"
+            className="h-12 w-full rounded-2xl border border-input-border bg-input pl-11 pr-4 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-brand/60"
           />
         </div>
       </div>
@@ -317,7 +308,7 @@ export default function CustomerManagementPage() {
       {/* ERROR */}
 
       {error && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="rounded-2xl border border-danger/20 bg-danger-soft p-4 text-sm text-danger">
           {error}
         </div>
       )}
@@ -329,30 +320,28 @@ export default function CustomerManagementPage() {
           title="Total Customers"
           value={statistics.total_customers}
           icon={Users}
-          iconClass="bg-purple-500/20 text-purple-300"
+          iconClass="bg-purple-500/10 text-purple-500"
         />
 
         <StatCard
           title="Active Customers"
           value={statistics.active_customers}
           icon={UserCheck}
-          iconClass="bg-emerald-500/20 text-emerald-300"
+          iconClass="bg-emerald-500/10 text-emerald-500"
         />
 
         <StatCard
           title="New Customers"
           value={statistics.new_customers}
           icon={UserPlus}
-          iconClass="bg-blue-500/20 text-blue-300"
+          iconClass="bg-blue-500/10 text-blue-500"
         />
 
         <StatCard
           title="Customers With Orders"
-          value={
-            statistics.customers_with_orders
-          }
+          value={statistics.customers_with_orders}
           icon={ShoppingBag}
-          iconClass="bg-orange-500/20 text-orange-300"
+          iconClass="bg-orange-500/10 text-orange-500"
         />
       </div>
 
@@ -367,24 +356,23 @@ export default function CustomerManagementPage() {
       >
         {/* CUSTOMER TABLE */}
 
-        <section className="min-w-0 overflow-hidden rounded-2xl border border-zinc-800 bg-[#11151d]">
-          <div className="border-b border-zinc-800 p-5">
-            <div className="mb-5 flex items-center justify-between">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition-colors duration-200">
+          <div className="border-b border-border p-5">
+            <div className="mb-5 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-lg font-semibold text-text-primary">
                   All Customers
                 </h2>
 
-                <p className="mt-1 text-xs text-zinc-500">
-                  Real customer accounts from
-                  CampusVita
+                <p className="mt-1 text-xs text-text-muted">
+                  Real customer accounts from CampusVita
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={exportCustomers}
-                className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-400"
+                className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
               >
                 <Download size={16} />
                 Export
@@ -397,18 +385,16 @@ export default function CustomerManagementPage() {
               <div className="relative flex-1">
                 <Search
                   size={17}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted"
                 />
 
                 <input
                   value={search}
                   onChange={(e) =>
-                    handleSearch(
-                      e.target.value
-                    )
+                    handleSearch(e.target.value)
                   }
                   placeholder="Search by name, email or phone..."
-                  className="h-11 w-full rounded-xl border border-zinc-800 bg-[#0c1017] pl-11 pr-4 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-orange-500/50"
+                  className="h-11 w-full rounded-xl border border-input-border bg-input pl-11 pr-4 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-brand/50"
                 />
               </div>
 
@@ -417,19 +403,11 @@ export default function CustomerManagementPage() {
                 onChange={(e) =>
                   handleStatus(e.target.value)
                 }
-                className="h-11 rounded-xl border border-zinc-800 bg-[#0c1017] px-4 text-sm text-zinc-300 outline-none focus:border-orange-500/50"
+                className="h-11 rounded-xl border border-input-border bg-input px-4 text-sm text-text-primary outline-none focus:border-brand/50"
               >
-                <option value="ALL">
-                  All Status
-                </option>
-
-                <option value="ACTIVE">
-                  Active
-                </option>
-
-                <option value="INACTIVE">
-                  Inactive
-                </option>
+                <option value="ALL">All Status</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
               </select>
 
               <select
@@ -437,28 +415,17 @@ export default function CustomerManagementPage() {
                 onChange={(e) =>
                   handleSort(e.target.value)
                 }
-                className="h-11 rounded-xl border border-zinc-800 bg-[#0c1017] px-4 text-sm text-zinc-300 outline-none focus:border-orange-500/50"
+                className="h-11 rounded-xl border border-input-border bg-input px-4 text-sm text-text-primary outline-none focus:border-brand/50"
               >
-                <option value="LATEST">
-                  Newest
-                </option>
-
-                <option value="NAME_ASC">
-                  Name A-Z
-                </option>
-
-                <option value="NAME_DESC">
-                  Name Z-A
-                </option>
-
+                <option value="LATEST">Newest</option>
+                <option value="NAME_ASC">Name A-Z</option>
+                <option value="NAME_DESC">Name Z-A</option>
                 <option value="SPENDING_HIGH">
                   Spending High
                 </option>
-
                 <option value="SPENDING_LOW">
                   Spending Low
                 </option>
-
                 <option value="ORDERS_HIGH">
                   Orders High
                 </option>
@@ -471,7 +438,7 @@ export default function CustomerManagementPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[850px]">
               <thead>
-                <tr className="border-b border-zinc-800 bg-[#151a23] text-left text-xs uppercase tracking-wide text-zinc-500">
+                <tr className="border-b border-border bg-surface text-left text-xs uppercase tracking-wide text-text-muted">
                   <th className="px-5 py-4">
                     Customer
                   </th>
@@ -511,7 +478,7 @@ export default function CustomerManagementPage() {
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-5 py-16 text-center text-zinc-500"
+                      className="px-5 py-16 text-center text-text-muted"
                     >
                       Loading customers...
                     </td>
@@ -520,7 +487,7 @@ export default function CustomerManagementPage() {
                   <tr>
                     <td
                       colSpan={8}
-                      className="px-5 py-16 text-center text-zinc-500"
+                      className="px-5 py-16 text-center text-text-muted"
                     >
                       No customers found.
                     </td>
@@ -530,11 +497,9 @@ export default function CustomerManagementPage() {
                     <tr
                       key={customer.id}
                       onClick={() =>
-                        handleCustomerClick(
-                          customer
-                        )
+                        handleCustomerClick(customer)
                       }
-                      className="cursor-pointer border-b border-zinc-800/70 transition hover:bg-white/[0.025]"
+                      className="cursor-pointer border-b border-border/70 transition hover:bg-card-hover"
                     >
                       {/* CUSTOMER */}
 
@@ -542,9 +507,7 @@ export default function CustomerManagementPage() {
                         <div className="flex items-center gap-3">
                           {customer.profile_image ? (
                             <img
-                              src={
-                                customer.profile_image
-                              }
+                              src={customer.profile_image}
                               alt={
                                 customer.name ||
                                 "Customer"
@@ -552,7 +515,7 @@ export default function CustomerManagementPage() {
                               className="h-10 w-10 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/15 text-sm font-semibold text-orange-300">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-sm font-semibold text-brand">
                               {getInitials(
                                 customer.name
                               )}
@@ -560,12 +523,12 @@ export default function CustomerManagementPage() {
                           )}
 
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-white">
+                            <p className="truncate font-medium text-text-primary">
                               {customer.name ||
                                 "Unnamed Customer"}
                             </p>
 
-                            <p className="text-xs text-zinc-600">
+                            <p className="text-xs text-text-muted">
                               Customer
                             </p>
                           </div>
@@ -574,25 +537,25 @@ export default function CustomerManagementPage() {
 
                       {/* EMAIL */}
 
-                      <td className="px-4 py-4 text-sm text-zinc-400">
+                      <td className="px-4 py-4 text-sm text-text-secondary">
                         {customer.email || "—"}
                       </td>
 
                       {/* PHONE */}
 
-                      <td className="px-4 py-4 text-sm text-zinc-400">
+                      <td className="px-4 py-4 text-sm text-text-secondary">
                         {customer.phone || "—"}
                       </td>
 
                       {/* ORDERS */}
 
-                      <td className="px-4 py-4 text-sm font-medium text-white">
+                      <td className="px-4 py-4 text-sm font-medium text-text-primary">
                         {customer.total_orders ?? 0}
                       </td>
 
                       {/* SPENT */}
 
-                      <td className="px-4 py-4 text-sm font-medium text-white">
+                      <td className="px-4 py-4 text-sm font-medium text-text-primary">
                         {formatMoney(
                           customer.total_spent
                         )}
@@ -605,8 +568,8 @@ export default function CustomerManagementPage() {
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
                             customer.status?.toUpperCase() ===
                             "ACTIVE"
-                              ? "bg-emerald-500/10 text-emerald-400"
-                              : "bg-red-500/10 text-red-400"
+                              ? "bg-emerald-500/10 text-emerald-600"
+                              : "bg-red-500/10 text-red-600"
                           }`}
                         >
                           {customer.status ||
@@ -616,7 +579,7 @@ export default function CustomerManagementPage() {
 
                       {/* DATE */}
 
-                      <td className="px-4 py-4 text-sm text-zinc-400">
+                      <td className="px-4 py-4 text-sm text-text-secondary">
                         {formatDate(
                           customer.joined_at
                         )}
@@ -640,45 +603,51 @@ export default function CustomerManagementPage() {
                                 : customer.id
                             )
                           }
-                          className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-white"
+                          className="rounded-lg p-2 text-text-muted transition hover:bg-card-hover hover:text-text-primary"
                         >
-                          <MoreVertical
-                            size={18}
-                          />
+                          <MoreVertical size={18} />
                         </button>
 
                         {openMenu === customer.id && (
-  <div className="absolute right-4 top-12 z-20 w-44 rounded-xl border border-zinc-700 bg-[#181c25] p-1 shadow-2xl">
-    <button
-      type="button"
-      onClick={() => {
-        setSelectedCustomer(customer);
-        setOpenMenu(null);
-      }}
-      className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white"
-    >
-      View Details
-    </button>
+                          <div className="absolute right-4 top-12 z-20 w-44 rounded-xl border border-border bg-card p-1 shadow-2xl">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCustomer(
+                                  customer
+                                );
+                                setOpenMenu(null);
+                              }}
+                              className="w-full rounded-lg px-3 py-2 text-left text-sm text-text-secondary hover:bg-card-hover hover:text-text-primary"
+                            >
+                              View Details
+                            </button>
 
-    {customer.role !== "VENDOR" && (
-      <button
-        type="button"
-        onClick={async () => {
-          try {
-            await updateUserRole(customer.email, "VENDOR");
-            setOpenMenu(null);
-            await loadCustomers();
-          } catch (error) {
-            console.error("Failed to make vendor:", error);
-          }
-        }}
-        className="w-full rounded-lg px-3 py-2 text-left text-sm text-orange-400 hover:bg-zinc-800 hover:text-orange-300"
-      >
-        Make Vendor
-      </button>
-    )}
-  </div>
-)}
+                            {customer.role !== "VENDOR" && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await updateUserRole(
+                                      customer.email,
+                                      "VENDOR"
+                                    );
+                                    setOpenMenu(null);
+                                    await loadCustomers();
+                                  } catch (error) {
+                                    console.error(
+                                      "Failed to make vendor:",
+                                      error
+                                    );
+                                  }
+                                }}
+                                className="w-full rounded-lg px-3 py-2 text-left text-sm text-brand hover:bg-card-hover"
+                              >
+                                Make Vendor
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -689,14 +658,14 @@ export default function CustomerManagementPage() {
 
           {/* PAGINATION */}
 
-          <div className="flex flex-col gap-4 border-t border-zinc-800 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-zinc-500">
+          <div className="flex flex-col gap-4 border-t border-border p-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-text-muted">
               Showing{" "}
-              <span className="text-zinc-300">
+              <span className="text-text-primary">
                 {customers.length}
               </span>{" "}
               of{" "}
-              <span className="text-zinc-300">
+              <span className="text-text-primary">
                 {statistics.total_customers}
               </span>{" "}
               customers
@@ -708,26 +677,23 @@ export default function CustomerManagementPage() {
                 disabled={page <= 1}
                 onClick={() =>
                   setPage((current) =>
-                    Math.max(
-                      1,
-                      current - 1
-                    )
+                    Math.max(1, current - 1)
                   )
                 }
-                className="rounded-lg border border-zinc-800 p-2 text-zinc-400 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                className="rounded-lg border border-border p-2 text-text-secondary transition hover:bg-card-hover hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronLeft size={17} />
               </button>
 
-              <span className="rounded-lg bg-orange-500 px-3 py-2 text-sm font-semibold text-white">
+              <span className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white">
                 {page}
               </span>
 
-              <span className="px-1 text-sm text-zinc-600">
+              <span className="px-1 text-sm text-text-muted">
                 of
               </span>
 
-              <span className="text-sm text-zinc-400">
+              <span className="text-sm text-text-secondary">
                 {totalPages || 1}
               </span>
 
@@ -745,7 +711,7 @@ export default function CustomerManagementPage() {
                     )
                   )
                 }
-                className="rounded-lg border border-zinc-800 p-2 text-zinc-400 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                className="rounded-lg border border-border p-2 text-text-secondary transition hover:bg-card-hover hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronRight size={17} />
               </button>
@@ -756,9 +722,9 @@ export default function CustomerManagementPage() {
         {/* CUSTOMER DETAILS */}
 
         {selectedCustomer && (
-          <aside className="h-fit overflow-hidden rounded-2xl border border-zinc-800 bg-[#11151d]">
-            <div className="flex items-center justify-between border-b border-zinc-800 p-5">
-              <h2 className="text-lg font-semibold text-white">
+          <aside className="h-fit overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+            <div className="flex items-center justify-between border-b border-border p-5">
+              <h2 className="text-lg font-semibold text-text-primary">
                 Customer Details
               </h2>
 
@@ -767,7 +733,7 @@ export default function CustomerManagementPage() {
                 onClick={() =>
                   setSelectedCustomer(null)
                 }
-                className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-800 hover:text-white"
+                className="rounded-lg p-2 text-text-muted hover:bg-card-hover hover:text-text-primary"
               >
                 <X size={18} />
               </button>
@@ -789,7 +755,7 @@ export default function CustomerManagementPage() {
                     className="h-20 w-20 rounded-2xl object-cover"
                   />
                 ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-orange-500/15 text-2xl font-bold text-orange-300">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-brand/10 text-2xl font-bold text-brand">
                     {getInitials(
                       selectedCustomer.name
                     )}
@@ -798,7 +764,7 @@ export default function CustomerManagementPage() {
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="truncate text-lg font-semibold text-white">
+                    <h3 className="truncate text-lg font-semibold text-text-primary">
                       {selectedCustomer.name ||
                         "Unnamed Customer"}
                     </h3>
@@ -807,8 +773,8 @@ export default function CustomerManagementPage() {
                       className={`rounded-full px-2 py-1 text-[10px] font-medium ${
                         selectedCustomer.status?.toUpperCase() ===
                         "ACTIVE"
-                          ? "bg-emerald-500/10 text-emerald-400"
-                          : "bg-red-500/10 text-red-400"
+                          ? "bg-emerald-500/10 text-emerald-600"
+                          : "bg-red-500/10 text-red-600"
                       }`}
                     >
                       {selectedCustomer.status ||
@@ -816,7 +782,7 @@ export default function CustomerManagementPage() {
                     </span>
                   </div>
 
-                  <div className="mt-3 space-y-2 text-xs text-zinc-400">
+                  <div className="mt-3 space-y-2 text-xs text-text-secondary">
                     <div className="flex items-center gap-2">
                       <Mail size={14} />
 
@@ -836,9 +802,7 @@ export default function CustomerManagementPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <CalendarDays
-                        size={14}
-                      />
+                      <CalendarDays size={14} />
 
                       <span>
                         Joined{" "}
@@ -853,7 +817,7 @@ export default function CustomerManagementPage() {
 
               {/* STATS */}
 
-              <div className="mt-6 grid grid-cols-3 divide-x divide-zinc-800 rounded-xl border border-zinc-800 bg-[#0c1017]">
+              <div className="mt-6 grid grid-cols-3 divide-x divide-border rounded-xl border border-border bg-surface">
                 <MiniStat
                   label="Orders"
                   value={
@@ -882,11 +846,11 @@ export default function CustomerManagementPage() {
 
               <div className="mt-6">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold text-white">
+                  <h3 className="font-semibold text-text-primary">
                     Recent Orders
                   </h3>
 
-                  <span className="text-xs text-zinc-600">
+                  <span className="text-xs text-text-muted">
                     Latest 5
                   </span>
                 </div>
@@ -898,18 +862,18 @@ export default function CustomerManagementPage() {
                       (order, index) => (
                         <div
                           key={`${order.order_id}-${index}`}
-                          className="rounded-xl border border-zinc-800 bg-[#0c1017] p-3"
+                          className="rounded-xl border border-border bg-surface p-3"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div>
-                              <p className="text-sm font-medium text-white">
+                              <p className="text-sm font-medium text-text-primary">
                                 #
                                 {order.order_id ||
                                   order.token ||
                                   "Order"}
                               </p>
 
-                              <p className="mt-1 text-xs text-zinc-600">
+                              <p className="mt-1 text-xs text-text-muted">
                                 {formatDate(
                                   order.date
                                 )}
@@ -917,7 +881,7 @@ export default function CustomerManagementPage() {
                             </div>
 
                             <div className="text-right">
-                              <p className="text-sm font-medium text-white">
+                              <p className="text-sm font-medium text-text-primary">
                                 {formatMoney(
                                   order.amount
                                 )}
@@ -927,20 +891,15 @@ export default function CustomerManagementPage() {
                                 className={`mt-1 inline-block text-[10px] ${
                                   order.status
                                     ?.toLowerCase()
-                                    .includes(
-                                      "complete"
-                                    ) ||
+                                    .includes("complete") ||
                                   order.status
                                     ?.toLowerCase()
-                                    .includes(
-                                      "deliver"
-                                    )
-                                    ? "text-emerald-400"
-                                    : "text-orange-400"
+                                    .includes("deliver")
+                                    ? "text-emerald-500"
+                                    : "text-brand"
                                 }`}
                               >
-                                {order.status ||
-                                  "—"}
+                                {order.status || "—"}
                               </span>
                             </div>
                           </div>
@@ -948,7 +907,7 @@ export default function CustomerManagementPage() {
                       )
                     )
                   ) : (
-                    <div className="rounded-xl border border-zinc-800 bg-[#0c1017] p-6 text-center text-sm text-zinc-600">
+                    <div className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-text-muted">
                       No orders found.
                     </div>
                   )}
@@ -959,7 +918,7 @@ export default function CustomerManagementPage() {
 
               <button
                 type="button"
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white transition hover:bg-orange-400"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-sm font-semibold text-white transition hover:brightness-95"
               >
                 <Users size={17} />
                 View Full Profile
@@ -988,14 +947,14 @@ function StatCard({
   iconClass: string;
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-[#11151d] p-5">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-text-muted">
             {title}
           </p>
 
-          <p className="mt-2 text-3xl font-bold text-white">
+          <p className="mt-2 text-3xl font-bold text-text-primary">
             {Number(value ?? 0).toLocaleString(
               "en-IN"
             )}
@@ -1025,11 +984,11 @@ function MiniStat({
 }) {
   return (
     <div className="p-3 text-center">
-      <p className="text-sm font-semibold text-white">
+      <p className="text-sm font-semibold text-text-primary">
         {value}
       </p>
 
-      <p className="mt-1 text-[10px] text-zinc-600">
+      <p className="mt-1 text-[10px] text-text-muted">
         {label}
       </p>
     </div>

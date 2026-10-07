@@ -48,28 +48,28 @@ function formatNumber(value: number) {
 function DashboardLoading() {
   return (
     <div className="space-y-6 animate-pulse">
-      <div className="h-28 rounded-3xl bg-[#15161d]" />
+      <div className="h-28 rounded-3xl border border-border bg-card" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[1, 2, 3, 4].map((item) => (
           <div
             key={item}
-            className="h-32 rounded-2xl border border-white/[0.06] bg-[#15161d]"
+            className="h-32 rounded-2xl border border-border bg-card"
           />
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="h-[390px] rounded-3xl bg-[#15161d]" />
-        <div className="h-[390px] rounded-3xl bg-[#15161d]" />
+        <div className="h-[390px] rounded-3xl border border-border bg-card" />
+        <div className="h-[390px] rounded-3xl border border-border bg-card" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="h-[390px] rounded-3xl bg-[#15161d]" />
-        <div className="h-[390px] rounded-3xl bg-[#15161d]" />
+        <div className="h-[390px] rounded-3xl border border-border bg-card" />
+        <div className="h-[390px] rounded-3xl border border-border bg-card" />
       </div>
 
-      <div className="h-[420px] rounded-3xl bg-[#15161d]" />
+      <div className="h-[420px] rounded-3xl border border-border bg-card" />
     </div>
   );
 }
@@ -88,14 +88,20 @@ function StatCard({
   iconClass: string;
 }) {
   return (
-    <div className="group rounded-2xl border border-white/[0.07] bg-[#15161d] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-500/20">
+    <div className="group rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-500/30 hover:shadow-[var(--shadow-card)]">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-zinc-400">{title}</p>
-          <p className="mt-3 truncate text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          <p className="text-xs font-medium text-text-secondary">
+            {title}
+          </p>
+
+          <p className="mt-3 truncate text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
             {value}
           </p>
-          <p className="mt-2 text-[11px] text-zinc-500">{subtitle}</p>
+
+          <p className="mt-2 text-[11px] text-text-muted">
+            {subtitle}
+          </p>
         </div>
 
         <div
@@ -130,6 +136,7 @@ export default function AdminDashboard() {
       });
     } catch (err) {
       console.error("Failed to load admin dashboard:", err);
+
       setError(
         err instanceof Error
           ? err.message
@@ -170,18 +177,18 @@ export default function AdminDashboard() {
   return (
     <div className="min-w-0 space-y-6">
       {/* Dashboard heading */}
-      <section className="rounded-3xl border border-white/[0.07] bg-[#111217] p-5 sm:p-6">
+      <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-colors duration-200 sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
               CampusVita Admin
             </p>
 
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
               Dashboard
             </h1>
 
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-text-secondary">
               Monitor your canteen operations and live order activity.
             </p>
           </div>
@@ -190,7 +197,7 @@ export default function AdminDashboard() {
             type="button"
             onClick={loadDashboard}
             disabled={loading}
-            className="inline-flex w-fit items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-[#191a21] px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-orange-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex w-fit items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-text-primary shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/40 hover:bg-card-hover hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw size={16} />
             Refresh
@@ -200,19 +207,20 @@ export default function AdminDashboard() {
 
       {/* Error state */}
       {error && (
-        <section className="rounded-2xl border border-red-500/20 bg-red-500/[0.06] p-4">
+        <section className="rounded-2xl border border-danger/20 bg-danger-soft p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
               <AlertCircle
                 size={20}
-                className="mt-0.5 shrink-0 text-red-400"
+                className="mt-0.5 shrink-0 text-danger"
               />
 
               <div>
-                <p className="text-sm font-semibold text-red-300">
+                <p className="text-sm font-semibold text-danger">
                   Unable to load dashboard data
                 </p>
-                <p className="mt-1 text-xs text-red-400/80">
+
+                <p className="mt-1 text-xs text-danger/80">
                   {error}
                 </p>
               </div>
@@ -221,7 +229,7 @@ export default function AdminDashboard() {
             <button
               type="button"
               onClick={loadDashboard}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-400/20 px-3 py-2 text-xs font-medium text-red-300 transition hover:bg-red-400/10"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-danger/20 px-3 py-2 text-xs font-medium text-danger transition hover:bg-danger/10"
             >
               <RefreshCw size={14} />
               Retry
@@ -267,43 +275,60 @@ export default function AdminDashboard() {
 
       {/* Secondary live metrics */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-white/[0.07] bg-[#15161d] p-5">
+        {/* All-Time Revenue */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400">
               <TrendingUp size={18} />
             </div>
+
             <div>
-              <p className="text-xs text-zinc-500">All-Time Revenue</p>
-              <p className="mt-1 text-lg font-bold text-white">
+              <p className="text-xs text-text-muted">
+                All-Time Revenue
+              </p>
+
+              <p className="mt-1 text-lg font-bold text-text-primary">
                 {formatCurrency(stats.totalRevenue)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.07] bg-[#15161d] p-5">
+        {/* Peak Ordering Hours */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
               <Clock3 size={18} />
             </div>
+
             <div className="min-w-0">
-              <p className="text-xs text-zinc-500">Peak Ordering Hours</p>
-              <p className="mt-1 truncate text-lg font-bold text-white">
+              <p className="text-xs text-text-muted">
+                Peak Ordering Hours
+              </p>
+
+              <p className="mt-1 truncate text-lg font-bold text-text-primary">
                 {stats.peakOrderingHours}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.07] bg-[#15161d] p-5">
+        {/* Order Activity */}
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
               <UtensilsCrossed size={18} />
             </div>
+
             <div>
-              <p className="text-xs text-zinc-500">Order Activity</p>
-              <p className="mt-1 text-lg font-bold text-white">
-                {stats.totalOrders > 0 ? "Active" : "No data"}
+              <p className="text-xs text-text-muted">
+                Order Activity
+              </p>
+
+              <p className="mt-1 text-lg font-bold text-text-primary">
+                {stats.totalOrders > 0
+                  ? "Active"
+                  : "No data"}
               </p>
             </div>
           </div>

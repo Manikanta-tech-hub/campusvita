@@ -78,9 +78,6 @@ export default function TopSellingChart() {
 
   const monthOptions = getMonthOptions();
 
-  // ---------------------------------------------------------
-  // Measure chart width
-  // ---------------------------------------------------------
   useEffect(() => {
     const element = chartContainerRef.current;
 
@@ -107,9 +104,6 @@ export default function TopSellingChart() {
     };
   }, []);
 
-  // ---------------------------------------------------------
-  // Load REAL database data
-  // ---------------------------------------------------------
   useEffect(() => {
     let mounted = true;
 
@@ -174,18 +168,17 @@ export default function TopSellingChart() {
       title="Top Selling Foods"
       subtitle={`Sales distribution by menu item • ${monthLabel}`}
     >
-      {/* Month selector */}
       <div className="mb-6 flex justify-end">
         <select
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="rounded-xl border border-white/10 bg-[#18181b] px-4 py-2 text-sm text-white outline-none transition focus:border-orange-500"
+          className="rounded-xl border border-input-border bg-input px-4 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand"
         >
           {monthOptions.map((option) => (
             <option
               key={option.value}
               value={option.value}
-              className="bg-[#18181b] text-white"
+              className="bg-input text-text-primary"
             >
               {option.label}
             </option>
@@ -193,35 +186,30 @@ export default function TopSellingChart() {
         </select>
       </div>
 
-      {/* Loading */}
       {loading && (
-        <div className="flex h-[300px] items-center justify-center text-sm text-zinc-400">
+        <div className="flex h-[300px] items-center justify-center text-sm text-text-secondary">
           Loading sales data...
         </div>
       )}
 
-      {/* Error */}
       {!loading && error && (
-        <div className="flex h-[300px] items-center justify-center text-sm text-red-400">
+        <div className="flex h-[300px] items-center justify-center text-sm text-danger">
           Failed to load sales data.
         </div>
       )}
 
-      {/* Empty */}
       {!loading &&
         !error &&
         chartData.length === 0 && (
-          <div className="flex h-[300px] items-center justify-center text-sm text-zinc-400">
+          <div className="flex h-[300px] items-center justify-center text-sm text-text-secondary">
             No sales data
           </div>
         )}
 
-      {/* REAL CHART */}
       {!loading &&
         !error &&
         chartData.length > 0 && (
           <div className="grid w-full grid-cols-1 items-center gap-6 md:grid-cols-[minmax(0,1fr)_190px]">
-            {/* Donut chart */}
             <div
               ref={chartContainerRef}
               className="flex h-[300px] w-full min-w-0 items-center justify-center"
@@ -257,10 +245,16 @@ export default function TopSellingChart() {
 
                   <Tooltip
                     contentStyle={{
-                      background: "#18181b",
-                      border: "1px solid #27272a",
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
                       borderRadius: 14,
-                      color: "#fff",
+                      color: "var(--text-primary)",
+                    }}
+                    labelStyle={{
+                      color: "var(--text-primary)",
+                    }}
+                    itemStyle={{
+                      color: "var(--text-primary)",
                     }}
                     formatter={(
                       value,
@@ -281,7 +275,6 @@ export default function TopSellingChart() {
               )}
             </div>
 
-            {/* REAL DATABASE LEGEND */}
             <div className="flex w-full flex-col justify-center gap-5">
               {foods.map((food, index) => (
                 <div
@@ -299,12 +292,12 @@ export default function TopSellingChart() {
                       }}
                     />
 
-                    <span className="truncate text-sm text-zinc-300">
+                    <span className="truncate text-sm text-text-secondary">
                       {food.name}
                     </span>
                   </div>
 
-                  <span className="shrink-0 text-sm font-semibold text-white">
+                  <span className="shrink-0 text-sm font-semibold text-text-primary">
                     {food.percentage}%
                   </span>
                 </div>

@@ -141,13 +141,13 @@ export default function SalesPieChart() {
         <select
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="rounded-xl border border-white/10 bg-[#18181b] px-4 py-2 text-sm text-white outline-none focus:border-orange-500"
+          className="rounded-xl border border-input-border bg-input px-4 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand"
         >
           {monthOptions.map((option) => (
             <option
               key={option.value}
               value={option.value}
-              className="bg-[#18181b] text-white"
+              className="bg-input text-text-primary"
             >
               {option.label}
             </option>
@@ -156,19 +156,19 @@ export default function SalesPieChart() {
       </div>
 
       {loading && (
-        <div className="flex h-[300px] items-center justify-center text-sm text-zinc-400">
+        <div className="flex h-[300px] items-center justify-center text-sm text-text-secondary">
           Loading sales data...
         </div>
       )}
 
       {!loading && error && (
-        <div className="flex h-[300px] items-center justify-center text-sm text-red-400">
+        <div className="flex h-[300px] items-center justify-center text-sm text-danger">
           Failed to load sales data.
         </div>
       )}
 
       {!loading && !error && chartData.length === 0 && (
-        <div className="flex h-[300px] items-center justify-center text-sm text-zinc-400">
+        <div className="flex h-[300px] items-center justify-center text-sm text-text-secondary">
           No sales data
         </div>
       )}
@@ -197,9 +197,7 @@ export default function SalesPieChart() {
                   {chartData.map((_, index) => (
                     <Cell
                       key={`category-${index}`}
-                      fill={
-                        COLORS[index % COLORS.length]
-                      }
+                      fill={COLORS[index % COLORS.length]}
                       stroke="none"
                     />
                   ))}
@@ -207,10 +205,16 @@ export default function SalesPieChart() {
 
                 <Tooltip
                   contentStyle={{
-                    background: "#18181b",
-                    border: "1px solid #27272a",
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
                     borderRadius: 14,
-                    color: "#fff",
+                    color: "var(--text-primary)",
+                  }}
+                  labelStyle={{
+                    color: "var(--text-primary)",
+                  }}
+                  itemStyle={{
+                    color: "var(--text-primary)",
                   }}
                   formatter={(value) => [
                     `${Number(value)}%`,
@@ -236,12 +240,12 @@ export default function SalesPieChart() {
                     }}
                   />
 
-                  <span className="truncate text-sm text-zinc-300">
+                  <span className="truncate text-sm text-text-secondary">
                     {category.name}
                   </span>
                 </div>
 
-                <span className="shrink-0 text-sm font-semibold text-white">
+                <span className="shrink-0 text-sm font-semibold text-text-primary">
                   {category.percentage}%
                 </span>
               </div>

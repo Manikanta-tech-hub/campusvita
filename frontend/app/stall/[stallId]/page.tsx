@@ -44,7 +44,7 @@ type Food = {
   available: boolean;
   is_veg: boolean | null;
 };
-const [foods, setFoods] = useState<Food[]>([]);
+
 type StallFoodsResponse = {
   success: boolean;
   stall: Stall;
@@ -75,8 +75,20 @@ export default function StallPage() {
     "ALL" | "VEG" | "NON_VEG"
   >("ALL");
 
+  /*
+   * ==========================================================
+   * LOAD STALL + FOOD DATA
+   * ==========================================================
+   */
+
   useEffect(() => {
-    if (!stallId) return;
+    if (!stallId) {
+      setLoading(false);
+      setError("Invalid stall.");
+      return;
+    }
+
+    const controller = new AbortController();
 
     const loadStall = async () => {
       try {
@@ -95,6 +107,7 @@ export default function StallPage() {
               Accept: "application/json",
             },
             cache: "no-store",
+            signal: controller.signal,
           }
         );
 
@@ -107,53 +120,129 @@ export default function StallPage() {
         const result: StallFoodsResponse =
           await response.json();
 
-        if (!result.success || !result.stall) {
+        if (
+          !result ||
+          !result.success ||
+          !result.stall
+        ) {
           throw new Error("Invalid stall response");
         }
 
-        setData(result);
+        setData({
+          ...result,
+          foods: Array.isArray(result.foods)
+            ? result.foods
+            : [],
+          total:
+            typeof result.total === "number"
+              ? result.total
+              : Array.isArray(result.foods)
+                ? result.foods.length
+                : 0,
+        });
       } catch (err) {
-        console.error("Failed to load stall:", err);
-        setError("Unable to load this stall.");
+        if (
+          err instanceof DOMException &&
+          err.name === "AbortError"
+        ) {
+          return;
+        }
+
+        console.error(
+          "Failed to load stall:",
+          err
+        );
+
+        setError(
+          "Unable to load this stall."
+        );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     void loadStall();
+
+    return () => {
+      controller.abort();
+    };
   }, [stallId]);
 
+  /*
+   * ==========================================================
+   * CATEGORIES
+   * ==========================================================
+   */
+
   const categories = useMemo(() => {
-    if (!data) return [];
+    if (!data || !Array.isArray(data.foods)) {
+      return [];
+    }
 
     return Array.from(
       new Set(
         data.foods
-          .map((food) => food.category?.trim())
+          .map((food) =>
+            typeof food.category === "string"
+              ? food.category.trim()
+              : ""
+          )
           .filter(Boolean)
       )
     );
   }, [data]);
 
-  const filteredFoods = useMemo(() => {
-    if (!data) return [];
+  /*
+   * ==========================================================
+   * FILTERED FOODS
+   * ==========================================================
+   */
 
-    const normalizedSearch = search.trim().toLowerCase();
+  const filteredFoods = useMemo(() => {
+    if (!data || !Array.isArray(data.foods)) {
+      return [];
+    }
+
+    const normalizedSearch =
+      search.trim().toLowerCase();
 
     return data.foods.filter((food) => {
+      const foodCategory =
+        typeof food.category === "string"
+          ? food.category.trim()
+          : "";
+
+      const foodName =
+        typeof food.name === "string"
+          ? food.name
+          : "";
+
+      const foodDescription =
+        typeof food.description === "string"
+          ? food.description
+          : "";
+
       const matchesCategory =
         selectedCategory === "ALL" ||
-        food.category === selectedCategory;
+        foodCategory === selectedCategory;
 
       const matchesFoodType =
         selectedFoodType === "ALL" ||
-        (selectedFoodType === "VEG" && food.is_veg === true) ||
-        (selectedFoodType === "NON_VEG" && food.is_veg === false);
+        (selectedFoodType === "VEG" &&
+          food.is_veg === true) ||
+        (selectedFoodType === "NON_VEG" &&
+          food.is_veg === false);
 
       const matchesSearch =
         !normalizedSearch ||
-        food.name.toLowerCase().includes(normalizedSearch) ||
-        food.description.toLowerCase().includes(normalizedSearch);
+        foodName
+          .toLowerCase()
+          .includes(normalizedSearch) ||
+        foodDescription
+          .toLowerCase()
+          .includes(normalizedSearch);
 
       return (
         matchesCategory &&
@@ -167,6 +256,12 @@ export default function StallPage() {
     selectedCategory,
     selectedFoodType,
   ]);
+
+  /*
+   * ==========================================================
+   * CART
+   * ==========================================================
+   */
 
   const getQuantity = (
     foodName: string,
@@ -182,7 +277,9 @@ export default function StallPage() {
   };
 
   const handleAddToCart = (food: Food) => {
-    if (!food.available) return;
+    if (!food.available) {
+      return;
+    }
 
     addToCart({
       name: food.name,
@@ -192,23 +289,42 @@ export default function StallPage() {
     });
   };
 
-  const handleIncreaseQuantity = (food: Food) => {
-    increaseQuantity(food.name, food.stall_id);
+  const handleIncreaseQuantity = (
+    food: Food
+  ) => {
+    increaseQuantity(
+      food.name,
+      food.stall_id
+    );
   };
 
-  const handleDecreaseQuantity = (food: Food) => {
-    decreaseQuantity(food.name, food.stall_id);
+  const handleDecreaseQuantity = (
+    food: Food
+  ) => {
+    decreaseQuantity(
+      food.name,
+      food.stall_id
+    );
   };
 
   const cartItemCount = useMemo(() => {
     return cartItems.reduce(
-      (total, item) => total + Number(item.quantity || 0),
+      (total, item) =>
+        total + Number(item.quantity || 0),
       0
     );
   }, [cartItems]);
 
   const cartLabel =
-    cartItemCount === 1 ? "item" : "items";
+    cartItemCount === 1
+      ? "item"
+      : "items";
+
+  /*
+   * ==========================================================
+   * FILTER CONTROLS
+   * ==========================================================
+   */
 
   const clearFilters = () => {
     setSearch("");
@@ -221,9 +337,21 @@ export default function StallPage() {
     selectedCategory !== "ALL" ||
     selectedFoodType !== "ALL";
 
+  /*
+   * ==========================================================
+   * LOADING
+   * ==========================================================
+   */
+
   if (loading) {
     return <StallPageSkeleton />;
   }
+
+  /*
+   * ==========================================================
+   * ERROR
+   * ==========================================================
+   */
 
   if (error || !data) {
     return (
@@ -252,7 +380,10 @@ export default function StallPage() {
 
           <div className="mt-8 border-t border-[var(--border)] pt-16 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-secondary)] text-[var(--text-muted)]">
-              <Store size={27} strokeWidth={1.8} />
+              <Store
+                size={27}
+                strokeWidth={1.8}
+              />
             </div>
 
             <h1 className="mt-5 text-xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -297,6 +428,12 @@ export default function StallPage() {
 
   const stall = data.stall;
 
+  /*
+   * ==========================================================
+   * MAIN PAGE
+   * ==========================================================
+   */
+
   return (
     <main className="min-h-screen overflow-x-clip bg-[var(--background)] pb-28 text-[var(--text-primary)]">
 
@@ -327,6 +464,7 @@ export default function StallPage() {
             size={17}
             className="transition-transform group-hover:-translate-x-0.5"
           />
+
           Back to stalls
         </button>
       </div>
@@ -347,15 +485,20 @@ export default function StallPage() {
                 alt={stall.name}
                 className="h-full w-full object-cover"
                 onError={(event) => {
-                  event.currentTarget.style.display = "none";
+                  event.currentTarget.style.display =
+                    "none";
 
                   const fallback =
                     event.currentTarget.parentElement?.querySelector(
                       "[data-stall-fallback]"
                     );
 
-                  if (fallback instanceof HTMLElement) {
-                    fallback.classList.remove("hidden");
+                  if (
+                    fallback instanceof HTMLElement
+                  ) {
+                    fallback.classList.remove(
+                      "hidden"
+                    );
                   }
                 }}
               />
@@ -365,7 +508,9 @@ export default function StallPage() {
               data-stall-fallback
               className={`
                 ${
-                  stall.image ? "hidden" : "flex"
+                  stall.image
+                    ? "hidden"
+                    : "flex"
                 }
                 absolute
                 inset-0
@@ -384,7 +529,6 @@ export default function StallPage() {
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7 lg:p-9">
-
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`
@@ -405,11 +549,16 @@ export default function StallPage() {
                   `}
                 >
                   <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      stall.is_open
-                        ? "bg-white"
-                        : "bg-red-400"
-                    }`}
+                    className={`
+                      h-1.5
+                      w-1.5
+                      rounded-full
+                      ${
+                        stall.is_open
+                          ? "bg-white"
+                          : "bg-red-400"
+                      }
+                    `}
                   />
 
                   {stall.is_open
@@ -445,9 +594,10 @@ export default function StallPage() {
           {/* STALL INFORMATION */}
 
           <div className="grid divide-y divide-[var(--border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-
             <StallMeta
-              icon={<CheckCircle2 size={17} />}
+              icon={
+                <CheckCircle2 size={17} />
+              }
               label="Availability"
               value={
                 stall.is_open
@@ -465,7 +615,6 @@ export default function StallPage() {
                 "Not specified"
               }
             />
-
           </div>
         </div>
       </section>
@@ -479,7 +628,6 @@ export default function StallPage() {
         {/* MENU TITLE + SEARCH */}
 
         <div className="flex flex-col gap-4 border-b border-[var(--border)] pb-5 lg:flex-row lg:items-end lg:justify-between">
-
           <div>
             <div className="flex items-center gap-2">
               <UtensilsCrossed
@@ -578,7 +726,9 @@ export default function StallPage() {
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
 
             <CompactFilter
-              active={selectedFoodType === "ALL"}
+              active={
+                selectedFoodType === "ALL"
+              }
               onClick={() =>
                 setSelectedFoodType("ALL")
               }
@@ -587,7 +737,9 @@ export default function StallPage() {
             </CompactFilter>
 
             <CompactFilter
-              active={selectedFoodType === "VEG"}
+              active={
+                selectedFoodType === "VEG"
+              }
               onClick={() =>
                 setSelectedFoodType("VEG")
               }
@@ -597,7 +749,9 @@ export default function StallPage() {
             </CompactFilter>
 
             <CompactFilter
-              active={selectedFoodType === "NON_VEG"}
+              active={
+                selectedFoodType === "NON_VEG"
+              }
               onClick={() =>
                 setSelectedFoodType("NON_VEG")
               }
@@ -611,7 +765,9 @@ export default function StallPage() {
                 <span className="mx-1 h-5 w-px shrink-0 bg-[var(--border)]" />
 
                 <CompactFilter
-                  active={selectedCategory === "ALL"}
+                  active={
+                    selectedCategory === "ALL"
+                  }
                   onClick={() =>
                     setSelectedCategory("ALL")
                   }
@@ -619,29 +775,32 @@ export default function StallPage() {
                   All
                 </CompactFilter>
 
-                {categories.map((category) => (
-                  <CompactFilter
-                    key={category}
-                    active={
-                      selectedCategory === category
-                    }
-                    onClick={() =>
-                      setSelectedCategory(category)
-                    }
-                  >
-                    {category}
-                  </CompactFilter>
-                ))}
+                {categories.map(
+                  (category) => (
+                    <CompactFilter
+                      key={category}
+                      active={
+                        selectedCategory ===
+                        category
+                      }
+                      onClick={() =>
+                        setSelectedCategory(
+                          category
+                        )
+                      }
+                    >
+                      {category}
+                    </CompactFilter>
+                  )
+                )}
               </>
             )}
-
           </div>
         </div>
 
         {/* RESULTS */}
 
         <div className="mb-5 flex min-h-5 items-center justify-between gap-4">
-
           <p className="text-xs text-[var(--text-muted)]">
             {hasFilters ? (
               <>
@@ -689,7 +848,6 @@ export default function StallPage() {
 
         {filteredFoods.length === 0 ? (
           <div className="border-t border-[var(--border)] py-20 text-center">
-
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-secondary)]">
               <Search
                 size={25}
@@ -702,8 +860,8 @@ export default function StallPage() {
             </h3>
 
             <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
-              Try another search or remove one of the
-              selected filters.
+              Try another search or remove one
+              of the selected filters.
             </p>
 
             {hasFilters && (
@@ -725,34 +883,39 @@ export default function StallPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-x-3.5 gap-y-7 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-9 lg:grid-cols-4 xl:grid-cols-5">
+            {filteredFoods.map(
+              (food) => {
+                const quantity =
+                  getQuantity(
+                    food.name,
+                    food.stall_id
+                  );
 
-            {filteredFoods.map((food) => {
-              const quantity = getQuantity(
-                food.name,
-                food.stall_id
-              );
-
-              return (
-                <FoodCard
-                  key={food._id}
-                  name={food.name}
-                  price={food.price}
-                  image={food.image}
-                  quantity={quantity}
-                  isVeg={food.is_veg}
-                  onAddToCart={() =>
-                    handleAddToCart(food)
-                  }
-                  onIncrease={() =>
-                    handleIncreaseQuantity(food)
-                  }
-                  onDecrease={() =>
-                    handleDecreaseQuantity(food)
-                  }
-                />
-              );
-            })}
-
+                return (
+                  <FoodCard
+                    key={food._id}
+                    name={food.name}
+                    price={food.price}
+                    image={food.image}
+                    quantity={quantity}
+                    isVeg={food.is_veg}
+                    onAddToCart={() =>
+                      handleAddToCart(food)
+                    }
+                    onIncrease={() =>
+                      handleIncreaseQuantity(
+                        food
+                      )
+                    }
+                    onDecrease={() =>
+                      handleDecreaseQuantity(
+                        food
+                      )
+                    }
+                  />
+                );
+              }
+            )}
           </div>
         )}
       </section>
@@ -763,10 +926,11 @@ export default function StallPage() {
 
       {cartItemCount > 0 && (
         <div className="fixed bottom-5 right-4 z-50 sm:right-6">
-
           <button
             type="button"
-            onClick={() => router.push("/cart")}
+            onClick={() =>
+              router.push("/cart")
+            }
             aria-label={`Open cart with ${cartItemCount} ${cartLabel}`}
             className="
               group
@@ -792,7 +956,6 @@ export default function StallPage() {
             "
           >
             <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-
               <ShoppingCart
                 size={21}
                 strokeWidth={2.2}
@@ -801,19 +964,17 @@ export default function StallPage() {
               <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[var(--brand)] bg-white px-1 text-[9px] font-black leading-none text-orange-600">
                 {cartItemCount}
               </span>
-
             </div>
 
             <div className="ml-1 flex min-w-0 flex-1 flex-col items-start justify-center">
-
               <span className="text-[13px] font-bold">
                 View cart
               </span>
 
               <span className="mt-1 text-[10px] font-medium text-white/75">
-                {cartItemCount} {cartLabel}
+                {cartItemCount}{" "}
+                {cartLabel}
               </span>
-
             </div>
 
             <ArrowRight
@@ -822,7 +983,6 @@ export default function StallPage() {
               className="ml-2 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
             />
           </button>
-
         </div>
       )}
     </main>
@@ -846,7 +1006,6 @@ function StallMeta({
 }) {
   return (
     <div className="flex items-center gap-3 px-5 py-4 sm:px-6">
-
       <div
         className={`
           flex
@@ -867,7 +1026,6 @@ function StallMeta({
       </div>
 
       <div className="min-w-0">
-
         <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           {label}
         </p>
@@ -887,7 +1045,6 @@ function StallMeta({
         >
           {value}
         </p>
-
       </div>
     </div>
   );
@@ -961,7 +1118,6 @@ function CompactFilter({
 function StallPageSkeleton() {
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--text-primary)]">
-
       <div className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
 
         <div className="h-5 w-28 animate-pulse rounded bg-[var(--surface-secondary)]" />
@@ -971,18 +1127,14 @@ function StallPageSkeleton() {
           <div className="h-[230px] animate-pulse bg-[var(--surface-secondary)] sm:h-[310px] lg:h-[370px]" />
 
           <div className="grid divide-y divide-[var(--border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-
             <div className="h-[76px] animate-pulse bg-[var(--surface)]" />
-
             <div className="h-[76px] animate-pulse bg-[var(--surface)]" />
-
           </div>
         </div>
 
         <div className="mt-9">
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-
             <div>
               <div className="h-8 w-28 animate-pulse rounded bg-[var(--surface-secondary)]" />
 
@@ -990,21 +1142,20 @@ function StallPageSkeleton() {
             </div>
 
             <div className="h-11 w-full animate-pulse rounded-xl bg-[var(--surface)] ring-1 ring-[var(--border)] sm:w-80" />
-
           </div>
 
           <div className="mt-5 flex gap-2 overflow-hidden">
-
             <div className="h-9 w-14 shrink-0 animate-pulse rounded-full bg-[var(--surface-secondary)]" />
             <div className="h-9 w-16 shrink-0 animate-pulse rounded-full bg-[var(--surface-secondary)]" />
             <div className="h-9 w-20 shrink-0 animate-pulse rounded-full bg-[var(--surface-secondary)]" />
             <div className="h-9 w-24 shrink-0 animate-pulse rounded-full bg-[var(--surface-secondary)]" />
-
           </div>
 
           <div className="mt-7 grid grid-cols-2 gap-x-3.5 gap-y-7 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-9 lg:grid-cols-4 xl:grid-cols-5">
 
-            {Array.from({ length: 10 }).map((_, index) => (
+            {Array.from({
+              length: 10,
+            }).map((_, index) => (
               <div
                 key={index}
                 className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
@@ -1012,17 +1163,14 @@ function StallPageSkeleton() {
                 <div className="aspect-[4/3] animate-pulse bg-[var(--surface-secondary)]" />
 
                 <div className="space-y-3 p-3">
-
                   <div className="h-4 w-3/4 animate-pulse rounded bg-[var(--surface-secondary)]" />
 
                   <div className="h-3 w-full animate-pulse rounded bg-[var(--surface-secondary)]" />
 
                   <div className="h-8 w-1/2 animate-pulse rounded-lg bg-[var(--surface-secondary)]" />
-
                 </div>
               </div>
             ))}
-
           </div>
         </div>
       </div>

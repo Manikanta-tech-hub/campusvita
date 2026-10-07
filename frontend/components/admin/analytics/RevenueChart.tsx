@@ -64,19 +64,19 @@ export default function RevenueChart() {
       subtitle="Monthly revenue performance"
     >
       {loading && (
-        <div className="flex h-[300px] w-full items-center justify-center text-sm text-zinc-400">
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-text-secondary">
           Loading revenue data...
         </div>
       )}
 
       {!loading && error && (
-        <div className="flex h-[300px] w-full items-center justify-center text-sm text-red-400">
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-danger">
           Failed to load revenue data.
         </div>
       )}
 
       {!loading && !error && revenueData.length === 0 && (
-        <div className="flex h-[300px] w-full items-center justify-center text-sm text-zinc-400">
+        <div className="flex h-[300px] w-full items-center justify-center text-sm text-text-secondary">
           No revenue data
         </div>
       )}
@@ -99,19 +99,19 @@ export default function RevenueChart() {
               }}
             >
               <CartesianGrid
-                stroke="#27272a"
+                stroke="var(--border)"
                 vertical={false}
               />
 
               <XAxis
                 dataKey="month"
-                stroke="#71717a"
+                stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
               />
 
               <YAxis
-                stroke="#71717a"
+                stroke="var(--text-muted)"
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
@@ -121,15 +121,20 @@ export default function RevenueChart() {
               />
 
               <Tooltip
-                cursor={{ stroke: "#3f3f46" }}
+                cursor={{
+                  stroke: "var(--border-strong)",
+                }}
                 contentStyle={{
-                  background: "#18181b",
-                  border: "1px solid #27272a",
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
                   borderRadius: 14,
-                  color: "#fff",
+                  color: "var(--text-primary)",
                 }}
                 labelStyle={{
-                  color: "#fff",
+                  color: "var(--text-primary)",
+                }}
+                itemStyle={{
+                  color: "var(--text-primary)",
                 }}
                 formatter={(value) => [
                   `₹${Number(value).toLocaleString("en-IN")}`,
@@ -140,16 +145,16 @@ export default function RevenueChart() {
               <Line
                 type="monotone"
                 dataKey="revenue"
-                stroke="#FF6B35"
+                stroke="var(--brand)"
                 strokeWidth={4}
                 dot={{
                   r: 5,
-                  fill: "#FF6B35",
+                  fill: "var(--brand)",
                   strokeWidth: 0,
                 }}
                 activeDot={{
                   r: 7,
-                  fill: "#FF6B35",
+                  fill: "var(--brand)",
                   strokeWidth: 0,
                 }}
                 isAnimationActive={false}

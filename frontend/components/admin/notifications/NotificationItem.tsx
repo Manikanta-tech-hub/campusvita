@@ -11,34 +11,30 @@ export default function NotificationItem({
 }: NotificationItemProps) {
   return (
     <div
-      className={`rounded-2xl border p-4 transition ${
+      className={`rounded-2xl border p-4 transition-colors duration-200 ${
         notification.unread
-          ? "border-orange-500/30 bg-orange-500/5"
-          : "border-zinc-800 bg-[#17171f]"
+          ? "border-brand/30 bg-brand/5"
+          : "border-border bg-surface"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-
         <div className="min-w-0">
-
-          <p className="text-sm font-semibold text-white">
+          <p className="text-sm font-semibold text-text-primary">
             {notification.title}
           </p>
 
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-text-secondary">
             {notification.message}
           </p>
 
-          <p className="mt-2 text-xs text-zinc-600">
+          <p className="mt-2 text-xs text-text-muted">
             {notification.time}
           </p>
-
         </div>
 
         {notification.unread && (
-          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-orange-500" />
+          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand" />
         )}
-
       </div>
     </div>
   );

@@ -5,46 +5,54 @@ import { ChevronDown } from "lucide-react";
 export default function UserMenu() {
   return (
     <button
+      type="button"
       className="
-      flex
-      items-center
-      gap-3
-      rounded-2xl
-      border
-      border-zinc-800
-      bg-zinc-900
-      px-3
-      py-2
-      hover:border-orange-500
-      transition
+        flex
+        items-center
+        gap-3
+        rounded-2xl
+        border
+        border-border
+        bg-card
+        px-3
+        py-2
+        text-text-primary
+        transition-all
+        duration-200
+        hover:border-brand/50
+        hover:bg-card-hover
       "
     >
       <div
         className="
-        h-10
-        w-10
-        rounded-full
-        bg-orange-500
-        flex
-        items-center
-        justify-center
-        font-bold
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-full
+          bg-brand
+          font-bold
+          text-white
         "
       >
         A
       </div>
 
-      <div className="text-left hidden md:block">
-        <p className="font-semibold">
+      <div className="hidden text-left md:block">
+        <p className="font-semibold text-text-primary">
           Administrator
         </p>
 
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-text-muted">
           CampusVita
         </p>
       </div>
 
-      <ChevronDown size={18} />
+      <ChevronDown
+        size={18}
+        className="text-text-secondary"
+      />
     </button>
   );
 }

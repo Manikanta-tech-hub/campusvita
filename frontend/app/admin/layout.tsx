@@ -44,11 +44,11 @@ export default function AdminLayout({
 
   if (checkingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] text-white">
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-200">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-border border-t-brand" />
 
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-text-secondary">
             Checking admin session...
           </p>
         </div>
@@ -61,19 +61,19 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen w-full items-stretch bg-[#0a0a0f] text-white">
+    <div className="flex min-h-screen w-full items-stretch bg-background text-foreground transition-colors duration-200">
       {/* Sidebar */}
       <div className="hidden w-72 shrink-0 lg:block">
         <Sidebar />
       </div>
 
       {/* Main Admin Content */}
-      <div className="min-w-0 flex-1 bg-[#0a0a0f]">
+      <div className="min-w-0 flex-1 bg-background transition-colors duration-200">
         {/* Topbar */}
         <Topbar />
 
         {/* Page Content */}
-        <main className="bg-[#0a0a0f]">
+        <main className="min-h-[calc(100vh-72px)] bg-background transition-colors duration-200">
           <div className="mx-auto w-full max-w-[1800px] p-4 sm:p-6 lg:p-8">
             {children}
           </div>

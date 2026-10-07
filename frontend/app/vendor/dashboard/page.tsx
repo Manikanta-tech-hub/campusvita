@@ -8,9 +8,11 @@ import {
   Clock3,
   CookingPot,
   LogOut,
+  Moon,
   PackageCheck,
   RefreshCw,
   Store,
+  Sun,
   TimerReset,
   UserRound,
   XCircle,
@@ -98,28 +100,16 @@ function getImageUrl(image?: string) {
 function getNextAction(status: string): Action | null {
   switch (status) {
     case "Pending":
-      return {
-        label: "Accept Order",
-        next: "Accepted",
-      };
+      return { label: "Accept Order", next: "Accepted" };
 
     case "Accepted":
-      return {
-        label: "Place Order",
-        next: "Placed",
-      };
+      return { label: "Place Order", next: "Placed" };
 
     case "Placed":
-      return {
-        label: "Start Cooking",
-        next: "Cooking",
-      };
+      return { label: "Start Cooking", next: "Cooking" };
 
     case "Cooking":
-      return {
-        label: "Mark Ready",
-        next: "Ready For Pickup",
-      };
+      return { label: "Mark Ready", next: "Ready For Pickup" };
 
     default:
       return null;
@@ -130,22 +120,16 @@ function getStatusLabel(status: string) {
   switch (status) {
     case "Pending":
       return "New Order";
-
     case "Accepted":
       return "Accepted";
-
     case "Placed":
       return "Placed";
-
     case "Cooking":
       return "Preparing";
-
     case "Ready For Pickup":
       return "Ready";
-
     case "Cancelled":
       return "Cancelled";
-
     default:
       return status;
   }
@@ -155,22 +139,16 @@ function getStatusIcon(status: string) {
   switch (status) {
     case "Pending":
       return Clock3;
-
     case "Accepted":
       return Check;
-
     case "Placed":
       return PackageCheck;
-
     case "Cooking":
       return CookingPot;
-
     case "Ready For Pickup":
       return Check;
-
     case "Cancelled":
       return XCircle;
-
     default:
       return Clock3;
   }
@@ -181,49 +159,85 @@ function getStatusStyles(status: string) {
     case "Pending":
       return {
         badge:
-          "border-orange-400/20 bg-orange-500/10 text-orange-300",
-        dot: "bg-orange-400",
+          "border-orange-400/20 bg-orange-500/10 text-orange-600",
+        badgeDark:
+          "dark:text-orange-300",
+        dot:
+          "bg-orange-500",
+        dotDark:
+          "dark:bg-orange-400",
       };
 
     case "Accepted":
       return {
         badge:
-          "border-blue-400/20 bg-blue-500/10 text-blue-300",
-        dot: "bg-blue-400",
+          "border-blue-400/20 bg-blue-500/10 text-blue-600",
+        badgeDark:
+          "dark:text-blue-300",
+        dot:
+          "bg-blue-500",
+        dotDark:
+          "dark:bg-blue-400",
       };
 
     case "Placed":
       return {
         badge:
-          "border-violet-400/20 bg-violet-500/10 text-violet-300",
-        dot: "bg-violet-400",
+          "border-violet-400/20 bg-violet-500/10 text-violet-600",
+        badgeDark:
+          "dark:text-violet-300",
+        dot:
+          "bg-violet-500",
+        dotDark:
+          "dark:bg-violet-400",
       };
 
     case "Cooking":
       return {
         badge:
-          "border-orange-400/20 bg-orange-500/10 text-orange-300",
-        dot: "bg-orange-400",
+          "border-orange-400/20 bg-orange-500/10 text-orange-600",
+        badgeDark:
+          "dark:text-orange-300",
+        dot:
+          "bg-orange-500",
+        dotDark:
+          "dark:bg-orange-400",
       };
 
     case "Ready For Pickup":
       return {
         badge:
-          "border-emerald-400/20 bg-emerald-500/10 text-emerald-300",
-        dot: "bg-emerald-400",
+          "border-emerald-400/20 bg-emerald-500/10 text-emerald-600",
+        badgeDark:
+          "dark:text-emerald-300",
+        dot:
+          "bg-emerald-500",
+        dotDark:
+          "dark:bg-emerald-400",
       };
 
     case "Cancelled":
       return {
         badge:
-          "border-red-400/20 bg-red-500/10 text-red-300",
-        dot: "bg-red-400",
+          "border-red-400/20 bg-red-500/10 text-red-600",
+        badgeDark:
+          "dark:text-red-300",
+        dot:
+          "bg-red-500",
+        dotDark:
+          "dark:bg-red-400",
       };
 
     default:
       return {
-        badge: "border-white/10 bg-white/5 text-white/60",
-        dot: "bg-white/40",
+        badge:
+          "border-black/10 bg-black/5 text-black/60",
+        badgeDark:
+          "dark:border-white/10 dark:bg-white/5 dark:text-white/60",
+        dot:
+          "bg-black/30",
+        dotDark:
+          "dark:bg-white/40",
       };
   }
 }
@@ -293,26 +307,76 @@ function getProgress(status: string) {
 
 export default function VendorDashboardPage() {
   const [orders, setOrders] = useState<VendorOrder[]>([]);
-
-  // ============================================================
-  // TODAY'S REVENUE
-  // ============================================================
-
   const [todayRevenue, setTodayRevenue] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const [updatingKey, setUpdatingKey] = useState<string | null>(
-    null
-  );
-
-  const [cancellingKey, setCancellingKey] = useState<string | null>(
-    null
-  );
+  const [updatingKey, setUpdatingKey] = useState<string | null>(null);
+  const [cancellingKey, setCancellingKey] = useState<string | null>(null);
 
   const [, setTimerTick] = useState(0);
+
+  // ============================================================
+  // THEME
+  // ============================================================
+
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+
+    let dark = true;
+
+    if (savedTheme === "light") {
+      dark = false;
+    } else if (savedTheme === "dark") {
+      dark = true;
+    } else {
+      dark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
+    }
+
+    setIsDark(dark);
+
+    document.documentElement.classList.toggle("dark", dark);
+
+    document.documentElement.style.colorScheme = dark
+      ? "dark"
+      : "light";
+
+    document.body.style.backgroundColor = dark
+      ? "#090909"
+      : "#f8fafc";
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDark((current) => {
+      const next = !current;
+
+      localStorage.setItem(
+        "theme",
+        next ? "dark" : "light"
+      );
+
+      document.documentElement.classList.toggle(
+        "dark",
+        next
+      );
+
+      document.documentElement.style.colorScheme = next
+        ? "dark"
+        : "light";
+
+      document.body.style.backgroundColor = next
+        ? "#090909"
+        : "#f8fafc";
+
+      return next;
+    });
+  };
 
   // ============================================================
   // LOGOUT
@@ -324,7 +388,7 @@ export default function VendorDashboardPage() {
   };
 
   // ============================================================
-  // LOAD VENDOR ORDERS + TODAY'S REVENUE
+  // LOAD ORDERS
   // ============================================================
 
   const loadOrders = async (showRefreshing = false) => {
@@ -343,15 +407,19 @@ export default function VendorDashboardPage() {
         );
       }
 
-      const response = await fetch(`${API_URL}/vendor/orders`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `${API_URL}/vendor/orders`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-store",
+        }
+      );
 
-      const data: VendorOrdersResponse = await response.json();
+      const data: VendorOrdersResponse =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -360,19 +428,11 @@ export default function VendorDashboardPage() {
         );
       }
 
-      // ========================================================
-      // LIVE ORDERS
-      // ========================================================
-
       setOrders(
         Array.isArray(data.orders)
           ? data.orders
           : []
       );
-
-      // ========================================================
-      // LIVE TODAY'S REVENUE
-      // ========================================================
 
       setTodayRevenue(
         Number(data.today_revenue || 0)
@@ -404,7 +464,7 @@ export default function VendorDashboardPage() {
   }, []);
 
   // ============================================================
-  // COOKING TIMER
+  // TIMER
   // ============================================================
 
   useEffect(() => {
@@ -443,7 +503,10 @@ export default function VendorDashboardPage() {
           cooking += 1;
         }
 
-        if (stallOrder.status === "Ready For Pickup") {
+        if (
+          stallOrder.status ===
+          "Ready For Pickup"
+        ) {
           ready += 1;
         }
       });
@@ -459,7 +522,7 @@ export default function VendorDashboardPage() {
   }, [orders]);
 
   // ============================================================
-  // UPDATE ORDER STATUS
+  // UPDATE STATUS
   // ============================================================
 
   const updateStatus = async (
@@ -661,23 +724,47 @@ export default function VendorDashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#090909] text-white">
+      <main
+        className={`min-h-screen transition-colors duration-300 ${
+          isDark
+            ? "bg-[#090909] text-white"
+            : "bg-slate-50 text-slate-900"
+        }`}
+      >
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div className="h-8 w-40 rounded-lg bg-white/10" />
+            <div
+              className={`h-8 w-40 rounded-lg ${
+                isDark ? "bg-[#151515]" : "bg-slate-200"
+              }`}
+            />
 
-            <div className="mt-3 h-4 w-64 rounded bg-white/5" />
+            <div
+              className={`mt-3 h-4 w-64 rounded ${
+                isDark ? "bg-[#111111]" : "bg-slate-100"
+              }`}
+            />
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4].map((item) => (
                 <div
                   key={item}
-                  className="h-28 rounded-2xl bg-white/5"
+                  className={`h-28 rounded-2xl ${
+                    isDark
+                      ? "border border-white/[0.05] bg-[#101010]"
+                      : "border border-slate-200 bg-white"
+                  }`}
                 />
               ))}
             </div>
 
-            <div className="mt-8 h-72 rounded-3xl bg-white/5" />
+            <div
+              className={`mt-8 h-72 rounded-3xl ${
+                isDark
+                  ? "border border-white/[0.05] bg-[#101010]"
+                  : "border border-slate-200 bg-white"
+              }`}
+            />
           </div>
         </div>
       </main>
@@ -685,12 +772,22 @@ export default function VendorDashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#090909] text-white">
-      {/* ======================================================
-          HEADER
-      ====================================================== */}
+    <main
+      className={`min-h-screen transition-colors duration-300 ${
+        isDark
+          ? "bg-[#090909] text-white"
+          : "bg-slate-50 text-slate-900"
+      }`}
+    >
+      {/* HEADER */}
 
-      <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#090909]/90 backdrop-blur-xl">
+      <header
+        className={`sticky top-0 z-40 border-b backdrop-blur-xl transition-colors duration-300 ${
+          isDark
+            ? "border-white/[0.07] bg-[#090909]/90"
+            : "border-black/[0.07] bg-white/90"
+        }`}
+      >
         <div className="mx-auto flex h-[72px] max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 shadow-lg shadow-orange-500/20">
@@ -698,7 +795,7 @@ export default function VendorDashboardPage() {
             </div>
 
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-500 dark:text-orange-400">
                 CampusVita
               </p>
 
@@ -708,19 +805,44 @@ export default function VendorDashboardPage() {
             </div>
           </div>
 
-          {/* ==================================================
-              HEADER ACTIONS
-          ================================================== */}
-
           <div className="flex items-center gap-2">
-            {/* REFRESH */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={
+                isDark
+                  ? "Switch to light theme"
+                  : "Switch to dark theme"
+              }
+              title={
+                isDark
+                  ? "Switch to light theme"
+                  : "Switch to dark theme"
+              }
+              className={`group flex h-10 w-10 items-center justify-center rounded-xl border transition ${
+                isDark
+                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-300"
+                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-600"
+              }`}
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
+              ) : (
+                <Moon className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-12" />
+              )}
+            </button>
+
             <button
               type="button"
               onClick={() => loadOrders(true)}
               disabled={refreshing}
               aria-label="Refresh orders"
               title="Refresh orders"
-              className="group flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/70 transition hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`group flex h-10 w-10 items-center justify-center rounded-xl border transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDark
+                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-300"
+                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-600"
+              }`}
             >
               <RefreshCw
                 className={`h-4 w-4 ${
@@ -729,13 +851,16 @@ export default function VendorDashboardPage() {
               />
             </button>
 
-            {/* LOGOUT */}
             <button
               type="button"
               onClick={handleLogout}
               aria-label="Log out"
               title="Log out"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/55 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+              className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${
+                isDark
+                  ? "border-white/10 bg-white/[0.04] text-white/55 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                  : "border-black/10 bg-black/[0.03] text-slate-500 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600"
+              }`}
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -744,47 +869,77 @@ export default function VendorDashboardPage() {
       </header>
 
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        {/* ======================================================
-            HERO
-        ====================================================== */}
+        {/* HERO */}
 
-        <section className="relative overflow-hidden rounded-[28px] border border-orange-400/10 bg-gradient-to-br from-[#21120a] via-[#140c08] to-[#0d0d0d] p-5 shadow-2xl shadow-black/20 sm:p-7 lg:p-8">
+        <section
+          className={`relative overflow-hidden rounded-[28px] border p-5 shadow-2xl transition-colors duration-300 sm:p-7 lg:p-8 ${
+            isDark
+              ? "border-orange-400/10 bg-gradient-to-br from-[#21120a] via-[#140c08] to-[#0d0d0d] shadow-black/20"
+              : "border-orange-400/10 bg-gradient-to-br from-orange-50 via-white to-slate-100 shadow-black/5"
+          }`}
+        >
           <div className="absolute -right-20 -top-32 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
 
           <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-orange-500/[0.06] blur-3xl" />
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.8)]" />
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(251,146,60,0.8)] dark:bg-orange-400" />
                 LIVE VENDOR DASHBOARD
               </div>
 
-              <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
+              <h2
+                className={`text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl ${
+                  isDark
+                    ? "text-white"
+                    : "text-slate-950"
+                }`}
+              >
                 My Stall
               </h2>
 
-              <p className="mt-3 max-w-xl text-sm leading-6 text-white/45 sm:text-base">
+              <p
+                className={`mt-3 max-w-xl text-sm leading-6 sm:text-base ${
+                  isDark
+                    ? "text-white/45"
+                    : "text-slate-600"
+                }`}
+              >
                 Manage incoming orders, prepare food, and keep
                 customers updated in real time.
               </p>
             </div>
 
-            {/* ==================================================
-                TODAY'S REVENUE
-            ================================================== */}
-
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+            <div
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm backdrop-blur-sm ${
+                isDark
+                  ? "border-white/10 bg-[#101010]/90"
+                  : "border-black/10 bg-white/70"
+              }`}
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                <Store className="h-5 w-5 text-orange-400" />
+                <Store className="h-5 w-5 text-orange-500 dark:text-orange-400" />
               </div>
 
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
+                <p
+                  className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                    isDark
+                      ? "text-white/35"
+                      : "text-slate-500"
+                  }`}
+                >
                   Today's Revenue
                 </p>
 
-                <p className="mt-0.5 text-xl font-bold text-white">
+                <p
+                  className={`mt-0.5 text-xl font-bold ${
+                    isDark
+                      ? "text-white"
+                      : "text-slate-950"
+                  }`}
+                >
                   {formatMoney(todayRevenue)}
                 </p>
               </div>
@@ -792,101 +947,102 @@ export default function VendorDashboardPage() {
           </div>
         </section>
 
-        {/* ======================================================
-            ERROR
-        ====================================================== */}
+        {/* ERROR */}
 
         {error && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3 text-sm text-red-300">
+          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3 text-sm text-red-600 dark:text-red-300">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-
             <p>{error}</p>
           </div>
         )}
 
-        {/* ======================================================
-            STATISTICS
-        ====================================================== */}
+        {/* STATISTICS */}
 
         <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <div className="rounded-2xl border border-white/[0.07] bg-[#101010] p-4 sm:p-5">
-            <p className="text-xs font-medium text-white/40">
-              Orders
-            </p>
+          {[
+            {
+              label: "Orders",
+              value: statistics.total,
+              description: "Active order groups",
+              border: "border-black/[0.07]",
+            },
+            {
+              label: "Pending",
+              value: statistics.pending,
+              description: "Need attention",
+              border: "border-orange-400/10",
+              valueClass:
+                "text-orange-500 dark:text-orange-300",
+            },
+            {
+              label: "Cooking",
+              value: statistics.cooking,
+              description: "Currently preparing",
+              border: "border-orange-400/10",
+              valueClass:
+                "text-orange-500 dark:text-orange-300",
+            },
+            {
+              label: "Ready",
+              value: statistics.ready,
+              description: "Waiting for pickup",
+              border: "border-emerald-400/10",
+              valueClass:
+                "text-emerald-500 dark:text-emerald-300",
+            },
+            {
+              label: "Cancelled",
+              value: statistics.cancelled,
+              description: "Cancelled orders",
+              border: "border-red-400/10",
+              valueClass:
+                "text-red-500 dark:text-red-300",
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className={`rounded-2xl border p-4 shadow-sm transition-colors duration-300 sm:p-5 ${
+                isDark
+                  ? `${stat.border} bg-[#101010]`
+                  : `${stat.border} bg-white`
+              }`}
+            >
+              <p
+                className={`text-xs font-medium ${
+                  isDark
+                    ? "text-white/40"
+                    : "text-slate-500"
+                }`}
+              >
+                {stat.label}
+              </p>
 
-            <p className="mt-4 text-2xl font-black">
-              {statistics.total}
-            </p>
+              <p
+                className={`mt-4 text-2xl font-black ${
+                  stat.valueClass || ""
+                }`}
+              >
+                {stat.value}
+              </p>
 
-            <p className="mt-1 text-[11px] text-white/30">
-              Active order groups
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-orange-400/10 bg-[#101010] p-4 sm:p-5">
-            <p className="text-xs font-medium text-white/40">
-              Pending
-            </p>
-
-            <p className="mt-4 text-2xl font-black text-orange-300">
-              {statistics.pending}
-            </p>
-
-            <p className="mt-1 text-[11px] text-white/30">
-              Need attention
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-orange-400/10 bg-[#101010] p-4 sm:p-5">
-            <p className="text-xs font-medium text-white/40">
-              Cooking
-            </p>
-
-            <p className="mt-4 text-2xl font-black text-orange-300">
-              {statistics.cooking}
-            </p>
-
-            <p className="mt-1 text-[11px] text-white/30">
-              Currently preparing
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-400/10 bg-[#101010] p-4 sm:p-5">
-            <p className="text-xs font-medium text-white/40">
-              Ready
-            </p>
-
-            <p className="mt-4 text-2xl font-black text-emerald-300">
-              {statistics.ready}
-            </p>
-
-            <p className="mt-1 text-[11px] text-white/30">
-              Waiting for pickup
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-red-400/10 bg-[#101010] p-4 sm:p-5">
-            <p className="text-xs font-medium text-white/40">
-              Cancelled
-            </p>
-
-            <p className="mt-4 text-2xl font-black text-red-300">
-              {statistics.cancelled}
-            </p>
-
-            <p className="mt-1 text-[11px] text-white/30">
-              Cancelled orders
-            </p>
-          </div>
+              <p
+                className={`mt-1 text-[11px] ${
+                  isDark
+                    ? "text-white/30"
+                    : "text-slate-400"
+                }`}
+              >
+                {stat.description}
+              </p>
+            </div>
+          ))}
         </section>
 
-        {/* ======================================================
-            ORDERS HEADER
-        ====================================================== */}
+        {/* ORDERS HEADER */}
 
         <div className="mb-4 mt-8 flex items-end justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500 dark:text-orange-400">
               Order Management
             </p>
 
@@ -895,26 +1051,42 @@ export default function VendorDashboardPage() {
             </h3>
           </div>
 
-          <p className="hidden text-xs text-white/25 sm:block">
+          <p
+            className={`hidden text-xs sm:block ${
+              isDark
+                ? "text-white/25"
+                : "text-slate-400"
+            }`}
+          >
             Live updates every few seconds
           </p>
         </div>
 
-        {/* ======================================================
-            EMPTY
-        ====================================================== */}
+        {/* EMPTY */}
 
         {orders.length === 0 ? (
-          <section className="rounded-[28px] border border-white/[0.07] bg-[#101010] px-6 py-16 text-center">
+          <section
+            className={`rounded-[28px] border px-6 py-16 text-center shadow-sm transition-colors duration-300 ${
+              isDark
+                ? "border-white/[0.07] bg-[#101010]"
+                : "border-black/[0.07] bg-white"
+            }`}
+          >
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10">
-              <PackageCheck className="h-7 w-7 text-orange-400" />
+              <PackageCheck className="h-7 w-7 text-orange-500 dark:text-orange-400" />
             </div>
 
             <h3 className="mt-5 text-xl font-bold">
               No orders yet
             </h3>
 
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/35">
+            <p
+              className={`mx-auto mt-2 max-w-md text-sm leading-6 ${
+                isDark
+                  ? "text-white/35"
+                  : "text-slate-500"
+              }`}
+            >
               Orders containing items from your assigned stall
               will appear here automatically.
             </p>
@@ -934,9 +1106,7 @@ export default function VendorDashboardPage() {
                 const action =
                   orderCancelled || stallCancelled
                     ? null
-                    : getNextAction(
-                        stallOrder.status
-                      );
+                    : getNextAction(stallOrder.status);
 
                 const statusForDisplay =
                   orderCancelled || stallCancelled
@@ -944,14 +1114,10 @@ export default function VendorDashboardPage() {
                     : stallOrder.status;
 
                 const statusStyles =
-                  getStatusStyles(
-                    statusForDisplay
-                  );
+                  getStatusStyles(statusForDisplay);
 
                 const StatusIcon =
-                  getStatusIcon(
-                    statusForDisplay
-                  );
+                  getStatusIcon(statusForDisplay);
 
                 const stallItems = order.items
                   .map((item, originalIndex) => ({
@@ -980,12 +1146,9 @@ export default function VendorDashboardPage() {
                   remainingSeconds === 0;
 
                 const progress =
-                  orderCancelled ||
-                  stallCancelled
+                  orderCancelled || stallCancelled
                     ? 100
-                    : getProgress(
-                        stallOrder.status
-                      );
+                    : getProgress(stallOrder.status);
 
                 const vendorTotal =
                   stallItems.reduce(
@@ -996,42 +1159,47 @@ export default function VendorDashboardPage() {
 
                       return (
                         sum +
-                        Number(
-                          item.price || 0
-                        ) *
-                          Number(
-                            item.quantity || 0
-                          )
+                        Number(item.price || 0) *
+                          Number(item.quantity || 0)
                       );
                     },
                     0
                   );
 
-                const cancelOrderKey = `order-${order.order_id}-${stallOrder.stall_id}`;
+                const cancelOrderKey =
+                  `order-${order.order_id}-${stallOrder.stall_id}`;
 
                 const cancellingStallOrder =
-                  cancellingKey ===
-                  cancelOrderKey;
+                  cancellingKey === cancelOrderKey;
 
                 return (
                   <article
                     key={updateKey}
-                    className={`overflow-hidden rounded-[28px] border bg-[#101010] shadow-2xl shadow-black/10 ${
-                      orderCancelled ||
-                      stallCancelled
+                    className={`overflow-hidden rounded-[28px] border shadow-xl transition-colors duration-300 ${
+                      orderCancelled || stallCancelled
                         ? "border-red-500/10"
-                        : "border-white/[0.07]"
+                        : isDark
+                        ? "border-white/[0.07]"
+                        : "border-black/[0.07]"
+                    } ${
+                      isDark
+                        ? "bg-[#101010] shadow-black/10"
+                        : "bg-white shadow-black/5"
                     }`}
                   >
-                    {/* ==================================================
-                        ORDER HEADER
-                    ================================================== */}
+                    {/* ORDER HEADER */}
 
-                    <div className="border-b border-white/[0.06] p-4 sm:p-5 lg:p-6">
+                    <div
+                      className={`border-b p-4 transition-colors duration-300 sm:p-5 lg:p-6 ${
+                        isDark
+                          ? "border-white/[0.06]"
+                          : "border-black/[0.06]"
+                      }`}
+                    >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10">
-                            <UserRound className="h-5 w-5 text-orange-400" />
+                            <UserRound className="h-5 w-5 text-orange-500 dark:text-orange-400" />
                           </div>
 
                           <div>
@@ -1042,40 +1210,61 @@ export default function VendorDashboardPage() {
                                   order.order_id}
                               </p>
 
-                              <span className="h-1 w-1 rounded-full bg-white/20" />
+                              <span
+                                className={`h-1 w-1 rounded-full ${
+                                  isDark
+                                    ? "bg-white/20"
+                                    : "bg-black/20"
+                                }`}
+                              />
 
-                              <span className="text-xs text-white/35">
+                              <span
+                                className={`text-xs ${
+                                  isDark
+                                    ? "text-white/35"
+                                    : "text-slate-400"
+                                }`}
+                              >
                                 {formatDate(
                                   order.created_at
                                 )}
                               </span>
                             </div>
 
-                            <p className="mt-1 text-sm text-white/40">
-                              {order.name ||
-                                "Customer"}
+                            <p
+                              className={`mt-1 text-sm ${
+                                isDark
+                                  ? "text-white/40"
+                                  : "text-slate-500"
+                              }`}
+                            >
+                              {order.name || "Customer"}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 lg:justify-end">
                           <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
+                            <p
+                              className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                                isDark
+                                  ? "text-white/30"
+                                  : "text-slate-400"
+                              }`}
+                            >
                               Your Total
                             </p>
 
-                            <p className="mt-1 text-xl font-black text-orange-400">
-                              {formatMoney(
-                                vendorTotal
-                              )}
+                            <p className="mt-1 text-xl font-black text-orange-500 dark:text-orange-400">
+                              {formatMoney(vendorTotal)}
                             </p>
                           </div>
 
                           <div
-                            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${statusStyles.badge}`}
+                            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${statusStyles.badge} ${statusStyles.badgeDark}`}
                           >
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${statusStyles.dot}`}
+                              className={`h-1.5 w-1.5 rounded-full ${statusStyles.dot} ${statusStyles.dotDark}`}
                             />
 
                             {getStatusLabel(
@@ -1086,24 +1275,32 @@ export default function VendorDashboardPage() {
                       </div>
                     </div>
 
-                    {/* ==================================================
-                        BODY
-                    ================================================== */}
+                    {/* BODY */}
 
                     <div className="p-4 sm:p-5 lg:p-6">
                       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-                        {/* ==================================================
-                            ITEMS
-                        ================================================== */}
+                        {/* ITEMS */}
 
                         <div>
                           <div className="mb-4 flex items-center justify-between">
                             <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">
+                              <p
+                                className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                                  isDark
+                                    ? "text-white/30"
+                                    : "text-slate-400"
+                                }`}
+                              >
                                 Order Items
                               </p>
 
-                              <p className="mt-1 text-sm font-semibold text-white/70">
+                              <p
+                                className={`mt-1 text-sm font-semibold ${
+                                  isDark
+                                    ? "text-white/70"
+                                    : "text-slate-700"
+                                }`}
+                              >
                                 {stallItems.length}{" "}
                                 {stallItems.length === 1
                                   ? "item"
@@ -1111,7 +1308,13 @@ export default function VendorDashboardPage() {
                               </p>
                             </div>
 
-                            <div className="hidden items-center gap-2 text-xs text-white/25 sm:flex">
+                            <div
+                              className={`hidden items-center gap-2 text-xs sm:flex ${
+                                isDark
+                                  ? "text-white/25"
+                                  : "text-slate-400"
+                              }`}
+                            >
                               <Store className="h-3.5 w-3.5" />
                               Your Stall
                             </div>
@@ -1124,26 +1327,17 @@ export default function VendorDashboardPage() {
                                 originalIndex,
                               }) => {
                                 const imageUrl =
-                                  getImageUrl(
-                                    item.image
-                                  );
+                                  getImageUrl(item.image);
 
                                 const lineTotal =
-                                  Number(
-                                    item.price ||
-                                      0
-                                  ) *
-                                  Number(
-                                    item.quantity ||
-                                      0
-                                  );
+                                  Number(item.price || 0) *
+                                  Number(item.quantity || 0);
 
                                 const itemCancelled =
-                                  Boolean(
-                                    item.cancelled
-                                  );
+                                  Boolean(item.cancelled);
 
-                                const itemCancelKey = `item-${order.order_id}-${stallOrder.stall_id}-${originalIndex}`;
+                                const itemCancelKey =
+                                  `item-${order.order_id}-${stallOrder.stall_id}-${originalIndex}`;
 
                                 const cancellingItem =
                                   cancellingKey ===
@@ -1155,19 +1349,23 @@ export default function VendorDashboardPage() {
                                     className={`rounded-2xl border p-3 transition sm:p-4 ${
                                       itemCancelled
                                         ? "border-red-500/10 bg-red-500/[0.04]"
-                                        : "border-white/[0.06] bg-[#151515]"
+                                        : isDark
+                                        ? "border-white/[0.06] bg-[#151515]"
+                                        : "border-black/[0.06] bg-slate-50"
                                     }`}
                                   >
                                     <div className="flex items-center gap-3 sm:gap-4">
-                                      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-white/5 sm:h-[84px] sm:w-[84px]">
+                                      <div
+                                        className={`relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl sm:h-[84px] sm:w-[84px] ${
+                                          isDark
+                                            ? "bg-[#1c1c1c]"
+                                            : "bg-slate-100"
+                                        }`}
+                                      >
                                         {imageUrl ? (
                                           <img
-                                            src={
-                                              imageUrl
-                                            }
-                                            alt={
-                                              item.name
-                                            }
+                                            src={imageUrl}
+                                            alt={item.name}
                                             className={`h-full w-full object-cover ${
                                               itemCancelled
                                                 ? "opacity-30 grayscale"
@@ -1176,7 +1374,13 @@ export default function VendorDashboardPage() {
                                           />
                                         ) : (
                                           <div className="flex h-full w-full items-center justify-center">
-                                            <CookingPot className="h-6 w-6 text-white/20" />
+                                            <CookingPot
+                                              className={`h-6 w-6 ${
+                                                isDark
+                                                  ? "text-white/20"
+                                                  : "text-black/20"
+                                              }`}
+                                            />
                                           </div>
                                         )}
 
@@ -1191,37 +1395,55 @@ export default function VendorDashboardPage() {
                                         <h4
                                           className={`truncate text-sm font-bold sm:text-base ${
                                             itemCancelled
-                                              ? "text-white/35 line-through"
-                                              : "text-white"
+                                              ? isDark
+                                                ? "text-white/35 line-through"
+                                                : "text-slate-400 line-through"
+                                              : isDark
+                                              ? "text-white"
+                                              : "text-slate-900"
                                           }`}
                                         >
                                           {item.name}
                                         </h4>
 
-                                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/35">
+                                        <div
+                                          className={`mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${
+                                            isDark
+                                              ? "text-white/35"
+                                              : "text-slate-500"
+                                          }`}
+                                        >
                                           <span>
                                             Qty:{" "}
-                                            <span className="font-semibold text-white/60">
-                                              {
-                                                item.quantity
-                                              }
+                                            <span
+                                              className={`font-semibold ${
+                                                isDark
+                                                  ? "text-white/60"
+                                                  : "text-slate-700"
+                                              }`}
+                                            >
+                                              {item.quantity}
                                             </span>
                                           </span>
 
-                                          <span className="h-1 w-1 rounded-full bg-white/15" />
+                                          <span
+                                            className={`h-1 w-1 rounded-full ${
+                                              isDark
+                                                ? "bg-white/15"
+                                                : "bg-black/15"
+                                            }`}
+                                          />
 
                                           <span>
                                             {formatMoney(
-                                              Number(
-                                                item.price
-                                              )
+                                              Number(item.price)
                                             )}{" "}
                                             each
                                           </span>
                                         </div>
 
                                         {itemCancelled && (
-                                          <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-red-400">
+                                          <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
                                             Item Cancelled
                                           </p>
                                         )}
@@ -1231,20 +1453,18 @@ export default function VendorDashboardPage() {
                                         <p
                                           className={`text-sm font-bold sm:text-base ${
                                             itemCancelled
-                                              ? "text-white/25 line-through"
-                                              : "text-white"
+                                              ? isDark
+                                                ? "text-white/25 line-through"
+                                                : "text-slate-300 line-through"
+                                              : isDark
+                                              ? "text-white"
+                                              : "text-slate-900"
                                           }`}
                                         >
-                                          {formatMoney(
-                                            lineTotal
-                                          )}
+                                          {formatMoney(lineTotal)}
                                         </p>
                                       </div>
                                     </div>
-
-                                    {/* ==================================================
-                                        ITEM CANCEL
-                                    ================================================== */}
 
                                     {!itemCancelled &&
                                       !orderCancelled &&
@@ -1253,9 +1473,7 @@ export default function VendorDashboardPage() {
                                           type="button"
                                           disabled={
                                             cancellingItem ||
-                                            Boolean(
-                                              cancellingKey
-                                            )
+                                            Boolean(cancellingKey)
                                           }
                                           onClick={() =>
                                             cancelItem(
@@ -1265,7 +1483,7 @@ export default function VendorDashboardPage() {
                                               item
                                             )
                                           }
-                                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2 text-xs font-semibold text-red-300 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40 sm:ml-auto sm:w-auto"
+                                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2 text-xs font-semibold text-red-500 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-300 dark:hover:text-red-200 sm:ml-auto sm:w-auto"
                                         >
                                           {cancellingItem ? (
                                             <>
@@ -1287,14 +1505,24 @@ export default function VendorDashboardPage() {
                           </div>
                         </div>
 
-                        {/* ==================================================
-                            STATUS
-                        ================================================== */}
+                        {/* STATUS */}
 
-                        <div className="rounded-2xl border border-white/[0.06] bg-[#151515] p-4">
+                        <div
+                          className={`rounded-2xl border p-4 transition-colors duration-300 ${
+                            isDark
+                              ? "border-white/[0.06] bg-[#151515]"
+                              : "border-black/[0.06] bg-slate-50"
+                          }`}
+                        >
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">
+                              <p
+                                className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                                  isDark
+                                    ? "text-white/30"
+                                    : "text-slate-400"
+                                }`}
+                              >
                                 Order Status
                               </p>
 
@@ -1306,20 +1534,22 @@ export default function VendorDashboardPage() {
                             </div>
 
                             <div
-                              className={`flex h-9 w-9 items-center justify-center rounded-xl ${statusStyles.badge}`}
+                              className={`flex h-9 w-9 items-center justify-center rounded-xl ${statusStyles.badge} ${statusStyles.badgeDark}`}
                             >
                               <StatusIcon className="h-4 w-4" />
                             </div>
                           </div>
 
-                          {/* ==================================================
-                              PROGRESS
-                          ================================================== */}
-
                           {!orderCancelled &&
                             !stallCancelled && (
                               <div className="mt-5">
-                                <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+                                <div
+                                  className={`h-1.5 overflow-hidden rounded-full ${
+                                    isDark
+                                      ? "bg-white/5"
+                                      : "bg-black/5"
+                                  }`}
+                                >
                                   <div
                                     className="h-full rounded-full bg-gradient-to-r from-orange-600 to-orange-400 transition-all duration-500"
                                     style={{
@@ -1328,17 +1558,19 @@ export default function VendorDashboardPage() {
                                   />
                                 </div>
 
-                                <div className="mt-2 flex justify-between text-[9px] font-medium uppercase tracking-wider text-white/20">
+                                <div
+                                  className={`mt-2 flex justify-between text-[9px] font-medium uppercase tracking-wider ${
+                                    isDark
+                                      ? "text-white/20"
+                                      : "text-slate-400"
+                                  }`}
+                                >
                                   <span>New</span>
                                   <span>Cooking</span>
                                   <span>Ready</span>
                                 </div>
                               </div>
                             )}
-
-                          {/* ==================================================
-                              TIMER
-                          ================================================== */}
 
                           {stallOrder.status ===
                             "Cooking" &&
@@ -1353,14 +1585,20 @@ export default function VendorDashboardPage() {
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <TimerReset className="h-4 w-4 text-orange-400" />
+                                    <TimerReset className="h-4 w-4 text-orange-500 dark:text-orange-400" />
 
-                                    <span className="text-xs font-semibold text-white/50">
+                                    <span
+                                      className={`text-xs font-semibold ${
+                                        isDark
+                                          ? "text-white/50"
+                                          : "text-slate-600"
+                                      }`}
+                                    >
                                       Preparation
                                     </span>
                                   </div>
 
-                                  <span className="font-mono text-sm font-bold text-orange-300">
+                                  <span className="font-mono text-sm font-bold text-orange-500 dark:text-orange-300">
                                     {formatCountdown(
                                       remainingSeconds
                                     )}
@@ -1368,14 +1606,19 @@ export default function VendorDashboardPage() {
                                 </div>
 
                                 {isTakingLonger ? (
-                                  <p className="mt-2 text-[11px] leading-4 text-orange-300/70">
-                                    Taking longer than
-                                    expected. Mark the
-                                    order ready when it is
-                                    actually prepared.
+                                  <p className="mt-2 text-[11px] leading-4 text-orange-600/80 dark:text-orange-300/70">
+                                    Taking longer than expected.
+                                    Mark the order ready when it
+                                    is actually prepared.
                                   </p>
                                 ) : (
-                                  <p className="mt-2 text-[11px] text-white/25">
+                                  <p
+                                    className={`mt-2 text-[11px] ${
+                                      isDark
+                                        ? "text-white/25"
+                                        : "text-slate-400"
+                                    }`}
+                                  >
                                     Estimated preparation:{" "}
                                     {
                                       stallOrder.estimatedPreparationMinutes
@@ -1386,10 +1629,6 @@ export default function VendorDashboardPage() {
                               </div>
                             )}
 
-                          {/* ==================================================
-                              READY
-                          ================================================== */}
-
                           {stallOrder.status ===
                             "Ready For Pickup" &&
                             !orderCancelled &&
@@ -1397,43 +1636,39 @@ export default function VendorDashboardPage() {
                               <div className="mt-5 rounded-xl border border-emerald-400/10 bg-emerald-500/[0.06] p-3">
                                 <div className="flex items-center gap-2">
                                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10">
-                                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                                    <Check className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
                                   </div>
 
                                   <div>
-                                    <p className="text-xs font-bold text-emerald-300">
+                                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-300">
                                       Ready for pickup
                                     </p>
 
-                                    <p className="mt-0.5 text-[10px] text-emerald-300/40">
-                                      Customer can collect
-                                      the order
+                                    <p className="mt-0.5 text-[10px] text-emerald-600/50 dark:text-emerald-300/40">
+                                      Customer can collect the
+                                      order
                                     </p>
                                   </div>
                                 </div>
                               </div>
                             )}
 
-                          {/* ==================================================
-                              CANCELLED
-                          ================================================== */}
-
                           {(orderCancelled ||
                             stallCancelled) && (
                             <div className="mt-5 rounded-xl border border-red-400/10 bg-red-500/[0.06] p-3">
                               <div className="flex items-center gap-2">
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10">
-                                  <XCircle className="h-4 w-4 text-red-400" />
+                                  <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
                                 </div>
 
                                 <div>
-                                  <p className="text-xs font-bold text-red-300">
+                                  <p className="text-xs font-bold text-red-600 dark:text-red-300">
                                     {orderCancelled
                                       ? "Order cancelled"
                                       : "Stall order cancelled"}
                                   </p>
 
-                                  <p className="mt-0.5 text-[10px] text-red-300/40">
+                                  <p className="mt-0.5 text-[10px] text-red-500/50 dark:text-red-300/40">
                                     {orderCancelled
                                       ? "This order is no longer being prepared."
                                       : "This stall is no longer preparing its items."}
@@ -1442,10 +1677,6 @@ export default function VendorDashboardPage() {
                               </div>
                             </div>
                           )}
-
-                          {/* ==================================================
-                              STATUS ACTION
-                          ================================================== */}
 
                           {action && (
                             <button
@@ -1474,21 +1705,13 @@ export default function VendorDashboardPage() {
                             </button>
                           )}
 
-                          {/* ==================================================
-                              CANCEL STALL ORDER
-                          ================================================== */}
-
                           {!orderCancelled &&
                             !stallCancelled && (
                               <button
                                 type="button"
                                 disabled={
-                                  Boolean(
-                                    cancellingKey
-                                  ) ||
-                                  Boolean(
-                                    updatingKey
-                                  )
+                                  Boolean(cancellingKey) ||
+                                  Boolean(updatingKey)
                                 }
                                 onClick={() =>
                                   cancelCompleteOrder(
@@ -1496,7 +1719,7 @@ export default function VendorDashboardPage() {
                                     stallOrder
                                   )
                                 }
-                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.04] px-4 py-3 text-sm font-semibold text-red-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
+                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.04] px-4 py-3 text-sm font-semibold text-red-500 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-300 dark:hover:text-red-200"
                               >
                                 {cancellingStallOrder ? (
                                   <>
@@ -1515,7 +1738,7 @@ export default function VendorDashboardPage() {
                           {stallCancelled &&
                             !orderCancelled && (
                               <div className="mt-5 rounded-xl border border-red-400/10 bg-red-500/[0.06] p-3 text-center">
-                                <p className="text-xs font-semibold text-red-300">
+                                <p className="text-xs font-semibold text-red-500 dark:text-red-300">
                                   This stall order is cancelled
                                 </p>
                               </div>

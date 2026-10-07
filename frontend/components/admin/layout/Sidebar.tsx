@@ -91,15 +91,15 @@ export default function Sidebar() {
       initial={{ x: -40, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="flex h-full w-full flex-col border-r border-zinc-800 bg-[#111113]"
+      className="flex h-full w-full flex-col border-r border-border bg-card text-text-primary transition-colors duration-200"
     >
       {/* Logo */}
-      <div className="border-b border-zinc-800 px-6 py-7">
-        <h1 className="text-3xl font-bold text-orange-500">
+      <div className="border-b border-border px-6 py-7">
+        <h1 className="text-3xl font-bold text-brand">
           CampusVita
         </h1>
 
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-text-muted">
           Enterprise Admin
         </p>
       </div>
@@ -126,11 +126,11 @@ export default function Sidebar() {
       </div>
 
       {/* Logout */}
-      <div className="border-t border-zinc-800 p-3">
+      <div className="border-t border-border p-3">
         <button
           type="button"
           onClick={handleLogout}
-          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-zinc-400 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400"
+          className="group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-text-secondary transition-all duration-200 hover:bg-danger/10 hover:text-danger"
         >
           <LogOut
             size={20}
