@@ -1,4 +1,8 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import {
+  initializeApp,
+  getApps,
+  getApp,
+} from "firebase/app";
 
 import {
   getAuth,
@@ -14,15 +18,17 @@ import {
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
 
-  authDomain: "campusvita-3115.firebaseapp.com",
+  authDomain: "campusvita.firebaseapp.com",
 
-  projectId: "campusvita-3115",
+  projectId: "campusvita",
 
-  storageBucket: "campusvita-3115.firebasestorage.app",
+  storageBucket: "campusvita.firebasestorage.app",
 
-  messagingSenderId: "696780425118",
+  messagingSenderId: "1044650280683",
 
-  appId: "1:696780425118:web:1f82431a017eb37454b88f",
+  appId: "1:1044650280683:web:714ea86da19398ea9820ae",
+
+  measurementId: "G-CK2BVJ0MVJ",
 };
 
 /* =========================================================
@@ -71,18 +77,31 @@ export async function getFirebaseMessaging() {
 
 export async function getFCMToken() {
   try {
-    console.log("🔍 FCM: starting token generation");
+    console.log(
+      "🔍 FCM: starting token generation"
+    );
 
-const supported = await isSupported();
-console.log("🔍 FCM supported:", supported);
-
-console.log(
-  "🔍 VAPID configured:",
-  Boolean(process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY)
-);
     if (typeof window === "undefined") {
       return null;
     }
+
+    const supported = await isSupported();
+
+    console.log(
+      "🔍 FCM supported:",
+      supported
+    );
+
+    if (!supported) {
+      return null;
+    }
+
+    console.log(
+      "🔍 VAPID configured:",
+      Boolean(
+        process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY
+      )
+    );
 
     const messaging =
       await getFirebaseMessaging();
@@ -102,39 +121,63 @@ console.log(
       return null;
     }
 
+    console.log(
+      "✅ Notification permission granted"
+    );
+
     const registration =
       await navigator.serviceWorker.register(
         "/firebase-messaging-sw.js"
       );
 
-    const token = await getToken(messaging, {
-      vapidKey:
-        process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+    await navigator.serviceWorker.ready;
 
-      serviceWorkerRegistration:
-        registration,
-    });
+    console.log(
+      "✅ Firebase service worker active:",
+      registration.scope
+    );
+
+    const vapidKey =
+      process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+
+    if (!vapidKey) {
+      console.error(
+        "❌ NEXT_PUBLIC_FIREBASE_VAPID_KEY is not configured"
+      );
+
+      return null;
+    }
+
+    const token = await getToken(
+      messaging,
+      {
+        vapidKey,
+        serviceWorkerRegistration:
+          registration,
+      }
+    );
 
     if (!token) {
-      console.log(
-        "No FCM token generated"
+      console.error(
+        "❌ No FCM token generated"
       );
 
       return null;
     }
 
     console.log(
-      "FCM token generated successfully"
+      "✅ FCM token generated successfully"
     );
 
     return token;
 
   } catch (error) {
     console.error(
-      "Error getting FCM token:",
+      "❌ Error getting FCM token:",
       error
     );
 
     return null;
   }
 }
+

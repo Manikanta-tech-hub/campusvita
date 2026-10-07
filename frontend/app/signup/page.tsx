@@ -434,6 +434,10 @@ export default function SignupPage() {
 
           body: JSON.stringify({
             id_token: idToken,
+
+            // Public signup always creates a USER account.
+            // The backend decides the actual stored role.
+            login_mode: "USER",
           }),
         }
       );

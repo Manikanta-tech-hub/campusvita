@@ -15,9 +15,18 @@ import {
   Phone,
   CalendarDays,
   X,
+  Copy,
+  Check,
+  AlertTriangle,
 } from "lucide-react";
 
-import { getCustomers, updateUserRole } from "@/app/lib/api";
+import {
+  getCustomers,
+  updateUserRole,
+  createVendorInvitation,
+  getPublicStalls,
+  type VendorInvitationResult,
+} from "@/app/lib/api";
 
 type RecentOrder = {
   order_id: string;
@@ -130,6 +139,37 @@ export default function CustomerManagementPage() {
 
   const [totalPages, setTotalPages] = useState(0);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  // ------------------------------------------------------------
+  // CREATE VENDOR (invitation) modal
+  // ------------------------------------------------------------
+
+  const [showVendorModal, setShowVendorModal] =
+    useState(false);
+
+  const [vendorForm, setVendorForm] = useState({
+    business_name: "",
+    owner_name: "",
+    email: "",
+    phone: "",
+  });
+
+  const [stallOptions, setStallOptions] = useState<
+    { _id: string; name: string }[]
+  >([]);
+
+  const [selectedStallIds, setSelectedStallIds] =
+    useState<string[]>([]);
+
+  const [creatingVendor, setCreatingVendor] =
+    useState(false);
+
+  const [vendorError, setVendorError] = useState("");
+
+  const [createdInvitation, setCreatedInvitation] =
+    useState<VendorInvitationResult | null>(null);
+
+  const [copiedField, setCopiedField] = useState("");
 
   async function loadCustomers() {
     try {
@@ -263,6 +303,114 @@ export default function CustomerManagementPage() {
     URL.revokeObjectURL(url);
   }
 
+  // ------------------------------------------------------------
+  // CREATE VENDOR (invitation)
+  // ------------------------------------------------------------
+
+  async function openVendorModal() {
+    setVendorForm({
+      business_name: "",
+      owner_name: "",
+      email: "",
+      phone: "",
+    });
+    setSelectedStallIds([]);
+    setVendorError("");
+    setCreatedInvitation(null);
+    setShowVendorModal(true);
+
+    if (stallOptions.length === 0) {
+      try {
+        const data = await getPublicStalls();
+        setStallOptions(data?.stalls ?? []);
+      } catch (err) {
+        console.error("Failed to load stalls:", err);
+      }
+    }
+  }
+
+  function closeVendorModal() {
+    setShowVendorModal(false);
+    setCreatedInvitation(null);
+    setVendorError("");
+  }
+
+  function toggleStall(stallId: string) {
+    setSelectedStallIds((current) =>
+      current.includes(stallId)
+        ? current.filter((id) => id !== stallId)
+        : [...current, stallId]
+    );
+  }
+
+  async function handleCreateVendor() {
+    const businessName =
+      vendorForm.business_name.trim();
+    const ownerName = vendorForm.owner_name.trim();
+    const email = vendorForm.email.trim();
+    const phone = vendorForm.phone.trim();
+
+    if (!businessName || !ownerName || !email || !phone) {
+      setVendorError("Please fill all required fields.");
+      return;
+    }
+
+    try {
+      setCreatingVendor(true);
+      setVendorError("");
+
+      const result = await createVendorInvitation({
+        business_name: businessName,
+        owner_name: ownerName,
+        email,
+        phone,
+        stall_ids: selectedStallIds,
+      });
+
+      setCreatedInvitation(result);
+    } catch (err) {
+      console.error("Create vendor invitation error:", err);
+      setVendorError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create vendor invitation"
+      );
+    } finally {
+      setCreatingVendor(false);
+    }
+  }
+
+  async function copyCredential(
+    field: string,
+    value: string
+  ) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(""), 1500);
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
+  }
+
+  function formatDateTime(value?: string) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   return (
     <div className="min-h-full space-y-6">
       {/* HEADER */}
@@ -369,14 +517,25 @@ export default function CustomerManagementPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={exportCustomers}
-                className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
-              >
-                <Download size={16} />
-                Export
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={openVendorModal}
+                  className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+                >
+                  <UserPlus size={16} />
+                  Create Vendor
+                </button>
+
+                <button
+                  type="button"
+                  onClick={exportCustomers}
+                  className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+                >
+                  <Download size={16} />
+                  Export
+                </button>
+              </div>
             </div>
 
             {/* FILTERS */}
@@ -927,6 +1086,332 @@ export default function CustomerManagementPage() {
           </aside>
         )}
       </div>
+
+      {/* ======================================================
+          CREATE VENDOR MODAL
+      ====================================================== */}
+
+      {showVendorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-3xl border border-zinc-800 bg-[#12131a] shadow-2xl">
+            {/* MODAL HEADER */}
+
+            <div className="flex items-center justify-between border-b border-zinc-800 p-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  {createdInvitation
+                    ? "Vendor Credentials"
+                    : "Create Vendor"}
+                </h2>
+
+                <p className="mt-1 text-sm text-zinc-500">
+                  {createdInvitation
+                    ? "Hand these one-time credentials to the vendor"
+                    : "Generate a Vendor ID and one-time activation code"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeVendorModal}
+                className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-800 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {createdInvitation ? (
+              <>
+                {/* CREDENTIALS (creation response only - never re-fetched) */}
+
+                <div className="space-y-4 p-6">
+                  <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+                    <AlertTriangle
+                      size={18}
+                      className="mt-0.5 shrink-0"
+                    />
+
+                    <p>
+                      Save these credentials now. The
+                      activation code will only be shown
+                      once.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-[#0c1017] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs uppercase tracking-wide text-zinc-500">
+                          Vendor ID
+                        </p>
+
+                        <p className="mt-1 font-mono text-lg font-semibold text-white">
+                          {createdInvitation.vendor_id}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyCredential(
+                            "vendor_id",
+                            createdInvitation.vendor_id
+                          )
+                        }
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                      >
+                        {copiedField === "vendor_id" ? (
+                          <Check
+                            size={14}
+                            className="text-emerald-400"
+                          />
+                        ) : (
+                          <Copy size={14} />
+                        )}
+
+                        {copiedField === "vendor_id"
+                          ? "Copied"
+                          : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-[#0c1017] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs uppercase tracking-wide text-zinc-500">
+                          Activation Code
+                        </p>
+
+                        <p className="mt-1 font-mono text-lg font-semibold text-white">
+                          {createdInvitation.activation_code}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyCredential(
+                            "activation_code",
+                            createdInvitation.activation_code
+                          )
+                        }
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                      >
+                        {copiedField === "activation_code" ? (
+                          <Check
+                            size={14}
+                            className="text-emerald-400"
+                          />
+                        ) : (
+                          <Copy size={14} />
+                        )}
+
+                        {copiedField === "activation_code"
+                          ? "Copied"
+                          : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-zinc-800 bg-[#0c1017] p-4">
+                    <p className="text-xs uppercase tracking-wide text-zinc-500">
+                      Expires
+                    </p>
+
+                    <p className="mt-1 text-sm font-medium text-white">
+                      {formatDateTime(
+                        createdInvitation.expires_at
+                      )}
+                    </p>
+                  </div>
+
+                  <p className="text-xs text-zinc-500">
+                    Give these to{" "}
+                    <span className="text-zinc-300">
+                      {createdInvitation.owner_name}
+                    </span>{" "}
+                    (
+                    <span className="text-zinc-300">
+                      {createdInvitation.email}
+                    </span>
+                    ). The vendor will enter them at
+                    /vendor/activate to set a password and
+                    activate the account.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3 border-t border-zinc-800 p-6">
+                  <button
+                    type="button"
+                    onClick={closeVendorModal}
+                    className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* FORM */}
+
+                <div className="space-y-5 p-6">
+                  {vendorError && (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                      {vendorError}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Business Name
+                    </label>
+
+                    <input
+                      value={vendorForm.business_name}
+                      onChange={(e) =>
+                        setVendorForm({
+                          ...vendorForm,
+                          business_name: e.target.value,
+                        })
+                      }
+                      placeholder="Example: Spice Garden Foods"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Owner Name
+                    </label>
+
+                    <input
+                      value={vendorForm.owner_name}
+                      onChange={(e) =>
+                        setVendorForm({
+                          ...vendorForm,
+                          owner_name: e.target.value,
+                        })
+                      }
+                      placeholder="Full name of the vendor owner"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        Email
+                      </label>
+
+                      <input
+                        type="email"
+                        value={vendorForm.email}
+                        onChange={(e) =>
+                          setVendorForm({
+                            ...vendorForm,
+                            email: e.target.value,
+                          })
+                        }
+                        placeholder="vendor@example.com"
+                        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-zinc-300">
+                        Phone
+                      </label>
+
+                      <input
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={vendorForm.phone}
+                        onChange={(e) =>
+                          setVendorForm({
+                            ...vendorForm,
+                            phone: e.target.value.replace(
+                              /\D/g,
+                              ""
+                            ),
+                          })
+                        }
+                        placeholder="10-digit mobile number"
+                        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-zinc-300">
+                      Stall Assignment{" "}
+                      <span className="text-zinc-500">
+                        (optional)
+                      </span>
+                    </label>
+
+                    {stallOptions.length > 0 ? (
+                      <div className="max-h-40 space-y-2 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 p-3">
+                        {stallOptions.map((stall) => (
+                          <label
+                            key={stall._id}
+                            className="flex cursor-pointer items-center gap-3"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedStallIds.includes(
+                                stall._id
+                              )}
+                              onChange={() =>
+                                toggleStall(stall._id)
+                              }
+                              className="h-4 w-4 accent-orange-500"
+                            />
+
+                            <span className="text-sm text-zinc-300">
+                              {stall.name || "Unnamed Stall"}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-zinc-500">
+                        No stalls available yet. You can
+                        assign stalls later from Stall
+                        Management.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* MODAL FOOTER */}
+
+                <div className="flex justify-end gap-3 border-t border-zinc-800 p-6">
+                  <button
+                    type="button"
+                    onClick={closeVendorModal}
+                    disabled={creatingVendor}
+                    className="rounded-xl bg-zinc-800 px-5 py-2.5 text-sm font-medium text-zinc-300 hover:bg-zinc-700 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCreateVendor}
+                    disabled={creatingVendor}
+                    className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {creatingVendor
+                      ? "Creating..."
+                      : "Create Vendor"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   getSession,
   clearSession,
@@ -13,11 +13,21 @@ export default function VendorLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authorized, setAuthorized] = useState(false);
 
+  // Public entry point: the vendor activation placeholder
+  // must be reachable (and render immediately) without a
+  // VENDOR session.
+  const isPublicRoute = pathname === "/vendor/activate";
+
   useEffect(() => {
+    if (isPublicRoute) {
+      return;
+    }
+
     const session = getSession("VENDOR");
 
     if (!session) {
@@ -34,7 +44,15 @@ export default function VendorLayout({
 
     setAuthorized(true);
     setCheckingAuth(false);
-  }, [router]);
+  }, [router, isPublicRoute]);
+
+  if (isPublicRoute) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] text-white">
+        {children}
+      </div>
+    );
+  }
 
   if (checkingAuth) {
     return (

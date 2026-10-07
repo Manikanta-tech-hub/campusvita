@@ -18,12 +18,12 @@ const outputPath = path.join(
 
 const firebaseConfig = {
   apiKey,
-  authDomain: "campusvita-3115.firebaseapp.com",
-  projectId: "campusvita-3115",
-  storageBucket: "campusvita-3115.firebasestorage.app",
-  messagingSenderId: "696780425118",
-  appId: "1:696780425118:web:1f82431a017eb37454b88fa",
-  measurementId: "G-R7HY0DN79E",
+  authDomain: "campusvita.firebaseapp.com",
+  projectId: "campusvita",
+  storageBucket: "campusvita.firebasestorage.app",
+  messagingSenderId: "1044650280683",
+  appId: "1:1044650280683:web:714ea86da19398ea9820ae",
+  measurementId: "G-CK2BVJ0MVJ",
 };
 
 const configText = JSON.stringify(firebaseConfig, null, 2);

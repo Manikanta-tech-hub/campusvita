@@ -2,7 +2,7 @@
 
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -14,7 +14,13 @@ import {
   UserRoundPlus,
 } from "lucide-react";
 
-import { saveSession } from "@/app/lib/auth/session";
+import {
+  saveSession,
+  consumeSessionExpiredFlag,
+  SESSION_EXPIRED_MESSAGE,
+  consumeVendorActivatedFlag,
+  VENDOR_ACTIVATED_MESSAGE,
+} from "@/app/lib/auth/session";
 
 import {
   getFCMToken,
@@ -30,6 +36,26 @@ const API_URL =
 
 export default function LoginPage() {
   const router = useRouter();
+
+  // ============================================================
+  // SESSION EXPIRED NOTICE
+  //
+  // The API layer clears a stale session and redirects here
+  // with a one-shot flag. Consume it once and show a friendly
+  // message (backend JWT errors are never shown).
+  // ============================================================
+
+  useEffect(() => {
+    if (consumeSessionExpiredFlag()) {
+      toast.error(SESSION_EXPIRED_MESSAGE);
+    }
+
+    // One-shot flag set by /vendor/activate on success, so
+    // the login page makes it obvious the account is ready.
+    if (consumeVendorActivatedFlag()) {
+      toast.success(VENDOR_ACTIVATED_MESSAGE);
+    }
+  }, []);
 
   // ============================================================
   // STATE
@@ -675,7 +701,7 @@ export default function LoginPage() {
 
           {/* DESKTOP LOGIN CARD */}
 
-          <section className="absolute right-[6%] top-1/2 w-[min(42vw,590px)] -translate-y-1/2 rounded-[36px] border border-white/60 bg-white/95 p-8 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:p-10 xl:p-12">
+          <section className="absolute right-[6%] top-1/2 max-h-[calc(100dvh_-_3rem)] w-[min(42vw,590px)] -translate-y-1/2 overflow-y-auto rounded-[36px] border border-white/60 bg-white/95 p-8 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:p-10 xl:p-12">
 
             {/* USER ICON */}
 
@@ -908,6 +934,21 @@ export default function LoginPage() {
 
             </p>
 
+            {/* VENDOR ACTIVATION ENTRY POINT */}
+
+            <p className="mt-3 text-center text-sm text-zinc-600">
+
+              Are you a vendor?{" "}
+
+              <Link
+                href="/vendor/activate"
+                className="font-semibold text-orange-700 transition-colors hover:text-orange-900"
+              >
+                Activate your account
+              </Link>
+
+            </p>
+
           </section>
 
         </div>
@@ -975,7 +1016,7 @@ export default function LoginPage() {
 
         {/* MOBILE LOGIN SHEET */}
 
-        <section className="relative z-20 -mt-8 flex min-h-[62dvh] w-full flex-1 flex-col rounded-t-[34px] bg-[#fafafa] px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_rgba(0,0,0,0.35)]">
+        <section className="relative z-20 -mt-8 flex min-h-[62dvh] w-full flex-1 flex-col overflow-y-auto rounded-t-[34px] bg-[#fafafa] px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_rgba(0,0,0,0.35)]">
 
           {/* HANDLE */}
 
@@ -1199,7 +1240,7 @@ export default function LoginPage() {
 
           {/* SIGNUP */}
 
-          <p className="mt-5 pb-2 text-center text-xs text-zinc-600">
+          <p className="mt-5 text-center text-xs text-zinc-600">
 
             Don't have an account?{" "}
 
@@ -1208,6 +1249,21 @@ export default function LoginPage() {
               className="font-semibold text-orange-700"
             >
               Sign up
+            </Link>
+
+          </p>
+
+          {/* VENDOR ACTIVATION ENTRY POINT */}
+
+          <p className="mt-3 pb-2 text-center text-xs text-zinc-600">
+
+            Are you a vendor?{" "}
+
+            <Link
+              href="/vendor/activate"
+              className="font-semibold text-orange-700"
+            >
+              Activate your account
             </Link>
 
           </p>
