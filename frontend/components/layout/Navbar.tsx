@@ -213,7 +213,7 @@ export default function Navbar({
                           font-semibold
                           text-white
                           shadow-md
-                          shadow-orange-500/15
+                          shadow-brand/15
                         `
                         : `
                           font-medium
@@ -286,7 +286,7 @@ export default function Navbar({
               gap-3
               rounded-2xl
               border
-              border-orange-400/30
+              border-brand/30
               bg-[var(--brand)]
               px-4
               py-3
@@ -329,7 +329,7 @@ export default function Navbar({
                   px-1
                   text-[10px]
                   font-bold
-                  text-orange-600
+                  text-brand-hover
                   shadow-sm
                 "
               >
@@ -344,7 +344,7 @@ export default function Navbar({
                 Cart
               </span>
 
-              <span className="mt-1 text-[11px] text-orange-100">
+              <span className="mt-1 text-[11px] text-white">
                 {cartCount}{" "}
                 {cartCount === 1
                   ? "item"

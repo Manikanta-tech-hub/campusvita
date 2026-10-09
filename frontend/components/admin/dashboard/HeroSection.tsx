@@ -35,9 +35,9 @@ export default function HeroSection({
     <motion.section
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1b1c26] via-[#16171f] to-[#101118] p-8"
+      className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[var(--surface-secondary)] via-[var(--surface)] to-[var(--background)] p-8"
     >
-      <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
+      <div className="absolute right-0 top-0 h-72 w-72 rounded-full bg-brand/10 blur-3xl" />
 
       <div className="relative flex flex-col gap-10 xl:flex-row xl:items-center xl:justify-between">
         <div>
@@ -45,7 +45,7 @@ export default function HeroSection({
 
           <h1 className="mt-2 text-4xl font-bold text-white">
             Welcome back,
-            <span className="text-orange-500"> {adminName}</span>
+            <span className="text-brand"> {adminName}</span>
           </h1>
 
           <p className="mt-4 max-w-xl text-zinc-400">

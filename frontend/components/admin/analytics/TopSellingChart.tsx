@@ -18,7 +18,7 @@ type Food = {
 };
 
 const COLORS = [
-  "#FF6B35",
+  "#686ee8",
   "#F59E0B",
   "#3B82F6",
   "#10B981",

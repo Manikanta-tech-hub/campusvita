@@ -48,7 +48,7 @@ export default function VendorLayout({
 
   if (isPublicRoute) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] text-white">
+      <div className="min-h-screen bg-[var(--background)] text-white">
         {children}
       </div>
     );
@@ -56,9 +56,9 @@ export default function VendorLayout({
 
   if (checkingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] text-white">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)] text-white">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-brand" />
           <p className="text-sm text-zinc-400">
             Checking vendor session...
           </p>
@@ -72,7 +72,7 @@ export default function VendorLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen bg-[var(--background)] text-white">
       {children}
     </div>
   );

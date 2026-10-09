@@ -1010,7 +1010,7 @@ export default function ProfilePage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-orange-500" />
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-zinc-800 border-t-brand" />
 
           <h1 className="text-xl font-semibold">
             Loading Profile...
@@ -1033,7 +1033,7 @@ export default function ProfilePage() {
             PROFILE HERO
         ===================================================== */}
 
-        <section className="relative flex min-h-[320px] flex-col items-center justify-center rounded-b-[45px] bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-10">
+        <section className="relative flex min-h-[320px] flex-col items-center justify-center rounded-b-[45px] bg-gradient-to-r from-brand to-brand-hover px-6 py-10">
           {/* PROFILE IMAGE */}
 
           <div className="relative">
@@ -1131,9 +1131,9 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2 text-sm">
                 {savingProfile ? (
                   <>
-                    <div className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />
+                    <div className="h-2 w-2 animate-pulse rounded-full bg-brand" />
 
-                    <span className="text-orange-400">
+                    <span className="text-brand">
                       Saving...
                     </span>
                   </>
@@ -1177,7 +1177,7 @@ export default function ProfilePage() {
                   onBlur={
                     updateProfile
                   }
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-brand focus:bg-zinc-800"
                 />
               </label>
 
@@ -1208,7 +1208,7 @@ export default function ProfilePage() {
                     updateProfile
                   }
                   maxLength={10}
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-brand focus:bg-zinc-800"
                 />
               </label>
 
@@ -1237,7 +1237,7 @@ export default function ProfilePage() {
                   onBlur={
                     updateProfile
                   }
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-500 focus:bg-zinc-800"
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition placeholder:text-zinc-600 focus:border-brand focus:bg-zinc-800"
                 />
               </label>
 
@@ -1261,7 +1261,7 @@ export default function ProfilePage() {
                   onBlur={
                     updateProfile
                   }
-                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition focus:border-orange-500"
+                  className="w-full rounded-2xl border border-transparent bg-zinc-800 px-4 py-4 text-white outline-none transition focus:border-brand"
                 >
                   <option value="">
                     Select Year
@@ -1295,9 +1295,9 @@ export default function ProfilePage() {
             {/* ORDERS */}
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl transition hover:border-zinc-700">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10">
                 <ShoppingBag
-                  className="text-orange-500"
+                  className="text-brand"
                   size={26}
                 />
               </div>
@@ -1362,7 +1362,7 @@ export default function ProfilePage() {
 
           <section className="mt-8 rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl md:p-7">
             <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand/10 text-brand">
                 <User size={20} />
               </div>
 

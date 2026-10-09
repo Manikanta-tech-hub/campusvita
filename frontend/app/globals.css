@@ -3,6 +3,11 @@
 /* =========================================================
    CAMPUSVITA DESIGN SYSTEM
    70 / 20 / 10 THEME
+
+   BRAND:    indigo  #686ee8 (light) / #8691f0 (dark)
+   NEUTRAL:  #e6e7eb (light) / #303746 (dark)
+   SOFT:     #e2e8fd (light) / #3a4150 (dark)
+   ACCENT:   #d5544b (warm red — errors / destructive / accent)
 ========================================================= */
 
 *,
@@ -18,73 +23,86 @@
 :root {
   color-scheme: light;
 
-  /* 70% — Primary canvas */
-  --background: #f8fafc;
-  --foreground: #18181b;
+  /* 70% — Primary canvas (page background) */
+  --background: #e6e7eb;
+  --foreground: #1a1b23;
 
-  /* 20% — Secondary surfaces */
+  /* 20% — Surfaces */
   --surface: #ffffff;
-  --surface-secondary: #fff7ed;
-  --surface-tertiary: #fef3c7;
+  --surface-secondary: #e2e8fd;
+  --surface-tertiary: #dcdfe8;
 
   /* Text */
-  --text-primary: #18181b;
-  --text-secondary: #52525b;
-  --text-muted: #71717a;
-  --text-subtle: #a1a1aa;
+  --text-primary: #1a1b23;
+  --text-secondary: #4d5160;
+  --text-muted: #6b7080;
+  --text-subtle: #9499a8;
 
   /* Borders */
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
+  --border: #d5d8e0;
+  --border-strong: #c4c8d3;
 
-  /* 10% — Brand */
-  --brand: #f97316;
-  --brand-hover: #ea580c;
-  --brand-active: #c2410c;
+  /* 10% — Brand / primary (indigo) */
+  --primary: #686ee8;
+  --primary-hover: #5a60dd;
+  --primary-active: #4c52cc;
+  --primary-soft: #e2e8fd;
+  --primary-soft-strong: #d0d8fb;
 
-  /* Brand surfaces */
-  --brand-soft: #fff7ed;
-  --brand-soft-strong: #ffedd5;
+  /* Legacy aliases (kept so existing var(--brand-*) usage works) */
+  --brand: var(--primary);
+  --brand-hover: var(--primary-hover);
+  --brand-active: var(--primary-active);
+  --brand-soft: var(--primary-soft);
+  --brand-soft-strong: var(--primary-soft-strong);
 
-  /* Success */
+  /* Text that sits on solid brand surfaces */
+  --on-primary: #ffffff;
+
+  /* Warm accent / danger */
+  --accent: #d5544b;
+  --accent-hover: #c1483f;
+  --accent-active: #a93c34;
+  --accent-soft: rgba(213, 84, 75, 0.1);
+
+  /* Status */
   --success: #16a34a;
-  --success-soft: #f0fdf4;
+  --success-soft: rgba(22, 163, 74, 0.12);
 
-  /* Warning */
   --warning: #d97706;
-  --warning-soft: #fffbeb;
+  --warning-soft: rgba(217, 119, 6, 0.14);
 
-  /* Danger */
-  --danger: #dc2626;
-  --danger-soft: #fef2f2;
+  --danger: #d5544b;
+  --danger-soft: rgba(213, 84, 75, 0.12);
 
-  /* Info */
   --info: #2563eb;
-  --info-soft: #eff6ff;
+  --info-soft: rgba(37, 99, 235, 0.12);
 
   /* Cards */
   --card: #ffffff;
-  --card-hover: #fffaf5;
+  --card-hover: #f7f8fc;
 
   /* Inputs */
   --input: #ffffff;
-  --input-hover: #fffaf5;
-  --input-border: #d4d4d8;
-  --input-focus: #f97316;
+  --input-hover: #f7f8fc;
+  --input-border: #ccd0db;
+  --input-focus: var(--primary);
 
-  /* Navbar */
-  --navbar: rgba(255, 255, 255, 0.92);
-  --navbar-border: rgba(228, 228, 231, 0.9);
+  /* Navbar (floating / translucent) */
+  --navbar: rgba(255, 255, 255, 0.88);
+  --navbar-border: rgba(206, 210, 220, 0.9);
 
   /* Overlay */
-  --overlay: rgba(15, 23, 42, 0.45);
+  --overlay: rgba(20, 22, 32, 0.5);
 
   /* Shadows */
-  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-soft: 0 1px 2px rgba(24, 26, 45, 0.05);
   --shadow-card:
-    0 8px 30px rgba(15, 23, 42, 0.06);
+    0 8px 30px rgba(24, 26, 45, 0.07);
   --shadow-elevated:
-    0 18px 50px rgba(15, 23, 42, 0.1);
+    0 18px 50px rgba(24, 26, 45, 0.11);
+  --shadow-brand:
+    0 6px 18px rgba(104, 110, 232, 0.3);
 
   /* Radius */
   --radius-sm: 0.5rem;
@@ -101,87 +119,93 @@
 .dark {
   color-scheme: dark;
 
-  /* 70% — Primary canvas */
-  --background: #09090b;
-  --foreground: #fafafa;
+  /* 70% — Primary canvas (page background) */
+  --background: #303746;
+  --foreground: #e9ebf3;
 
-  /* 20% — Charcoal surfaces */
-  --surface: #18181b;
-  --surface-secondary: #1f1f23;
-  --surface-tertiary: #27272a;
+  /* 20% — Surfaces */
+  --surface: #3a4150;
+  --surface-secondary: #434b5d;
+  --surface-tertiary: #4c5568;
 
   /* Text */
-  --text-primary: #fafafa;
-  --text-secondary: #d4d4d8;
-  --text-muted: #a1a1aa;
-  --text-subtle: #71717a;
+  --text-primary: #f0f2f7;
+  --text-secondary: #c6cbd8;
+  --text-muted: #9ba2b4;
+  --text-subtle: #798195;
 
   /* Borders */
-  --border: #27272a;
-  --border-strong: #3f3f46;
+  --border: #474f61;
+  --border-strong: #576078;
 
-  /* Orange remains the CampusVita brand */
-  --brand: #fb923c;
-  --brand-hover: #fdba74;
-  --brand-active: #f97316;
+  /* 10% — Brand / primary (bright indigo) */
+  --primary: #8691f0;
+  --primary-hover: #9aa3f4;
+  --primary-active: #727ee9;
+  --primary-soft: #3a4150;
+  --primary-soft-strong: #434b5d;
 
-  /* Orange surfaces */
-  --brand-soft: rgba(249, 115, 22, 0.12);
-  --brand-soft-strong: rgba(249, 115, 22, 0.2);
+  /* Legacy aliases */
+  --brand: var(--primary);
+  --brand-hover: var(--primary-hover);
+  --brand-active: var(--primary-active);
+  --brand-soft: var(--primary-soft);
+  --brand-soft-strong: var(--primary-soft-strong);
 
   /*
-     10% ACCENT
-     Green gives dark mode its own identity.
+     Text on solid brand surfaces.
+     Dark mode uses a brighter primary, so a dark
+     foreground keeps contrast strong (Material-3 style).
   */
+  --on-primary: #232637;
 
-  --accent: #22c55e;
-  --accent-hover: #4ade80;
-  --accent-active: #16a34a;
+  /* Warm accent / danger */
+  --accent: #d5544b;
+  --accent-hover: #e0665c;
+  --accent-active: #c1483f;
+  --accent-soft: rgba(213, 84, 75, 0.16);
 
-  --accent-soft: rgba(34, 197, 94, 0.12);
-  --accent-soft-strong: rgba(34, 197, 94, 0.2);
-
-  /* Success */
+  /* Status */
   --success: #22c55e;
-  --success-soft: rgba(34, 197, 94, 0.12);
+  --success-soft: rgba(34, 197, 94, 0.16);
 
-  /* Warning */
   --warning: #f59e0b;
-  --warning-soft: rgba(245, 158, 11, 0.12);
+  --warning-soft: rgba(245, 158, 11, 0.16);
 
-  /* Danger */
-  --danger: #ef4444;
-  --danger-soft: rgba(239, 68, 68, 0.12);
+  --danger: #d5544b;
+  --danger-soft: rgba(213, 84, 75, 0.16);
 
-  /* Info */
   --info: #60a5fa;
-  --info-soft: rgba(96, 165, 250, 0.12);
+  --info-soft: rgba(96, 165, 250, 0.14);
 
   /* Cards */
-  --card: #18181b;
-  --card-hover: #202024;
+  --card: #3a4150;
+  --card-hover: #414a5c;
 
   /* Inputs */
-  --input: #18181b;
-  --input-hover: #202024;
-  --input-border: #3f3f46;
-  --input-focus: #fb923c;
+  --input: #3a4150;
+  --input-hover: #414a5c;
+  --input-border: #576078;
+  --input-focus: var(--primary);
 
-  /* Navbar */
-  --navbar: rgba(9, 9, 11, 0.92);
-  --navbar-border: rgba(39, 39, 42, 0.9);
+  /* Navbar (floating / translucent) */
+  --navbar: rgba(48, 55, 70, 0.88);
+  --navbar-border: rgba(74, 83, 101, 0.9);
 
   /* Overlay */
-  --overlay: rgba(0, 0, 0, 0.72);
+  --overlay: rgba(12, 14, 20, 0.7);
 
   /* Shadows */
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.28);
 
   --shadow-card:
-    0 8px 30px rgba(0, 0, 0, 0.28);
+    0 8px 30px rgba(0, 0, 0, 0.26);
 
   --shadow-elevated:
-    0 20px 60px rgba(0, 0, 0, 0.45);
+    0 20px 60px rgba(0, 0, 0, 0.42);
+
+  --shadow-brand:
+    0 6px 18px rgba(134, 145, 240, 0.28);
 }
 
 /* =========================================================
@@ -241,6 +265,11 @@ body {
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
 
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-soft: var(--primary-soft);
+
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-active: var(--brand-active);
@@ -263,6 +292,10 @@ body {
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+
+  --color-navbar: var(--navbar);
+  --color-overlay: var(--overlay);
 
   --color-danger-soft: var(--danger-soft);
   --color-success-soft: var(--success-soft);
@@ -291,8 +324,8 @@ p {
 }
 
 ::selection {
-  background: var(--brand);
-  color: white;
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 /* =========================================================
@@ -355,7 +388,7 @@ button:disabled {
 ========================================================= */
 
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
 
@@ -450,33 +483,35 @@ section,
 div {
   max-width: 100%;
 }
+
 /* =========================================================
-   CAMPUSVITA ADMIN — LIGHT THEME COMPATIBILITY
-   Converts legacy hard-coded dark admin classes into
-   the existing CampusVita light-theme design tokens.
-   Dark theme remains unchanged.
+   CAMPUSVITA LEGACY CLASS COMPATIBILITY
+   Legacy admin / vendor / auth components are styled with
+   hard-coded dark chrome (zinc, near-black hexes) and white
+   text. These rules map them onto the semantic tokens above
+   so BOTH themes render consistently from one source of truth.
 ========================================================= */
 
 html:not(.dark) {
   color-scheme: light;
 }
 
-/* ---------- DARK BACKGROUNDS → LIGHT SURFACES ---------- */
+/* ---------- DARK BACKGROUNDS → SURFACE TOKENS ---------- */
 
-html:not(.dark) .bg-black {
+.bg-black,
+.bg-zinc-950 {
   background-color: var(--background) !important;
 }
 
-html:not(.dark) .bg-zinc-950,
-html:not(.dark) .bg-zinc-900 {
+.bg-zinc-900 {
   background-color: var(--surface) !important;
 }
 
-html:not(.dark) .bg-zinc-800 {
+.bg-zinc-800 {
   background-color: var(--surface-tertiary) !important;
 }
 
-html:not(.dark) .bg-zinc-700 {
+.bg-zinc-700 {
   background-color: var(--border-strong) !important;
 }
 
@@ -496,11 +531,14 @@ html:not(.dark) .bg-\[\#181c25\] {
 /* ---------- BORDERS ---------- */
 
 html:not(.dark) .border-zinc-800,
-html:not(.dark) .border-zinc-800\/70 {
+html:not(.dark) .border-zinc-800\/70,
+.dark .border-zinc-800,
+.dark .border-zinc-800\/70 {
   border-color: var(--border) !important;
 }
 
-html:not(.dark) .border-zinc-700 {
+html:not(.dark) .border-zinc-700,
+.dark .border-zinc-700 {
   border-color: var(--input-border) !important;
 }
 
@@ -511,13 +549,55 @@ html:not(.dark) .text-white {
 }
 
 /*
-   Keep white text on CampusVita brand buttons.
-   This prevents orange buttons from becoming dark text.
+   Keep text readable on solid brand / accent fills.
+   --on-primary is white in light mode and dark ink in dark
+   mode so contrast stays strong on the brighter dark primary.
+   Self and descendant forms are both listed.
 */
-html:not(.dark) .bg-orange-400.text-white,
-html:not(.dark) .bg-orange-500.text-white,
-html:not(.dark) .bg-orange-600.text-white,
-html:not(.dark) .bg-orange-700.text-white {
+html:not(.dark) .bg-brand.text-white,
+html:not(.dark) .bg-primary.text-white,
+html:not(.dark) [class*="bg-brand"].text-white,
+html:not(.dark) [class*="bg-[var(--brand)]"].text-white,
+html:not(.dark) [class*="from-brand"].text-white,
+html:not(.dark) [class*="to-brand"].text-white,
+html:not(.dark) [class*="bg-brand"] .text-white,
+html:not(.dark) [class*="bg-[var(--brand)]"] .text-white,
+html:not(.dark) [class*="from-brand"] .text-white,
+.dark .bg-brand.text-white,
+.dark .bg-primary.text-white,
+.dark [class*="bg-brand"].text-white,
+.dark [class*="bg-[var(--brand)]"].text-white,
+.dark [class*="from-brand"].text-white,
+.dark [class*="to-brand"].text-white,
+.dark [class*="bg-brand"] .text-white,
+.dark [class*="bg-[var(--brand)]"] .text-white,
+.dark [class*="from-brand"] .text-white {
+  color: var(--on-primary) !important;
+}
+
+/* Status fills always keep light text */
+html:not(.dark) [class*="bg-danger"].text-white,
+html:not(.dark) [class*="bg-success"].text-white,
+html:not(.dark) [class*="bg-warning"].text-white,
+html:not(.dark) [class*="bg-info"].text-white,
+html:not(.dark) [class*="bg-red-"].text-white,
+html:not(.dark) [class*="bg-emerald-"].text-white,
+html:not(.dark) [class*="bg-green-"].text-white,
+html:not(.dark) [class*="bg-blue-"].text-white,
+html:not(.dark) [class*="bg-amber-"].text-white,
+html:not(.dark) [class*="bg-red-"] .text-white,
+html:not(.dark) [class*="bg-emerald-"] .text-white,
+.dark [class*="bg-danger"].text-white,
+.dark [class*="bg-success"].text-white,
+.dark [class*="bg-warning"].text-white,
+.dark [class*="bg-info"].text-white,
+.dark [class*="bg-red-"].text-white,
+.dark [class*="bg-emerald-"].text-white,
+.dark [class*="bg-green-"].text-white,
+.dark [class*="bg-blue-"].text-white,
+.dark [class*="bg-amber-"].text-white,
+.dark [class*="bg-red-"] .text-white,
+.dark [class*="bg-emerald-"] .text-white {
   color: #ffffff !important;
 }
 
@@ -526,18 +606,33 @@ html:not(.dark) .bg-orange-700.text-white {
 html:not(.dark) .text-gray-300,
 html:not(.dark) .text-gray-400,
 html:not(.dark) .text-zinc-300,
-html:not(.dark) .text-zinc-400 {
+html:not(.dark) .text-zinc-400,
+html:not(.dark) .text-slate-400,
+.dark .text-gray-300,
+.dark .text-gray-400,
+.dark .text-zinc-300,
+.dark .text-zinc-400,
+.dark .text-slate-400 {
   color: var(--text-secondary) !important;
 }
 
 html:not(.dark) .text-gray-500,
-html:not(.dark) .text-zinc-500 {
+html:not(.dark) .text-zinc-500,
+html:not(.dark) .text-slate-500,
+.dark .text-gray-500,
+.dark .text-zinc-500,
+.dark .text-slate-500 {
   color: var(--text-muted) !important;
 }
 
 html:not(.dark) .text-gray-600,
 html:not(.dark) .text-zinc-600,
-html:not(.dark) .text-zinc-700 {
+html:not(.dark) .text-zinc-700,
+html:not(.dark) .text-slate-600,
+.dark .text-gray-600,
+.dark .text-zinc-600,
+.dark .text-zinc-700,
+.dark .text-slate-600 {
   color: var(--text-subtle) !important;
 }
 
@@ -548,7 +643,13 @@ html:not(.dark) input.bg-zinc-900,
 html:not(.dark) select.bg-zinc-800,
 html:not(.dark) select.bg-zinc-900,
 html:not(.dark) textarea.bg-zinc-800,
-html:not(.dark) textarea.bg-zinc-900 {
+html:not(.dark) textarea.bg-zinc-900,
+.dark input.bg-zinc-800,
+.dark input.bg-zinc-900,
+.dark select.bg-zinc-800,
+.dark select.bg-zinc-900,
+.dark textarea.bg-zinc-800,
+.dark textarea.bg-zinc-900 {
   background-color: var(--input) !important;
   color: var(--text-primary) !important;
   border-color: var(--input-border) !important;
@@ -574,42 +675,52 @@ html:not(.dark) select.bg-\[\#0c1017\] {
 
 /* ---------- TABLES ---------- */
 
-html:not(.dark) thead.bg-zinc-800 {
+html:not(.dark) thead.bg-zinc-800,
+.dark thead.bg-zinc-800 {
   background-color: var(--surface-tertiary) !important;
 }
 
-html:not(.dark) tbody tr {
+html:not(.dark) tbody tr,
+.dark tbody tr {
   border-color: var(--border) !important;
 }
 
-html:not(.dark) tbody tr:hover {
+html:not(.dark) tbody tr:hover,
+.dark tbody tr:hover {
   background-color: var(--card-hover) !important;
 }
 
 /* ---------- HOVER STATES ---------- */
 
-html:not(.dark) .hover\:bg-zinc-700:hover {
+html:not(.dark) .hover\:bg-zinc-700:hover,
+html:not(.dark) .hover\:bg-zinc-800:hover,
+.dark .hover\:bg-zinc-700:hover,
+.dark .hover\:bg-zinc-800:hover {
   background-color: var(--surface-tertiary) !important;
 }
 
-html:not(.dark) .hover\:bg-zinc-800:hover {
-  background-color: var(--surface-tertiary) !important;
+html:not(.dark) .hover\:bg-zinc-900:hover,
+.dark .hover\:bg-zinc-900:hover {
+  background-color: var(--card-hover) !important;
 }
 
 /* ---------- ADMIN MODALS ---------- */
 
-html:not(.dark) .bg-black\/70 {
+html:not(.dark) .bg-black\/70,
+.dark .bg-black\/70 {
   background-color: var(--overlay) !important;
 }
 
-html:not(.dark) .bg-zinc-900.border-zinc-800 {
+html:not(.dark) .bg-zinc-900.border-zinc-800,
+.dark .bg-zinc-900.border-zinc-800 {
   background-color: var(--surface) !important;
   border-color: var(--border) !important;
 }
 
 /* ---------- DIVIDERS ---------- */
 
-html:not(.dark) .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
+html:not(.dark) .divide-zinc-800 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
   border-color: var(--border) !important;
 }
 
@@ -617,4 +728,37 @@ html:not(.dark) .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
 
 html:not(.dark) .shadow-2xl {
   box-shadow: var(--shadow-elevated) !important;
+}
+
+/* ---------- DARK THEME: LIGHT-DARK TEXT FIXES ---------- */
+
+/*
+   Legacy components hard-code near-black text that becomes
+   invisible once surfaces are themed dark. Remap only in dark
+   mode so light-mode dark-on-light text is untouched.
+*/
+
+.dark .text-zinc-800,
+.dark .text-zinc-900,
+.dark .text-zinc-950,
+.dark .text-gray-800,
+.dark .text-gray-900,
+.dark .text-gray-950,
+.dark .text-slate-800,
+.dark .text-slate-900,
+.dark .text-slate-950 {
+  color: var(--text-primary) !important;
+}
+
+/* ---------- LIGHT BORDERS → INPUT / CARD BORDERS ---------- */
+
+html:not(.dark) .border-zinc-200,
+html:not(.dark) .border-gray-200,
+html:not(.dark) .border-gray-300,
+html:not(.dark) .border-slate-200,
+.dark .border-zinc-200,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-slate-200 {
+  border-color: var(--input-border) !important;
 }

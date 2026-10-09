@@ -44,7 +44,7 @@ export default function Topbar() {
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center">
             <User size={18} className="text-white" />
           </div>
 

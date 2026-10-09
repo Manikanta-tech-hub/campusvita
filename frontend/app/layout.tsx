@@ -27,11 +27,11 @@ export const viewport: Viewport = {
   themeColor: [
     {
       media: "(prefers-color-scheme: light)",
-      color: "#fafafa",
+      color: "#e6e7eb",
     },
     {
       media: "(prefers-color-scheme: dark)",
-      color: "#09090b",
+      color: "#303746",
     },
   ],
 };
@@ -42,7 +42,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body className={inter.className}>
         <ThemeProvider>
           <CartProvider>

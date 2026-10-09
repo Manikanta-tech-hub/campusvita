@@ -58,7 +58,7 @@ const statusStyles = {
 
 export default function RecentOrders() {
   return (
-    <div className="rounded-3xl border border-zinc-800 bg-[#17171f] p-6">
+    <div className="rounded-3xl border border-zinc-800 bg-[var(--surface)] p-6">
 
       {/* Header */}
 
@@ -79,8 +79,8 @@ export default function RecentOrders() {
         <button
           className="
           flex items-center gap-2
-          text-orange-500
-          hover:text-orange-400
+          text-brand
+          hover:text-brand
           transition
           "
         >
@@ -156,7 +156,7 @@ export default function RecentOrders() {
                       w-10
                       h-10
                       rounded-full
-                      bg-orange-500
+                      bg-brand
                       flex
                       items-center
                       justify-center

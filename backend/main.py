@@ -25,6 +25,7 @@ import socketio
 import cloudinary
 import cloudinary.uploader
 import razorpay
+import requests
 import csv
 import io
 import json
@@ -8629,10 +8630,14 @@ async def upload_image(file: UploadFile = File(...), current_user: Optional[Dict
         )
 
 class CartSummaryItem(BaseModel):
+    """Same identity as OrderItemRequest: food is identified by
+    name + stall_id. Price is never accepted from the client."""
 
     name: str = Field(..., min_length=1)
 
     quantity: int = Field(..., ge=1)
+
+    stall_id: str = Field(..., min_length=1)
 
 class CartSummaryRequest(BaseModel):
 
@@ -8655,13 +8660,13 @@ def get_cart_summary(
         # ---------------------------------------------------------
 
         order_items = [
-    OrderItemRequest(
-        name=item.name,
-        quantity=item.quantity,
-        stall_id=item.stall_id,
-    )
-    for item in data.items
-]
+            OrderItemRequest(
+                name=item.name,
+                quantity=item.quantity,
+                stall_id=item.stall_id,
+            )
+            for item in data.items
+        ]
 
         print(
             "🛒 Cart summary items:",
@@ -8669,6 +8674,7 @@ def get_cart_summary(
                 {
                     "name": item.name,
                     "quantity": item.quantity,
+                    "stall_id": item.stall_id,
                 }
                 for item in order_items
             ],
@@ -8928,7 +8934,80 @@ def create_payment_order(
         raise
 
     # ============================================================
-    # RAZORPAY / SERVER ERRORS
+    # RAZORPAY ANSWERED BUT REJECTED THE REQUEST
+    #
+    # These SDK errors are raised only after Razorpay itself
+    # replied, which means the endpoint, payload and network path
+    # are correct. The most common cause is an invalid, rotated or
+    # revoked RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET.
+    #
+    # The gateway description never contains credentials, so it is
+    # safe to log and to return to the caller.
+    # ============================================================
+
+    except razorpay.errors.BadRequestError as e:
+        description = str(e).strip() or "Bad request"
+
+        logger.error(
+            "❌ Razorpay rejected food order creation: %s",
+            description,
+        )
+
+        if "authentication" in description.lower():
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=(
+                    "Payment gateway authentication failed: "
+                    "RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are "
+                    "invalid or revoked."
+                ),
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "Payment gateway rejected the payment order: "
+                f"{description}"
+            ),
+        )
+
+    except (
+        razorpay.errors.GatewayError,
+        razorpay.errors.ServerError,
+    ) as e:
+        logger.error(
+            "❌ Razorpay gateway error: %s",
+            e,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "Payment gateway is temporarily unavailable. "
+                "Please try again."
+            ),
+        )
+
+    # ============================================================
+    # RAZORPAY UNREACHABLE (DNS / TLS / timeouts)
+    # ============================================================
+
+    except requests.exceptions.RequestException as e:
+        logger.error(
+            "❌ Cannot reach Razorpay: %s",
+            e,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=(
+                "Unable to reach the payment gateway. "
+                "Please check connectivity and try again."
+            ),
+        )
+
+    # ============================================================
+    # UNEXPECTED SERVER ERRORS
     # ============================================================
 
     except Exception as e:

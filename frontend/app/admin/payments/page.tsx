@@ -260,7 +260,7 @@ export default function AdminPaymentsPage() {
           <div className="flex items-center gap-3">
 
             <CreditCard
-              className="text-orange-500"
+              className="text-brand"
               size={34}
             />
 
@@ -287,7 +287,7 @@ export default function AdminPaymentsPage() {
 
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 px-4 py-3 rounded-xl font-semibold"
+            className="flex items-center gap-2 bg-brand hover:bg-brand-hover px-4 py-3 rounded-xl font-semibold"
           >
             <Download size={18} />
             Export CSV
@@ -367,12 +367,12 @@ export default function AdminPaymentsPage() {
                 }
               }}
               placeholder="Search payment, order or customer..."
-              className="flex-1 min-w-0 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-orange-500"
+              className="flex-1 min-w-0 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-brand"
             />
 
             <button
               onClick={handleSearch}
-              className="bg-orange-500 px-4 rounded-xl shrink-0"
+              className="bg-brand px-4 rounded-xl shrink-0"
             >
               <Search size={20} />
             </button>
@@ -517,7 +517,7 @@ export default function AdminPaymentsPage() {
                       className="border-t border-zinc-800 hover:bg-zinc-800/50"
                     >
 
-                      <td className="px-5 py-4 font-mono text-sm text-orange-400">
+                      <td className="px-5 py-4 font-mono text-sm text-brand">
                         {payment.payment_id}
                       </td>
 

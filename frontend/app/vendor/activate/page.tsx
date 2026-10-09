@@ -213,14 +213,14 @@ export default function VendorActivatePage() {
   }
 
   return (
-    <main className="flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[#1a0d07] px-6 py-12">
-      <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-[#11151d] p-7 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+    <main className="flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[var(--background)] px-6 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-[var(--surface)] p-7 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-600 to-red-600">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-hover">
             <KeyRound className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
               Step {step} of 2
             </p>
             <h1 className="text-[22px] font-bold tracking-tight text-white">
@@ -229,7 +229,7 @@ export default function VendorActivatePage() {
           </div>
         </div>
 
-        <p className="mt-4 text-sm leading-relaxed text-white/60">
+        <p className="mt-4 text-sm leading-relaxed text-[var(--text-secondary)]">
           {step === 1
             ? "Enter the Vendor ID and activation code your administrator gave you."
             : "Confirm your invitation details and choose a password for your vendor account."}
@@ -243,7 +243,7 @@ export default function VendorActivatePage() {
             <div>
               <label
                 htmlFor="vendor-id"
-                className="mb-1.5 block text-sm font-medium text-white/80"
+                className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
               >
                 Vendor ID
               </label>
@@ -258,14 +258,14 @@ export default function VendorActivatePage() {
                 autoComplete="off"
                 spellCheck={false}
                 autoCapitalize="characters"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30"
+                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
               />
             </div>
 
             <div>
               <label
                 htmlFor="activation-code"
-                className="mb-1.5 block text-sm font-medium text-white/80"
+                className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
               >
                 Activation Code
               </label>
@@ -280,7 +280,7 @@ export default function VendorActivatePage() {
                 autoComplete="off"
                 spellCheck={false}
                 autoCapitalize="characters"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm uppercase tracking-[0.3em] text-white placeholder-white/30 placeholder:normal-case placeholder:tracking-normal outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30"
+                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm uppercase tracking-[0.3em] text-[var(--text-primary)] placeholder-white/30 placeholder:normal-case placeholder:tracking-normal outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
               />
             </div>
 
@@ -296,7 +296,7 @@ export default function VendorActivatePage() {
             <button
               type="submit"
               disabled={verifying}
-              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-orange-600 to-red-600 text-base font-semibold text-white shadow-[0_12px_30px_rgba(234,88,12,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand to-brand-hover text-base font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {verifying ? "Checking..." : "Continue"}
             </button>
@@ -306,9 +306,9 @@ export default function VendorActivatePage() {
             onSubmit={handleActivate}
             className="mt-6 space-y-4"
           >
-            <div className="space-y-3 rounded-2xl border border-zinc-800 bg-black/30 p-4">
+            <div className="space-y-3 rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] p-4">
               <div className="flex items-start justify-between gap-4">
-                <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Business
                 </span>
                 <span className="text-right text-sm font-medium text-white">
@@ -316,7 +316,7 @@ export default function VendorActivatePage() {
                 </span>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Owner
                 </span>
                 <span className="text-right text-sm font-medium text-white">
@@ -324,7 +324,7 @@ export default function VendorActivatePage() {
                 </span>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Email
                 </span>
                 <span className="break-all text-right text-sm font-medium text-white">
@@ -332,7 +332,7 @@ export default function VendorActivatePage() {
                 </span>
               </div>
               <div className="flex items-start justify-between gap-4">
-                <span className="text-xs font-medium uppercase tracking-wider text-white/40">
+                <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Vendor ID
                 </span>
                 <span className="text-right text-sm font-medium text-white">
@@ -344,7 +344,7 @@ export default function VendorActivatePage() {
             <div>
               <label
                 htmlFor="password"
-                className="mb-1.5 block text-sm font-medium text-white/80"
+                className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
               >
                 Password
               </label>
@@ -360,7 +360,7 @@ export default function VendorActivatePage() {
                   }
                   placeholder="Create a password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 pr-12 text-sm text-white placeholder-white/30 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30"
+                  className="w-full rounded-xl border border-input-border bg-input px-4 py-3 pr-12 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
                 />
                 <button
                   type="button"
@@ -372,7 +372,7 @@ export default function VendorActivatePage() {
                       ? "Hide password"
                       : "Show password"
                   }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 transition hover:text-white/70"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-subtle)] transition hover:text-[var(--text-secondary)]"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -386,7 +386,7 @@ export default function VendorActivatePage() {
             <div>
               <label
                 htmlFor="confirm-password"
-                className="mb-1.5 block text-sm font-medium text-white/80"
+                className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
               >
                 Confirm Password
               </label>
@@ -399,11 +399,11 @@ export default function VendorActivatePage() {
                 }
                 placeholder="Re-enter your password"
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30"
+                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
               />
             </div>
 
-            <p className="text-xs leading-relaxed text-white/40">
+            <p className="text-xs leading-relaxed text-[var(--text-subtle)]">
               Password must be at least 8 characters with an
               uppercase letter, a lowercase letter, a number,
               and a special character.
@@ -421,7 +421,7 @@ export default function VendorActivatePage() {
             <button
               type="submit"
               disabled={activating}
-              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-orange-600 to-red-600 text-base font-semibold text-white shadow-[0_12px_30px_rgba(234,88,12,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand to-brand-hover text-base font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {activating
                 ? "Activating..."
@@ -431,7 +431,7 @@ export default function VendorActivatePage() {
             <button
               type="button"
               onClick={handleBackToStepOne}
-              className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-white/50 transition hover:text-white/80"
+              className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to credentials
@@ -442,7 +442,7 @@ export default function VendorActivatePage() {
         <div className="mt-6 border-t border-zinc-800 pt-5 text-center">
           <Link
             href="/login"
-            className="text-sm font-medium text-white/50 transition hover:text-orange-400"
+            className="text-sm font-medium text-[var(--text-secondary)] transition hover:text-brand"
           >
             Back to Login
           </Link>

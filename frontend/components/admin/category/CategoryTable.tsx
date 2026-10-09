@@ -99,7 +99,7 @@ if (!token) {
         justify-center
       ">
         <Loader2
-          className="animate-spin text-orange-500"
+          className="animate-spin text-brand"
           size={32}
         />
       </div>
@@ -465,7 +465,7 @@ if (!token) {
                     </p>
 
                     <p className="
-                      text-orange-400
+                      text-brand
                       font-semibold
                       mt-2
                     ">

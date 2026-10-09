@@ -17,6 +17,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import BrandLogo from "@/components/branding/BrandLogo";
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:8000";
@@ -333,7 +335,7 @@ function VerifyResetOTPForm() {
   };
 
   return (
-    <main className="relative isolate min-h-screen min-h-[100dvh] w-full overflow-x-hidden bg-[#1a0d07]">
+    <main className="relative isolate min-h-screen min-h-[100dvh] w-full overflow-x-hidden bg-[var(--background)]">
 
       {/* ======================================================
           DESKTOP VERSION
@@ -365,11 +367,8 @@ function VerifyResetOTPForm() {
             href="/"
             className="absolute left-[5%] top-[6%]"
           >
-            <h1 className="text-[clamp(24px,2vw,34px)] font-bold tracking-tight text-white drop-shadow-lg">
-              Campus
-              <span className="text-orange-500">
-                Vita
-              </span>
+            <h1>
+              <BrandLogo plate className="h-[clamp(26px,2.2vw,36px)]" />
             </h1>
           </Link>
 
@@ -379,7 +378,7 @@ function VerifyResetOTPForm() {
 
             <h2 className="text-[clamp(42px,4.5vw,76px)] font-bold leading-none tracking-tight text-white drop-shadow-xl">
               Verify Your{" "}
-              <span className="text-orange-500">
+              <span className="text-brand">
                 OTP
               </span>
             </h2>
@@ -392,15 +391,15 @@ function VerifyResetOTPForm() {
 
           {/* OTP CARD */}
 
-          <section className="absolute right-[6%] top-1/2 w-[min(42vw,590px)] -translate-y-1/2 rounded-[36px] border border-white/60 bg-white/95 p-8 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:p-10 xl:p-12">
+          <section className="absolute right-[6%] top-1/2 w-[min(42vw,590px)] -translate-y-1/2 rounded-[36px] border-[var(--border)] bg-card/95 p-8 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:p-10 xl:p-12">
 
             {/* ICON */}
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-card shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
               <ShieldCheck
                 size={40}
                 strokeWidth={1.8}
-                className="text-orange-600"
+                className="text-brand-hover"
               />
             </div>
 
@@ -410,7 +409,7 @@ function VerifyResetOTPForm() {
 
               <h2 className="text-[clamp(26px,2vw,36px)] font-bold tracking-tight text-zinc-900">
                 Verify{" "}
-                <span className="text-orange-600">
+                <span className="text-brand-hover">
                   OTP
                 </span>
               </h2>
@@ -419,7 +418,7 @@ function VerifyResetOTPForm() {
                 We've sent a 6-digit verification code to
               </p>
 
-              <p className="mt-1 break-all text-sm font-semibold text-orange-600 md:text-base">
+              <p className="mt-1 break-all text-sm font-semibold text-brand-hover md:text-base">
                 {email || "your email address"}
               </p>
 
@@ -484,7 +483,7 @@ function VerifyResetOTPForm() {
                     aria-label={`OTP digit ${
                       index + 1
                     }`}
-                    className="h-14 w-11 rounded-xl border border-zinc-200 bg-white text-center text-xl font-bold text-zinc-900 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-50 sm:h-16 sm:w-14"
+                    className="h-14 w-11 rounded-xl border border-zinc-200 bg-input text-center text-xl font-bold text-zinc-900 outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50 sm:h-16 sm:w-14"
                   />
                 ))}
 
@@ -498,7 +497,7 @@ function VerifyResetOTPForm() {
                   loading ||
                   otpValue.length !== 6
                 }
-                className="group mt-8 flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 text-lg font-semibold text-white shadow-[0_12px_30px_rgba(234,88,12,0.35)] transition-all hover:scale-[1.01] hover:shadow-[0_16px_35px_rgba(234,88,12,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group mt-8 flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand via-brand to-brand-hover text-lg font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] hover:shadow-[0_16px_35px_rgba(104,110,232,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   "Verifying OTP..."
@@ -530,7 +529,7 @@ function VerifyResetOTPForm() {
                 type="button"
                 onClick={handleResendOTP}
                 disabled={loading}
-                className="mt-2 font-semibold text-orange-600 transition-colors hover:text-orange-800 disabled:opacity-50"
+                className="mt-2 font-semibold text-brand-hover transition-colors hover:text-brand-active disabled:opacity-50"
               >
                 Resend OTP
               </button>
@@ -548,7 +547,7 @@ function VerifyResetOTPForm() {
                     "/forgot-password"
                   )
                 }
-                className="inline-flex items-center gap-2 text-sm font-semibold text-orange-700 transition-colors hover:text-orange-900"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-brand-active transition-colors hover:text-brand-active"
               >
                 <ArrowLeft size={19} />
                 Back
@@ -566,7 +565,7 @@ function VerifyResetOTPForm() {
           MOBILE VERSION
       ====================================================== */}
 
-      <div className="relative flex min-h-screen min-h-[100dvh] w-full flex-col overflow-hidden bg-[#1a0d07] md:hidden">
+      <div className="relative flex min-h-screen min-h-[100dvh] w-full flex-col overflow-hidden bg-[var(--background)] md:hidden">
 
         {/* MOBILE IMAGE SECTION */}
 
@@ -593,11 +592,8 @@ function VerifyResetOTPForm() {
             {/* LOGO */}
 
             <Link href="/">
-              <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-lg">
-                Campus
-                <span className="text-orange-500">
-                  Vita
-                </span>
+              <h1>
+                <BrandLogo plate className="h-[26px]" />
               </h1>
             </Link>
 
@@ -607,7 +603,7 @@ function VerifyResetOTPForm() {
 
               <h2 className="text-[clamp(36px,10vw,48px)] font-bold leading-tight tracking-tight text-white drop-shadow-xl">
                 Verify Your{" "}
-                <span className="text-orange-500">
+                <span className="text-brand">
                   OTP
                 </span>
               </h2>
@@ -624,7 +620,7 @@ function VerifyResetOTPForm() {
 
         {/* MOBILE BOTTOM SHEET */}
 
-        <section className="relative z-20 -mt-8 flex min-h-[54dvh] w-full flex-1 flex-col rounded-t-[34px] bg-[#fafafa] px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_rgba(0,0,0,0.35)]">
+        <section className="relative z-20 -mt-8 flex min-h-[54dvh] w-full flex-1 flex-col rounded-t-[34px] bg-card px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_rgba(0,0,0,0.35)]">
 
           {/* HANDLE */}
 
@@ -632,11 +628,11 @@ function VerifyResetOTPForm() {
 
           {/* ICON */}
 
-          <div className="mx-auto mt-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
+          <div className="mx-auto mt-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-card shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
             <ShieldCheck
               size={32}
               strokeWidth={1.8}
-              className="text-orange-600"
+              className="text-brand-hover"
             />
           </div>
 
@@ -646,7 +642,7 @@ function VerifyResetOTPForm() {
 
             <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
               Verify{" "}
-              <span className="text-orange-600">
+              <span className="text-brand-hover">
                 OTP
               </span>
             </h2>
@@ -655,7 +651,7 @@ function VerifyResetOTPForm() {
               Enter the 6-digit code sent to
             </p>
 
-            <p className="mt-1 break-all text-xs font-semibold text-orange-600">
+            <p className="mt-1 break-all text-xs font-semibold text-brand-hover">
               {email || "your email address"}
             </p>
 
@@ -720,7 +716,7 @@ function VerifyResetOTPForm() {
                   aria-label={`OTP digit ${
                     index + 1
                   }`}
-                  className="h-12 w-10 rounded-lg border border-zinc-200 bg-white text-center text-lg font-bold text-zinc-900 outline-none transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-12 w-10 rounded-lg border border-zinc-200 bg-input text-center text-lg font-bold text-zinc-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               ))}
 
@@ -734,7 +730,7 @@ function VerifyResetOTPForm() {
                 loading ||
                 otpValue.length !== 6
               }
-              className="group mt-7 flex h-14 w-full items-center justify-center rounded-xl bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 font-semibold text-white shadow-[0_10px_25px_rgba(234,88,12,0.32)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="group mt-7 flex h-14 w-full items-center justify-center rounded-xl bg-gradient-to-r from-brand via-brand to-brand-hover font-semibold text-white shadow-[0_10px_25px_rgba(104,110,232,0.32)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 "Verifying OTP..."
@@ -766,7 +762,7 @@ function VerifyResetOTPForm() {
               type="button"
               onClick={handleResendOTP}
               disabled={loading}
-              className="mt-2 text-sm font-semibold text-orange-600 disabled:opacity-50"
+              className="mt-2 text-sm font-semibold text-brand-hover disabled:opacity-50"
             >
               Resend OTP
             </button>
@@ -784,7 +780,7 @@ function VerifyResetOTPForm() {
                   "/forgot-password"
                 )
               }
-              className="inline-flex items-center gap-2 text-xs font-semibold text-orange-700"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-brand-active"
             >
               <ArrowLeft size={17} />
               Back
@@ -809,7 +805,7 @@ export default function VerifyResetOTPPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-[#1a0d07]">
+        <main className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-[var(--background)]">
           <div className="text-lg font-semibold text-white">
             Loading...
           </div>

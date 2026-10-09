@@ -13,7 +13,7 @@ export default function NotificationButton() {
       bg-zinc-900
       p-3
       transition
-      hover:border-orange-500
+      hover:border-brand
       "
     >
       <Bell size={20} />
@@ -26,7 +26,7 @@ export default function NotificationButton() {
         h-2
         w-2
         rounded-full
-        bg-orange-500
+        bg-brand
         "
       />
     </button>

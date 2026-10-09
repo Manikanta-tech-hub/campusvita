@@ -64,7 +64,7 @@ export default function CategoryFilters({
               text-white
               placeholder:text-zinc-500
               outline-none
-              focus:border-orange-500
+              focus:border-brand
             "
           />
 
@@ -86,7 +86,7 @@ export default function CategoryFilters({
             px-4
             text-white
             outline-none
-            focus:border-orange-500
+            focus:border-brand
           "
         >
           <option value="ALL">
@@ -118,7 +118,7 @@ export default function CategoryFilters({
             px-4
             text-white
             outline-none
-            focus:border-orange-500
+            focus:border-brand
           "
         >
           <option value="LATEST">
@@ -145,8 +145,8 @@ export default function CategoryFilters({
             items-center
             justify-center
             gap-2
-            bg-orange-500
-            hover:bg-orange-600
+            bg-brand
+            hover:bg-brand-hover
             text-white
             font-semibold
             rounded-xl

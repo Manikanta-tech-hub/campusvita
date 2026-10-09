@@ -159,13 +159,13 @@ function getStatusStyles(status: string) {
     case "Pending":
       return {
         badge:
-          "border-orange-400/20 bg-orange-500/10 text-orange-600",
+          "border-brand/20 bg-brand/10 text-brand-hover",
         badgeDark:
-          "dark:text-orange-300",
+          "dark:text-brand",
         dot:
-          "bg-orange-500",
+          "bg-brand",
         dotDark:
-          "dark:bg-orange-400",
+          "dark:bg-brand",
       };
 
     case "Accepted":
@@ -195,13 +195,13 @@ function getStatusStyles(status: string) {
     case "Cooking":
       return {
         badge:
-          "border-orange-400/20 bg-orange-500/10 text-orange-600",
+          "border-brand/20 bg-brand/10 text-brand-hover",
         badgeDark:
-          "dark:text-orange-300",
+          "dark:text-brand",
         dot:
-          "bg-orange-500",
+          "bg-brand",
         dotDark:
-          "dark:bg-orange-400",
+          "dark:bg-brand",
       };
 
     case "Ready For Pickup":
@@ -231,7 +231,7 @@ function getStatusStyles(status: string) {
     default:
       return {
         badge:
-          "border-black/10 bg-black/5 text-black/60",
+          "border-black/10 bg-black/5 text-[var(--text-muted)]",
         badgeDark:
           "dark:border-white/10 dark:bg-white/5 dark:text-white/60",
         dot:
@@ -348,8 +348,8 @@ export default function VendorDashboardPage() {
       : "light";
 
     document.body.style.backgroundColor = dark
-      ? "#090909"
-      : "#f8fafc";
+      ? "#303746"
+      : "#e6e7eb";
   }, []);
 
   const toggleTheme = () => {
@@ -371,8 +371,8 @@ export default function VendorDashboardPage() {
         : "light";
 
       document.body.style.backgroundColor = next
-        ? "#090909"
-        : "#f8fafc";
+        ? "#303746"
+        : "#e6e7eb";
 
       return next;
     });
@@ -727,21 +727,21 @@ export default function VendorDashboardPage() {
       <main
         className={`min-h-screen transition-colors duration-300 ${
           isDark
-            ? "bg-[#090909] text-white"
-            : "bg-slate-50 text-slate-900"
+            ? "bg-[var(--background)] text-white"
+            : "bg-[var(--background)] text-[var(--text-primary)]"
         }`}
       >
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
           <div className="animate-pulse">
             <div
               className={`h-8 w-40 rounded-lg ${
-                isDark ? "bg-[#151515]" : "bg-slate-200"
+                isDark ? "bg-[var(--surface)]" : "bg-slate-200"
               }`}
             />
 
             <div
               className={`mt-3 h-4 w-64 rounded ${
-                isDark ? "bg-[#111111]" : "bg-slate-100"
+                isDark ? "bg-[var(--surface)]" : "bg-slate-100"
               }`}
             />
 
@@ -751,8 +751,8 @@ export default function VendorDashboardPage() {
                   key={item}
                   className={`h-28 rounded-2xl ${
                     isDark
-                      ? "border border-white/[0.05] bg-[#101010]"
-                      : "border border-slate-200 bg-white"
+                      ? "border border-white/[0.05] bg-[var(--surface)]"
+                      : "border border-slate-200 bg-card"
                   }`}
                 />
               ))}
@@ -761,8 +761,8 @@ export default function VendorDashboardPage() {
             <div
               className={`mt-8 h-72 rounded-3xl ${
                 isDark
-                  ? "border border-white/[0.05] bg-[#101010]"
-                  : "border border-slate-200 bg-white"
+                  ? "border border-white/[0.05] bg-[var(--surface)]"
+                  : "border border-slate-200 bg-card"
               }`}
             />
           </div>
@@ -775,8 +775,8 @@ export default function VendorDashboardPage() {
     <main
       className={`min-h-screen transition-colors duration-300 ${
         isDark
-          ? "bg-[#090909] text-white"
-          : "bg-slate-50 text-slate-900"
+          ? "bg-[var(--background)] text-white"
+          : "bg-[var(--background)] text-[var(--text-primary)]"
       }`}
     >
       {/* HEADER */}
@@ -784,18 +784,18 @@ export default function VendorDashboardPage() {
       <header
         className={`sticky top-0 z-40 border-b backdrop-blur-xl transition-colors duration-300 ${
           isDark
-            ? "border-white/[0.07] bg-[#090909]/90"
-            : "border-black/[0.07] bg-white/90"
+            ? "border-white/[0.07] bg-navbar"
+            : "border-[var(--border)] bg-navbar"
         }`}
       >
         <div className="mx-auto flex h-[72px] max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 shadow-lg shadow-orange-500/20">
-              <Store className="h-5 w-5 text-black" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand shadow-lg shadow-brand/20">
+              <Store className="h-5 w-5 text-[var(--on-primary)]" />
             </div>
 
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-500 dark:text-orange-400">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand dark:text-brand">
                 CampusVita
               </p>
 
@@ -821,8 +821,8 @@ export default function VendorDashboardPage() {
               }
               className={`group flex h-10 w-10 items-center justify-center rounded-xl border transition ${
                 isDark
-                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-300"
-                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-600"
+                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-brand/30 hover:bg-brand/10 hover:text-brand"
+                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-brand/30 hover:bg-brand/10 hover:text-brand-hover"
               }`}
             >
               {isDark ? (
@@ -840,8 +840,8 @@ export default function VendorDashboardPage() {
               title="Refresh orders"
               className={`group flex h-10 w-10 items-center justify-center rounded-xl border transition disabled:cursor-not-allowed disabled:opacity-50 ${
                 isDark
-                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-300"
-                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-orange-500/30 hover:bg-orange-500/10 hover:text-orange-600"
+                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-brand/30 hover:bg-brand/10 hover:text-brand"
+                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-brand/30 hover:bg-brand/10 hover:text-brand-hover"
               }`}
             >
               <RefreshCw
@@ -874,18 +874,18 @@ export default function VendorDashboardPage() {
         <section
           className={`relative overflow-hidden rounded-[28px] border p-5 shadow-2xl transition-colors duration-300 sm:p-7 lg:p-8 ${
             isDark
-              ? "border-orange-400/10 bg-gradient-to-br from-[#21120a] via-[#140c08] to-[#0d0d0d] shadow-black/20"
-              : "border-orange-400/10 bg-gradient-to-br from-orange-50 via-white to-slate-100 shadow-black/5"
+              ? "border-brand/10 bg-gradient-to-br from-[rgba(104,110,232,0.22)] via-[rgba(104,110,232,0.10)] to-[var(--surface)] shadow-black/20"
+              : "border-brand/10 bg-gradient-to-br from-brand-soft via-white to-slate-100 shadow-black/5"
           }`}
         >
-          <div className="absolute -right-20 -top-32 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
+          <div className="absolute -right-20 -top-32 h-72 w-72 rounded-full bg-brand/10 blur-3xl" />
 
-          <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-orange-500/[0.06] blur-3xl" />
+          <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-brand/[0.06] blur-3xl" />
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-600 dark:text-orange-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(251,146,60,0.8)] dark:bg-orange-400" />
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand-hover dark:text-brand">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_10px_rgba(134,145,240,0.75)] dark:bg-brand" />
                 LIVE VENDOR DASHBOARD
               </div>
 
@@ -914,12 +914,12 @@ export default function VendorDashboardPage() {
             <div
               className={`flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm backdrop-blur-sm ${
                 isDark
-                  ? "border-white/10 bg-[#101010]/90"
-                  : "border-black/10 bg-white/70"
+                  ? "border-white/10 bg-[var(--surface)]/90"
+                  : "border-[var(--border)] bg-card/90"
               }`}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-                <Store className="h-5 w-5 text-orange-500 dark:text-orange-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
+                <Store className="h-5 w-5 text-brand dark:text-brand" />
               </div>
 
               <div>
@@ -970,17 +970,17 @@ export default function VendorDashboardPage() {
               label: "Pending",
               value: statistics.pending,
               description: "Need attention",
-              border: "border-orange-400/10",
+              border: "border-brand/10",
               valueClass:
-                "text-orange-500 dark:text-orange-300",
+                "text-brand dark:text-brand",
             },
             {
               label: "Cooking",
               value: statistics.cooking,
               description: "Currently preparing",
-              border: "border-orange-400/10",
+              border: "border-brand/10",
               valueClass:
-                "text-orange-500 dark:text-orange-300",
+                "text-brand dark:text-brand",
             },
             {
               label: "Ready",
@@ -1003,8 +1003,8 @@ export default function VendorDashboardPage() {
               key={stat.label}
               className={`rounded-2xl border p-4 shadow-sm transition-colors duration-300 sm:p-5 ${
                 isDark
-                  ? `${stat.border} bg-[#101010]`
-                  : `${stat.border} bg-white`
+                  ? `${stat.border} bg-[var(--surface)]`
+                  : `${stat.border} bg-card`
               }`}
             >
               <p
@@ -1042,7 +1042,7 @@ export default function VendorDashboardPage() {
 
         <div className="mb-4 mt-8 flex items-end justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500 dark:text-orange-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand dark:text-brand">
               Order Management
             </p>
 
@@ -1068,12 +1068,12 @@ export default function VendorDashboardPage() {
           <section
             className={`rounded-[28px] border px-6 py-16 text-center shadow-sm transition-colors duration-300 ${
               isDark
-                ? "border-white/[0.07] bg-[#101010]"
-                : "border-black/[0.07] bg-white"
+                ? "border-white/[0.07] bg-[var(--surface)]"
+                : "border-black/[0.07] bg-card"
             }`}
           >
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10">
-              <PackageCheck className="h-7 w-7 text-orange-500 dark:text-orange-400" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10">
+              <PackageCheck className="h-7 w-7 text-brand dark:text-brand" />
             </div>
 
             <h3 className="mt-5 text-xl font-bold">
@@ -1183,8 +1183,8 @@ export default function VendorDashboardPage() {
                         : "border-black/[0.07]"
                     } ${
                       isDark
-                        ? "bg-[#101010] shadow-black/10"
-                        : "bg-white shadow-black/5"
+                        ? "bg-[var(--surface)] shadow-black/10"
+                        : "bg-card shadow-black/5"
                     }`}
                   >
                     {/* ORDER HEADER */}
@@ -1198,8 +1198,8 @@ export default function VendorDashboardPage() {
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10">
-                            <UserRound className="h-5 w-5 text-orange-500 dark:text-orange-400" />
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/10">
+                            <UserRound className="h-5 w-5 text-brand dark:text-brand" />
                           </div>
 
                           <div>
@@ -1255,7 +1255,7 @@ export default function VendorDashboardPage() {
                               Your Total
                             </p>
 
-                            <p className="mt-1 text-xl font-black text-orange-500 dark:text-orange-400">
+                            <p className="mt-1 text-xl font-black text-brand dark:text-brand">
                               {formatMoney(vendorTotal)}
                             </p>
                           </div>
@@ -1350,15 +1350,15 @@ export default function VendorDashboardPage() {
                                       itemCancelled
                                         ? "border-red-500/10 bg-red-500/[0.04]"
                                         : isDark
-                                        ? "border-white/[0.06] bg-[#151515]"
-                                        : "border-black/[0.06] bg-slate-50"
+                                        ? "border-white/[0.06] bg-[var(--surface)]"
+                                        : "border-black/[0.06] bg-[var(--background)]"
                                     }`}
                                   >
                                     <div className="flex items-center gap-3 sm:gap-4">
                                       <div
                                         className={`relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl sm:h-[84px] sm:w-[84px] ${
                                           isDark
-                                            ? "bg-[#1c1c1c]"
+                                            ? "bg-[var(--surface-tertiary)]"
                                             : "bg-slate-100"
                                         }`}
                                       >
@@ -1378,7 +1378,7 @@ export default function VendorDashboardPage() {
                                               className={`h-6 w-6 ${
                                                 isDark
                                                   ? "text-white/20"
-                                                  : "text-black/20"
+                                                  : "text-[var(--border-strong)]"
                                               }`}
                                             />
                                           </div>
@@ -1400,7 +1400,7 @@ export default function VendorDashboardPage() {
                                                 : "text-slate-400 line-through"
                                               : isDark
                                               ? "text-white"
-                                              : "text-slate-900"
+                                              : "text-[var(--text-primary)]"
                                           }`}
                                         >
                                           {item.name}
@@ -1458,7 +1458,7 @@ export default function VendorDashboardPage() {
                                                 : "text-slate-300 line-through"
                                               : isDark
                                               ? "text-white"
-                                              : "text-slate-900"
+                                              : "text-[var(--text-primary)]"
                                           }`}
                                         >
                                           {formatMoney(lineTotal)}
@@ -1510,8 +1510,8 @@ export default function VendorDashboardPage() {
                         <div
                           className={`rounded-2xl border p-4 transition-colors duration-300 ${
                             isDark
-                              ? "border-white/[0.06] bg-[#151515]"
-                              : "border-black/[0.06] bg-slate-50"
+                              ? "border-white/[0.06] bg-[var(--surface)]"
+                              : "border-black/[0.06] bg-[var(--background)]"
                           }`}
                         >
                           <div className="flex items-center justify-between">
@@ -1551,7 +1551,7 @@ export default function VendorDashboardPage() {
                                   }`}
                                 >
                                   <div
-                                    className="h-full rounded-full bg-gradient-to-r from-orange-600 to-orange-400 transition-all duration-500"
+                                    className="h-full rounded-full bg-gradient-to-r from-brand-hover to-brand transition-all duration-500"
                                     style={{
                                       width: `${progress}%`,
                                     }}
@@ -1579,13 +1579,13 @@ export default function VendorDashboardPage() {
                               <div
                                 className={`mt-5 rounded-xl border p-3 ${
                                   isTakingLonger
-                                    ? "border-orange-400/20 bg-orange-500/10"
-                                    : "border-orange-400/10 bg-orange-500/[0.06]"
+                                    ? "border-brand/20 bg-brand/10"
+                                    : "border-brand/10 bg-brand/[0.06]"
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <TimerReset className="h-4 w-4 text-orange-500 dark:text-orange-400" />
+                                    <TimerReset className="h-4 w-4 text-brand dark:text-brand" />
 
                                     <span
                                       className={`text-xs font-semibold ${
@@ -1598,7 +1598,7 @@ export default function VendorDashboardPage() {
                                     </span>
                                   </div>
 
-                                  <span className="font-mono text-sm font-bold text-orange-500 dark:text-orange-300">
+                                  <span className="font-mono text-sm font-bold text-brand dark:text-brand">
                                     {formatCountdown(
                                       remainingSeconds
                                     )}
@@ -1606,7 +1606,7 @@ export default function VendorDashboardPage() {
                                 </div>
 
                                 {isTakingLonger ? (
-                                  <p className="mt-2 text-[11px] leading-4 text-orange-600/80 dark:text-orange-300/70">
+                                  <p className="mt-2 text-[11px] leading-4 text-brand-hover/80 dark:text-brand/70">
                                     Taking longer than expected.
                                     Mark the order ready when it
                                     is actually prepared.
@@ -1689,7 +1689,7 @@ export default function VendorDashboardPage() {
                                   action.next
                                 )
                               }
-                              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-black shadow-lg shadow-orange-500/10 transition hover:bg-orange-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-bold text-[var(--on-primary)] shadow-lg shadow-brand/10 transition hover:bg-brand active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               {isUpdating ? (
                                 <>

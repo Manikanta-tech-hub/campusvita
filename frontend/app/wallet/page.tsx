@@ -2,6 +2,7 @@
 
 import {
   getAccessToken,
+  handleExpiredSession,
 } from "@/app/lib/auth/session";
 
 import {
@@ -30,7 +31,7 @@ import {
 
 import { useRouter } from "next/navigation";
 
-import Navbar from "@/components/layout/Navbar";
+import HomeNavbar from "@/components/layout/HomeNavbar";
 
 declare global {
   interface Window {
@@ -115,19 +116,22 @@ export default function WalletPage() {
           : []
       );
     } catch (error: any) {
+      // Log only status/message - the full Axios error carries
+      // the request config (including the Authorization header).
       console.error(
         "Wallet fetch error:",
-        error
+        error?.response?.status ??
+          error?.message
       );
 
       if (
         error?.response?.status === 401
       ) {
-        toast.error(
-          "Session expired. Please login again."
-        );
-
-        router.replace("/login");
+        // Session token exists but the backend rejected it
+        // (expired/invalid JWT). Clear the stale USER session
+        // centrally and let /login show the friendly one-shot
+        // message - backend JWT error strings are never shown.
+        handleExpiredSession("USER");
       } else {
         toast.error(
           "Failed to load wallet"
@@ -210,8 +214,16 @@ export default function WalletPage() {
     } catch (error: any) {
       console.error(
         "Wallet verification error:",
-        error
+        error?.response?.status ??
+          error?.message
       );
+
+      if (
+        error?.response?.status === 401
+      ) {
+        handleExpiredSession("USER");
+        return;
+      }
 
       toast.error(
         error?.response?.data?.detail ||
@@ -390,7 +402,7 @@ export default function WalletPage() {
 
         theme: {
           color:
-            "#f97316",
+            "#686ee8",
         },
 
         handler:
@@ -452,8 +464,17 @@ export default function WalletPage() {
     } catch (error: any) {
       console.error(
         "Create wallet payment error:",
-        error
+        error?.response?.status ??
+          error?.message
       );
+
+      if (
+        error?.response?.status === 401
+      ) {
+        setProcessing(false);
+        handleExpiredSession("USER");
+        return;
+      }
 
       const message =
         error?.response?.data
@@ -478,7 +499,7 @@ export default function WalletPage() {
   if (loading) {
     return (
       <>
-        <Navbar />
+        <HomeNavbar />
 
         <main className="min-h-screen bg-[var(--background)] px-4 pb-24 pt-6 text-[var(--text-primary)] md:px-6">
           <div className="mx-auto w-full max-w-5xl">
@@ -510,7 +531,7 @@ export default function WalletPage() {
 
   return (
     <>
-      <Navbar />
+      <HomeNavbar />
 
       <main className="min-h-screen bg-[var(--background)] px-4 pb-24 pt-5 text-[var(--text-primary)] md:px-6 md:pt-8">
         <div className="mx-auto w-full max-w-5xl">
@@ -550,7 +571,7 @@ export default function WalletPage() {
                   BALANCE CARD
                   ================================================== */}
 
-              <section className="relative overflow-hidden rounded-[28px] border border-orange-500/20 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 p-6 text-white shadow-[0_22px_60px_rgba(249,115,22,0.18)] sm:p-7">
+              <section className="relative overflow-hidden rounded-[28px] border border-brand/20 bg-gradient-to-br from-brand via-brand-hover to-brand-active p-6 text-white shadow-[0_22px_60px_rgba(104,110,232,0.18)] sm:p-7">
 
                 <div className="absolute -right-14 -top-14 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
 
@@ -570,18 +591,18 @@ export default function WalletPage() {
                       </div>
 
                       <div>
-                        <p className="text-sm font-semibold text-orange-50">
+                        <p className="text-sm font-semibold text-white">
                           Wallet Balance
                         </p>
 
-                        <p className="mt-0.5 text-[11px] text-orange-100/80">
+                        <p className="mt-0.5 text-[11px] text-white/80">
                           Available to spend
                         </p>
                       </div>
 
                     </div>
 
-                    <Sparkles className="h-5 w-5 text-orange-100/70" />
+                    <Sparkles className="h-5 w-5 text-white/70" />
 
                   </div>
 
@@ -591,7 +612,7 @@ export default function WalletPage() {
                       ₹{walletBalance.toFixed(2)}
                     </p>
 
-                    <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-black/10 px-3 py-1.5 text-[11px] font-semibold text-orange-50">
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-black/10 px-3 py-1.5 text-[11px] font-semibold text-white">
                       <span className="h-1.5 w-1.5 rounded-full bg-white" />
                       Ready for your next order
                     </div>
@@ -640,7 +661,7 @@ export default function WalletPage() {
                     Amount
                   </label>
 
-                  <div className="flex items-center rounded-2xl border border-[var(--border)] bg-[var(--input)] px-4 transition focus-within:border-[var(--brand)] focus-within:ring-4 focus-within:ring-orange-500/10">
+                  <div className="flex items-center rounded-2xl border border-[var(--border)] bg-[var(--input)] px-4 transition focus-within:border-[var(--brand)] focus-within:ring-4 focus-within:ring-brand/10">
 
                     <span className="mr-2 text-xl font-bold text-[var(--text-muted)]">
                       ₹
@@ -687,7 +708,7 @@ export default function WalletPage() {
                           Number(amount) ===
                           quickAmount
                             ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]"
-                            : "border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:border-orange-500/50 hover:text-[var(--brand)]"
+                            : "border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--text-secondary)] hover:border-brand/50 hover:text-[var(--brand)]"
                         }`}
                       >
                         + ₹{quickAmount}
@@ -707,7 +728,7 @@ export default function WalletPage() {
                   disabled={
                     processing
                   }
-                  className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] text-sm font-black text-white shadow-lg shadow-orange-500/15 transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] text-sm font-black text-white shadow-lg shadow-brand/15 transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {processing ? (
                     <>
@@ -883,7 +904,7 @@ export default function WalletPage() {
                       "/wallet/transactions"
                     )
                   }
-                  className="mt-3 flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-left shadow-[var(--shadow-card)] transition hover:border-orange-500/40 hover:bg-[var(--surface-secondary)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                  className="mt-3 flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-left shadow-[var(--shadow-card)] transition hover:border-brand/40 hover:bg-[var(--surface-secondary)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
                 >
 
                   <div>

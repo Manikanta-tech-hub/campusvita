@@ -179,7 +179,7 @@ export default function AddCategoryModal({
               setName(e.target.value)
             }
             disabled={loading}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
 
         </div>
@@ -201,7 +201,7 @@ export default function AddCategoryModal({
             }
             disabled={loading}
             rows={3}
-            className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+            className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
 
         </div>
@@ -232,7 +232,7 @@ export default function AddCategoryModal({
               }
 
             }}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 file:mr-4 file:rounded-md file:border-0 file:bg-orange-500 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-orange-600"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 file:mr-4 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-hover"
           />
 
           {imageFile && (
@@ -255,7 +255,7 @@ export default function AddCategoryModal({
                 e.target.checked
               )
             }
-            className="h-4 w-4 accent-orange-500"
+            className="h-4 w-4 accent-brand"
           />
 
           <span className="text-sm text-zinc-300">
@@ -280,7 +280,7 @@ export default function AddCategoryModal({
             type="button"
             disabled={loading}
             onClick={handleSubmit}
-            className="rounded-lg bg-orange-500 px-5 py-2.5 font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-brand px-5 py-2.5 font-medium text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
               ? "Creating..."

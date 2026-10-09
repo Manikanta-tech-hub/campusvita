@@ -489,7 +489,7 @@ export default function CustomerManagementPage() {
           title="Customers With Orders"
           value={statistics.customers_with_orders}
           icon={ShoppingBag}
-          iconClass="bg-orange-500/10 text-orange-500"
+          iconClass="bg-brand/10 text-brand"
         />
       </div>
 
@@ -1092,11 +1092,11 @@ export default function CustomerManagementPage() {
       ====================================================== */}
 
       {showVendorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-3xl border border-zinc-800 bg-[#12131a] shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:items-center">
+          <div className="flex w-full max-w-xl flex-col rounded-3xl border border-zinc-800 bg-[var(--surface)] shadow-2xl sm:max-h-[calc(100vh-2rem)]">
             {/* MODAL HEADER */}
 
-            <div className="flex items-center justify-between border-b border-zinc-800 p-6">
+            <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 p-6">
               <div>
                 <h2 className="text-xl font-bold text-white">
                   {createdInvitation
@@ -1124,8 +1124,8 @@ export default function CustomerManagementPage() {
               <>
                 {/* CREDENTIALS (creation response only - never re-fetched) */}
 
-                <div className="space-y-4 p-6">
-                  <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+                <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6">
+                  <div className="flex items-start gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
                     <AlertTriangle
                       size={18}
                       className="mt-0.5 shrink-0"
@@ -1138,7 +1138,7 @@ export default function CustomerManagementPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-zinc-800 bg-[#0c1017] p-4">
+                  <div className="rounded-xl border border-zinc-800 bg-[var(--surface-secondary)] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs uppercase tracking-wide text-zinc-500">
@@ -1176,7 +1176,7 @@ export default function CustomerManagementPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-zinc-800 bg-[#0c1017] p-4">
+                  <div className="rounded-xl border border-zinc-800 bg-[var(--surface-secondary)] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-xs uppercase tracking-wide text-zinc-500">
@@ -1214,7 +1214,7 @@ export default function CustomerManagementPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-zinc-800 bg-[#0c1017] p-4">
+                  <div className="rounded-xl border border-zinc-800 bg-[var(--surface-secondary)] p-4">
                     <p className="text-xs uppercase tracking-wide text-zinc-500">
                       Expires
                     </p>
@@ -1241,11 +1241,11 @@ export default function CustomerManagementPage() {
                   </p>
                 </div>
 
-                <div className="flex justify-end gap-3 border-t border-zinc-800 p-6">
+                <div className="flex shrink-0 justify-end gap-3 border-t border-zinc-800 p-6">
                   <button
                     type="button"
                     onClick={closeVendorModal}
-                    className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+                    className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover"
                   >
                     Done
                   </button>
@@ -1255,7 +1255,7 @@ export default function CustomerManagementPage() {
               <>
                 {/* FORM */}
 
-                <div className="space-y-5 p-6">
+                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
                   {vendorError && (
                     <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
                       {vendorError}
@@ -1276,7 +1276,7 @@ export default function CustomerManagementPage() {
                         })
                       }
                       placeholder="Example: Spice Garden Foods"
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                     />
                   </div>
 
@@ -1294,7 +1294,7 @@ export default function CustomerManagementPage() {
                         })
                       }
                       placeholder="Full name of the vendor owner"
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                     />
                   </div>
 
@@ -1314,7 +1314,7 @@ export default function CustomerManagementPage() {
                           })
                         }
                         placeholder="vendor@example.com"
-                        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                       />
                     </div>
 
@@ -1337,7 +1337,7 @@ export default function CustomerManagementPage() {
                           })
                         }
                         placeholder="10-digit mobile number"
-                        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                        className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                       />
                     </div>
                   </div>
@@ -1365,7 +1365,7 @@ export default function CustomerManagementPage() {
                               onChange={() =>
                                 toggleStall(stall._id)
                               }
-                              className="h-4 w-4 accent-orange-500"
+                              className="h-4 w-4 accent-brand"
                             />
 
                             <span className="text-sm text-zinc-300">
@@ -1386,7 +1386,7 @@ export default function CustomerManagementPage() {
 
                 {/* MODAL FOOTER */}
 
-                <div className="flex justify-end gap-3 border-t border-zinc-800 p-6">
+                <div className="flex shrink-0 justify-end gap-3 border-t border-zinc-800 p-6">
                   <button
                     type="button"
                     onClick={closeVendorModal}
@@ -1400,7 +1400,7 @@ export default function CustomerManagementPage() {
                     type="button"
                     onClick={handleCreateVendor}
                     disabled={creatingVendor}
-                    className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {creatingVendor
                       ? "Creating..."
@@ -1428,11 +1428,11 @@ function StatCard({
 }: {
   title: string;
   value: number;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ size?: number }>;
   iconClass: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-brand/20 hover:shadow-[var(--shadow-card)]">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-text-muted">

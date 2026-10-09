@@ -8,8 +8,6 @@ import {
   Clock3,
   IndianRupee,
   RefreshCw,
-  TrendingUp,
-  UtensilsCrossed,
 } from "lucide-react";
 
 import { getDashboard } from "@/app/lib/api";
@@ -18,6 +16,18 @@ import OrdersChart from "@/components/admin/analytics/OrdersChart";
 import SalesPieChart from "@/components/admin/analytics/SalesPieChart";
 import TopSellingChart from "@/components/admin/analytics/TopSellingChart";
 import RecentOrdersTable from "@/components/admin/dashboard/orders/RecentOrdersTable";
+
+/*
+  21st.dev "dashboard-with-collapsible-sidebar" layout applied to
+  CampusVita:
+
+  - 4 KPI cards (real getDashboard() values)
+  - 2/3 chart + 1/3 Quick Stats (real metrics, real derived %)
+  - 2/3 recent orders table + 1/3 top selling
+  - remaining existing analytics charts
+
+  No placeholder/fake data — every number comes from CampusVita's API.
+*/
 
 type DashboardStats = {
   totalOrders: number;
@@ -48,71 +58,195 @@ function formatNumber(value: number) {
 function DashboardLoading() {
   return (
     <div className="space-y-6 animate-pulse">
-      <div className="h-28 rounded-3xl border border-border bg-card" />
+      <div className="flex items-center justify-between gap-4">
+        <div className="h-5 w-56 rounded-lg border border-border bg-card" />
+        <div className="h-10 w-28 rounded-xl border border-border bg-card" />
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[1, 2, 3, 4].map((item) => (
           <div
             key={item}
-            className="h-32 rounded-2xl border border-border bg-card"
+            className="h-36 rounded-2xl border border-border bg-card"
           />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="h-[390px] rounded-3xl border border-border bg-card xl:col-span-2" />
         <div className="h-[390px] rounded-3xl border border-border bg-card" />
-        <div className="h-[390px] rounded-3xl border border-border bg-card" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="h-[420px] rounded-3xl border border-border bg-card xl:col-span-2" />
+        <div className="h-[420px] rounded-3xl border border-border bg-card" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <div className="h-[390px] rounded-3xl border border-border bg-card" />
         <div className="h-[390px] rounded-3xl border border-border bg-card" />
       </div>
-
-      <div className="h-[420px] rounded-3xl border border-border bg-card" />
     </div>
   );
 }
+
+/* ============================================================
+   KPI CARD — 21st.dev card language, CampusVita orange accent
+============================================================ */
 
 function StatCard({
   title,
   value,
   subtitle,
   icon: Icon,
-  iconClass,
 }: {
   title: string;
   value: string;
   subtitle: string;
   icon: typeof IndianRupee;
-  iconClass: string;
 }) {
   return (
-    <div className="group rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-500/30 hover:shadow-[var(--shadow-card)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-text-secondary">
-            {title}
-          </p>
+    <div className="group rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-[var(--shadow-card)]">
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand transition-colors duration-200 group-hover:bg-brand group-hover:text-white!">
+        <Icon size={20} />
+      </span>
 
-          <p className="mt-3 truncate text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-            {value}
-          </p>
+      <p className="mt-4 text-sm font-medium text-text-secondary!">
+        {title}
+      </p>
 
-          <p className="mt-2 text-[11px] text-text-muted">
-            {subtitle}
-          </p>
-        </div>
+      <p className="mt-1 text-2xl font-bold tracking-tight text-text-primary! sm:text-3xl">
+        {value}
+      </p>
 
+      <p className="mt-1.5 text-xs text-text-muted!">
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
+/* ============================================================
+   QUICK STATS — real CampusVita metrics + derived percentages
+============================================================ */
+
+function QuickStatsRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm text-text-secondary">
+        {label}
+      </span>
+
+      <span className="text-sm font-bold text-text-primary">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function QuickStatsBarRow({
+  label,
+  value,
+  percent,
+}: {
+  label: string;
+  value: string;
+  percent: number;
+}) {
+  const safePercent = Math.max(
+    0,
+    Math.min(100, Number(percent) || 0)
+  );
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-text-secondary">
+          {label}
+        </span>
+
+        <span className="text-sm font-bold text-text-primary">
+          {value}
+        </span>
+      </div>
+
+      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-border">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconClass}`}
-        >
-          <Icon size={19} />
-        </div>
+          className="h-full rounded-full bg-gradient-to-r from-brand to-red-500 transition-all duration-500"
+          style={{ width: `${safePercent}%` }}
+        />
       </div>
     </div>
   );
 }
+
+function QuickStatsPanel({
+  stats,
+  completionRate,
+}: {
+  stats: DashboardStats;
+  completionRate: number;
+}) {
+  const pendingShare =
+    stats.totalOrders > 0
+      ? Math.round(
+          (stats.pendingOrders / stats.totalOrders) * 100
+        )
+      : 0;
+
+  return (
+    <div className="flex h-full flex-col rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-card)] transition-colors duration-200">
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold">
+          Quick Stats
+        </h2>
+
+        <p className="mt-1 text-sm">
+          Live operational snapshot
+        </p>
+      </div>
+
+      <div className="space-y-5">
+        <QuickStatsRow
+          label="All-Time Revenue"
+          value={formatCurrency(stats.totalRevenue)}
+        />
+
+        <QuickStatsBarRow
+          label="Completion Rate"
+          value={`${completionRate}%`}
+          percent={completionRate}
+        />
+
+        <QuickStatsBarRow
+          label="Pending Share"
+          value={`${formatNumber(stats.pendingOrders)} orders`}
+          percent={pendingShare}
+        />
+
+        <QuickStatsRow
+          label="Peak Ordering Hours"
+          value={stats.peakOrderingHours}
+        />
+
+        <QuickStatsRow
+          label="Order Activity"
+          value={stats.totalOrders > 0 ? "Active" : "No data"}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   DASHBOARD PAGE
+============================================================ */
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS);
@@ -176,33 +310,28 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-w-0 space-y-6">
-      {/* Dashboard heading */}
-      <section className="rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-colors duration-200 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-text-muted">
-              CampusVita Admin
-            </p>
+      {/* Live status + manual refresh */}
 
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
-              Dashboard
-            </h1>
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <p className="flex items-center gap-2 text-sm text-text-muted!">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
 
-            <p className="mt-1 text-sm text-text-secondary">
-              Monitor your canteen operations and live order activity.
-            </p>
-          </div>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
 
-          <button
-            type="button"
-            onClick={loadDashboard}
-            disabled={loading}
-            className="inline-flex w-fit items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-text-primary shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/40 hover:bg-card-hover hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw size={16} />
-            Refresh
-          </button>
-        </div>
+          Live — auto-refreshes every 10 seconds
+        </p>
+
+        <button
+          type="button"
+          onClick={loadDashboard}
+          disabled={loading}
+          className="inline-flex w-fit items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-medium text-text-primary shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-brand/40 hover:bg-card-hover hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RefreshCw size={16} />
+          Refresh
+        </button>
       </section>
 
       {/* Error state */}
@@ -238,14 +367,14 @@ export default function AdminDashboard() {
         </section>
       )}
 
-      {/* KPI cards */}
+      {/* KPI cards — 4 real metrics from getDashboard() */}
+
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Today's Revenue"
           value={formatCurrency(stats.todayRevenue)}
           subtitle="Paid orders today"
           icon={IndianRupee}
-          iconClass="bg-orange-500/10 text-orange-400"
         />
 
         <StatCard
@@ -253,7 +382,6 @@ export default function AdminDashboard() {
           value={formatNumber(stats.totalOrders)}
           subtitle="All orders"
           icon={ClipboardList}
-          iconClass="bg-blue-500/10 text-blue-400"
         />
 
         <StatCard
@@ -261,7 +389,6 @@ export default function AdminDashboard() {
           value={formatNumber(stats.completedOrders)}
           subtitle={`${completionRate}% of all orders`}
           icon={CheckCircle2}
-          iconClass="bg-emerald-500/10 text-emerald-400"
         />
 
         <StatCard
@@ -269,87 +396,29 @@ export default function AdminDashboard() {
           value={formatNumber(stats.pendingOrders)}
           subtitle="Currently in progress"
           icon={Clock3}
-          iconClass="bg-violet-500/10 text-violet-400"
         />
       </section>
 
-      {/* Secondary live metrics */}
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {/* All-Time Revenue */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400">
-              <TrendingUp size={18} />
-            </div>
+      {/* Chart (2/3) + Quick Stats (1/3) */}
 
-            <div>
-              <p className="text-xs text-text-muted">
-                All-Time Revenue
-              </p>
-
-              <p className="mt-1 text-lg font-bold text-text-primary">
-                {formatCurrency(stats.totalRevenue)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Peak Ordering Hours */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
-              <Clock3 size={18} />
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-xs text-text-muted">
-                Peak Ordering Hours
-              </p>
-
-              <p className="mt-1 truncate text-lg font-bold text-text-primary">
-                {stats.peakOrderingHours}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Order Activity */}
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:border-orange-500/20 hover:shadow-[var(--shadow-card)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
-              <UtensilsCrossed size={18} />
-            </div>
-
-            <div>
-              <p className="text-xs text-text-muted">
-                Order Activity
-              </p>
-
-              <p className="mt-1 text-lg font-bold text-text-primary">
-                {stats.totalOrders > 0
-                  ? "Active"
-                  : "No data"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main analytics */}
-      <section className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="min-w-0">
+      <section className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="min-w-0 xl:col-span-2">
           <RevenueChart />
         </div>
 
         <div className="min-w-0">
-          <OrdersChart />
+          <QuickStatsPanel
+            stats={stats}
+            completionRate={completionRate}
+          />
         </div>
       </section>
 
-      {/* Distribution analytics */}
-      <section className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="min-w-0">
-          <SalesPieChart />
+      {/* Recent orders table (2/3) + Top selling (1/3) */}
+
+      <section className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="min-w-0 xl:col-span-2">
+          <RecentOrdersTable />
         </div>
 
         <div className="min-w-0">
@@ -357,9 +426,16 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* Recent orders */}
-      <section className="min-w-0">
-        <RecentOrdersTable />
+      {/* Existing distribution analytics */}
+
+      <section className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="min-w-0">
+          <OrdersChart />
+        </div>
+
+        <div className="min-w-0">
+          <SalesPieChart />
+        </div>
       </section>
     </div>
   );

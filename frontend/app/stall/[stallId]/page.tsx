@@ -683,7 +683,7 @@ export default function StallPage() {
                 hover:border-[var(--border-strong)]
                 focus:border-[var(--brand)]
                 focus:ring-4
-                focus:ring-orange-500/10
+                focus:ring-brand/10
               "
             />
 
@@ -942,7 +942,7 @@ export default function StallPage() {
               bg-[var(--brand)]
               px-3
               text-white
-              shadow-[0_14px_38px_rgba(249,115,22,0.28)]
+              shadow-[0_14px_38px_rgba(104,110,232,0.28)]
               transition-all
               duration-200
               hover:-translate-y-0.5
@@ -961,7 +961,7 @@ export default function StallPage() {
                 strokeWidth={2.2}
               />
 
-              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[var(--brand)] bg-white px-1 text-[9px] font-black leading-none text-orange-600">
+              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[var(--brand)] bg-white px-1 text-[9px] font-black leading-none text-brand-hover">
                 {cartItemCount}
               </span>
             </div>

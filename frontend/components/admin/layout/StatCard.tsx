@@ -18,14 +18,14 @@ export default function StatCard({
   color,
 }: StatCardProps) {
   const colors = {
-    orange: "bg-orange-500/20 text-orange-500",
+    orange: "bg-brand/20 text-brand",
     green: "bg-green-500/20 text-green-500",
     yellow: "bg-yellow-500/20 text-yellow-500",
     blue: "bg-blue-500/20 text-blue-500",
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-orange-500/40 transition-all">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-brand/40 transition-all">
       <div className="flex justify-between items-start">
         <div>
           <p className="text-gray-400 text-sm">{title}</p>

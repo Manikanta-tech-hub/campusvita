@@ -66,9 +66,9 @@ function SectionCard({
   footer?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-zinc-800 bg-[#111113] shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+    <section className="rounded-3xl border border-zinc-800 bg-[var(--surface)] shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
       <div className="flex items-start gap-4 border-b border-zinc-800 px-5 py-5 sm:px-6">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand/10 text-brand">
           <Icon size={20} />
         </div>
 
@@ -121,7 +121,7 @@ function Field({
         placeholder={placeholder}
         disabled={disabled}
         inputMode={inputMode}
-        className="w-full rounded-2xl border border-zinc-800 bg-[#0b0b0d] px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-700 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-2xl border border-zinc-800 bg-[var(--input)] px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-zinc-700 focus:border-brand focus:ring-2 focus:ring-brand/10 disabled:cursor-not-allowed disabled:opacity-60"
       />
     </label>
   );
@@ -452,7 +452,7 @@ export default function AdminSettingsPage() {
                   type="button"
                   onClick={handleProfileSave}
                   disabled={savingProfile || !profileDirty}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Save size={17} />
                   {savingProfile ? "Saving..." : "Save Changes"}
@@ -474,7 +474,7 @@ export default function AdminSettingsPage() {
                   )}
                 </div>
 
-                <label className="absolute -bottom-2 -right-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-800 bg-[#111113] text-orange-500 shadow-lg transition hover:bg-zinc-900">
+                <label className="absolute -bottom-2 -right-2 flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-800 bg-[var(--surface)] text-brand shadow-lg transition hover:bg-zinc-900">
                   <Camera size={16} />
                   <input
                     type="file"
@@ -541,7 +541,7 @@ export default function AdminSettingsPage() {
                 <span className="mb-2 block text-sm font-medium text-zinc-300">
                   Account status
                 </span>
-                <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-zinc-800 bg-[#0b0b0d] px-4 text-sm text-zinc-300">
+                <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] px-4 text-sm text-zinc-300">
                   <span className="h-2 w-2 rounded-full bg-emerald-400" />
                   Authenticated account
                 </div>
@@ -555,9 +555,9 @@ export default function AdminSettingsPage() {
             icon={Palette}
           >
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label className="rounded-2xl border border-zinc-800 bg-[#0b0b0d] p-4">
+              <label className="rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] p-4">
                 <div className="flex items-center gap-3">
-                  <Moon size={18} className="text-orange-500" />
+                  <Moon size={18} className="text-brand" />
                   <div>
                     <p className="text-sm font-semibold text-white">Theme</p>
                     <p className="text-xs text-zinc-600">
@@ -578,7 +578,7 @@ export default function AdminSettingsPage() {
 
     setTheme(selectedTheme);
   }}
-  className="mt-4 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500"
+  className="mt-4 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-white outline-none focus:border-brand"
 >
                   <option value="dark">Dark</option>
                   <option value="light">Light</option>
@@ -586,9 +586,9 @@ export default function AdminSettingsPage() {
                 </select>
               </label>
 
-              <div className="rounded-2xl border border-zinc-800 bg-[#0b0b0d] p-4">
+              <div className="rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] p-4">
                 <div className="flex items-center gap-3">
-                  <ShieldCheck size={18} className="text-orange-500" />
+                  <ShieldCheck size={18} className="text-brand" />
                   <div>
                     <p className="text-sm font-semibold text-white">
                       Existing backend
@@ -615,10 +615,10 @@ export default function AdminSettingsPage() {
                   notifications: !current.notifications,
                 }))
               }
-              className="flex w-full items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-[#0b0b0d] p-4 text-left transition hover:border-zinc-700"
+              className="flex w-full items-center justify-between gap-4 rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] p-4 text-left transition hover:border-zinc-700"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
                   <Bell size={18} />
                 </div>
 
@@ -637,7 +637,7 @@ export default function AdminSettingsPage() {
               <span
                 className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${
                   profile.notifications
-                    ? "bg-orange-500"
+                    ? "bg-brand"
                     : "bg-zinc-800"
                 }`}
               >
@@ -659,8 +659,8 @@ export default function AdminSettingsPage() {
             description="Change the authenticated account password using the existing secure backend flow."
             icon={LockKeyhole}
           >
-            <div className="mb-5 flex items-start gap-3 rounded-2xl border border-zinc-800 bg-[#0b0b0d] p-4">
-              <KeyRound size={18} className="mt-0.5 text-orange-500" />
+            <div className="mb-5 flex items-start gap-3 rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] p-4">
+              <KeyRound size={18} className="mt-0.5 text-brand" />
               <div>
                 <p className="text-sm font-semibold text-white">
                   Password change
@@ -718,7 +718,7 @@ export default function AdminSettingsPage() {
             </div>
           </SectionCard>
 
-          <div className="rounded-3xl border border-zinc-800 bg-[#111113] p-5 sm:p-6">
+          <div className="rounded-3xl border border-zinc-800 bg-[var(--surface)] p-5 sm:p-6">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400">
                 <Check size={18} />

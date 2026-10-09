@@ -29,6 +29,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import BrandLogo from "@/components/branding/BrandLogo";
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:8000";
@@ -107,7 +109,7 @@ function Field({
   return (
     <label className="group block w-full min-w-0">
       {!mobile && label && (
-        <span className="mb-2 block text-[13px] font-semibold text-[#302d2a]">
+        <span className="mb-2 block text-[13px] font-semibold text-[var(--text-primary)]">
           {label}
         </span>
       )}
@@ -116,13 +118,13 @@ function Field({
         className={`
           relative flex w-full min-w-0 items-center
           rounded-2xl
-          border border-[#dedbd6]
-          bg-white
+          border border-input-border
+          bg-input
           shadow-[0_3px_12px_rgba(0,0,0,0.025)]
           transition-all duration-200
-          group-focus-within:border-orange-400
+          group-focus-within:border-brand
           group-focus-within:ring-4
-          group-focus-within:ring-orange-100
+          group-focus-within:ring-brand/40
           ${mobile ? "h-[62px] px-5" : "h-[64px] px-5"}
         `}
       >
@@ -132,9 +134,9 @@ function Field({
           className="
             mr-4
             shrink-0
-            text-[#77736f]
+            text-[var(--text-muted)]
             transition-colors
-            group-focus-within:text-orange-500
+            group-focus-within:text-brand
           "
         />
 
@@ -153,9 +155,9 @@ function Field({
             flex-1
             bg-transparent
             text-[16px]
-            text-[#292725]
+            text-[var(--text-primary)]
             outline-none
-            placeholder:text-[#77736f]
+            placeholder:text-[var(--text-muted)]
             disabled:cursor-not-allowed
             disabled:opacity-50
           "
@@ -678,8 +680,8 @@ export default function SignupPage() {
         w-full
         max-w-[100vw]
         overflow-x-hidden
-        bg-[#1a1715]
-        text-[#292725]
+        bg-[var(--background)]
+        text-[var(--text-primary)]
       "
     >
       {/* =====================================================
@@ -743,17 +745,14 @@ export default function SignupPage() {
           <section className="relative flex h-full min-w-0 flex-col">
             {/* LOGO */}
 
-            <div className="pt-5 text-[28px] font-bold tracking-[-0.05em] text-white">
-              Campus
-              <span className="text-orange-500">
-                Vita
-              </span>
+            <div className="pt-5">
+              <BrandLogo plate className="h-[30px]" />
             </div>
 
             {/* HERO */}
 
             <div className="my-auto max-w-[760px] pb-10">
-              <div className="mb-7 h-[4px] w-12 rounded-full bg-orange-500" />
+              <div className="mb-7 h-[4px] w-12 rounded-full bg-brand" />
 
               <h1
                 className="
@@ -766,7 +765,7 @@ export default function SignupPage() {
                 "
               >
                 Join{" "}
-                <span className="text-orange-500">
+                <span className="text-brand">
                   CampusVita
                 </span>
               </h1>
@@ -848,7 +847,7 @@ export default function SignupPage() {
                 overflow-y-auto
                 overflow-x-hidden
                 rounded-[34px]
-                bg-[#fbfaf9]
+                bg-card
                 px-8
                 py-8
                 shadow-[0_25px_80px_rgba(0,0,0,0.28)]
@@ -938,12 +937,7 @@ export default function SignupPage() {
             pt-8
           "
         >
-          <div className="text-[27px] font-bold tracking-[-0.05em] text-white">
-            Campus
-            <span className="text-orange-500">
-              Vita
-            </span>
-          </div>
+          <BrandLogo plate className="h-[28px]" />
         </div>
 
         {/* MOBILE FORM */}
@@ -964,7 +958,7 @@ export default function SignupPage() {
               max-w-full
               overflow-x-hidden
               rounded-t-[38px]
-              bg-[#fbfaf9]
+              bg-card
               px-6
               pb-12
               pt-5
@@ -972,7 +966,7 @@ export default function SignupPage() {
             "
           >
             <div className="mb-6 flex justify-center">
-              <div className="h-1.5 w-12 rounded-full bg-[#d7d2cc]" />
+              <div className="h-1.5 w-12 rounded-full bg-border" />
             </div>
 
             <SignupForm
@@ -1043,8 +1037,8 @@ function SignupForm({
             className={`
               flex items-center justify-center
               rounded-full
-              bg-white
-              text-orange-600
+              bg-card
+              text-brand-hover
               shadow-[0_5px_20px_rgba(0,0,0,0.10)]
               ${
                 mobile
@@ -1064,7 +1058,7 @@ function SignupForm({
           className={`
             font-bold
             tracking-[-0.045em]
-            text-[#202020]
+            text-[var(--text-primary)]
             ${
               mobile
                 ? "text-[29px]"
@@ -1072,7 +1066,7 @@ function SignupForm({
             }
           `}
         >
-          <span className="text-orange-600">
+          <span className="text-brand-hover">
             Create
           </span>{" "}
           your account
@@ -1081,7 +1075,7 @@ function SignupForm({
         <p
           className={`
             mt-2
-            text-[#77736f]
+            text-[var(--text-muted)]
             ${mobile ? "text-[15px]" : "text-[17px]"}
           `}
         >
@@ -1153,9 +1147,9 @@ function SignupForm({
               className="
                 ml-3
                 shrink-0
-                text-[#77736f]
+                text-[var(--text-muted)]
                 transition
-                hover:text-orange-500
+                hover:text-brand
                 disabled:cursor-not-allowed
               "
             >
@@ -1201,12 +1195,12 @@ function SignupForm({
           justify-center
           gap-3
           rounded-2xl
-          bg-[#f04b00]
+          bg-[var(--primary)]
           font-bold
           text-white
-          shadow-[0_12px_25px_rgba(240,75,0,0.28)]
+          shadow-[0_12px_25px_rgba(104,110,232,0.3)]
           transition-all
-          hover:bg-[#dc4400]
+          hover:bg-[var(--primary-hover)]
           active:scale-[0.99]
           disabled:cursor-not-allowed
           disabled:opacity-60
@@ -1230,13 +1224,13 @@ function SignupForm({
       {/* DIVIDER */}
 
       <div className="my-5 flex items-center gap-4">
-        <div className="h-px min-w-0 flex-1 bg-[#dedad5]" />
+        <div className="h-px min-w-0 flex-1 bg-border" />
 
-        <span className="whitespace-nowrap text-sm text-[#77736f]">
+        <span className="whitespace-nowrap text-sm text-[var(--text-muted)]">
           or continue with
         </span>
 
-        <div className="h-px min-w-0 flex-1 bg-[#dedad5]" />
+        <div className="h-px min-w-0 flex-1 bg-border" />
       </div>
 
       {/* GOOGLE */}
@@ -1254,15 +1248,15 @@ function SignupForm({
           gap-3
           rounded-2xl
           border
-          border-[#e2ddd7]
-          bg-white
+          border-border
+          bg-card
           text-[16px]
           font-semibold
-          text-[#292725]
+          text-[var(--text-primary)]
           shadow-[0_3px_12px_rgba(0,0,0,0.03)]
           transition-all
-          hover:border-orange-300
-          hover:bg-orange-50
+          hover:border-brand
+          hover:bg-brand-soft
           hover:shadow-[0_8px_20px_rgba(0,0,0,0.07)]
           active:scale-[0.99]
           disabled:cursor-not-allowed
@@ -1283,7 +1277,7 @@ function SignupForm({
           pb-2
           text-center
           text-[15px]
-          text-[#77736f]
+          text-[var(--text-muted)]
           ${mobile ? "mt-6" : "mt-5"}
         `}
       >
@@ -1297,9 +1291,9 @@ function SignupForm({
           disabled={isDisabled}
           className="
             font-bold
-            text-orange-600
+            text-brand-hover
             transition
-            hover:text-orange-700
+            hover:text-brand-active
             disabled:cursor-not-allowed
             disabled:opacity-60
           "
@@ -1335,8 +1329,8 @@ function Feature({
           items-center
           justify-center
           rounded-2xl
-          bg-orange-500/20
-          text-orange-400
+          bg-brand/20
+          text-brand
         "
       >
         <Icon
@@ -1350,7 +1344,7 @@ function Feature({
           {title}
         </p>
 
-        <p className="mt-1 text-[13px] leading-5 text-white/80">
+        <p className="mt-1 text-[13px] leading-5 text-[var(--text-secondary)]">
           {description}
         </p>
       </div>

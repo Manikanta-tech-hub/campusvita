@@ -6,12 +6,14 @@ import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import {
+  MotionConfig,
+  motion,
+} from "framer-motion";
+
+import {
   ArrowRight,
   Eye,
   EyeOff,
-  LockKeyhole,
-  Mail,
-  UserRoundPlus,
 } from "lucide-react";
 
 import {
@@ -29,6 +31,8 @@ import {
 } from "@/app/firebase";
 
 import { signInWithPopup } from "firebase/auth";
+
+import LoginHero from "@/components/auth/LoginHero";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -636,125 +640,64 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative isolate min-h-screen min-h-[100dvh] w-full max-w-none overflow-x-clip bg-[#1a0d07]">
+    <MotionConfig reducedMotion="user">
+      <main className="relative isolate flex h-[100dvh] w-full flex-col overflow-x-clip bg-background md:grid md:grid-cols-2 md:grid-rows-1 lg:grid-cols-[1.12fr_1fr]">
 
-      {/* ======================================================
-          DESKTOP VERSION
-      ====================================================== */}
+        {/* ======================================================
+            HERO — desktop left panel / mobile header
+        ====================================================== */}
 
-      <div className="relative hidden min-h-screen min-h-[100dvh] w-full overflow-hidden md:block">
+        <LoginHero />
 
-        {/* BACKGROUND */}
+        {/* ======================================================
+            LOGIN PANEL
+        ====================================================== */}
 
-        <div
-          className="absolute inset-0 h-full w-full bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage:
-              "url('/images/login-background.jpeg')",
-          }}
-        />
+        <section className="relative z-10 -mt-6 flex min-h-0 w-full flex-1 flex-col overflow-y-auto rounded-t-[2rem] bg-background px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-8 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] sm:px-8 md:mt-0 md:rounded-none md:px-10 md:py-12 md:shadow-none lg:px-16">
 
-        {/* DARK OVERLAY */}
-
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/20" />
-
-        {/* CONTENT */}
-
-        <div className="relative z-10 min-h-screen min-h-[100dvh] w-full">
-
-          {/* LOGO */}
-
-          <div className="absolute left-[5%] top-[6%]">
-
-            <h1 className="text-[clamp(24px,2vw,34px)] font-bold tracking-tight text-white drop-shadow-lg">
-
-              Campus
-              <span className="text-orange-500">
-                Vita
-              </span>
-
-            </h1>
-
-          </div>
-
-          {/* WELCOME */}
-
-          <div className="absolute left-[5%] top-1/2 -translate-y-1/2">
-
-            <h2 className="text-[clamp(42px,4.5vw,76px)] font-bold leading-none tracking-tight text-white drop-shadow-xl">
-
-              Welcome{" "}
-
-              <span className="text-orange-500">
-                Back!
-              </span>
-
-            </h2>
-
-            <p className="mt-5 text-[clamp(16px,1.35vw,24px)] font-medium text-white/90 drop-shadow-lg">
-
-              From Classrooms to Cravings.
-
-            </p>
-
-          </div>
-
-          {/* DESKTOP LOGIN CARD */}
-
-          <section className="absolute right-[6%] top-1/2 max-h-[calc(100dvh_-_3rem)] w-[min(42vw,590px)] -translate-y-1/2 overflow-y-auto rounded-[36px] border border-white/60 bg-white/95 p-8 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:p-10 xl:p-12">
-
-            {/* USER ICON */}
-
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
-
-              <UserRoundPlus
-                size={38}
-                strokeWidth={1.8}
-                className="text-orange-600"
-              />
-
-            </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.5,
+              delay: 0.1,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="mx-auto my-auto w-[min(100%,27rem)]"
+          >
 
             {/* HEADING */}
 
-            <div className="mt-7 text-center">
+            <p className="text-sm font-semibold tracking-[0.04em] text-brand! sm:text-[15px]">
+              From Classrooms to Cravings.
+            </p>
 
-              <h2 className="text-[clamp(26px,2vw,36px)] font-bold tracking-tight text-zinc-900">
-
-                Log in to{" "}
-
-                <span className="text-orange-600">
-                  CampusVita
-                </span>
-
-              </h2>
-
-              <p className="mt-2 text-sm text-zinc-500 md:text-base">
-
-                Welcome back! Please enter your details.
-
-              </p>
-
-            </div>
+            <h1 className="mt-2.5 text-[28px] font-bold tracking-tight sm:text-[34px]">
+              Welcome{" "}
+              <span className="text-brand!">
+                Back!
+              </span>
+            </h1>
 
             {/* LOGIN FORM */}
 
             <form
               onSubmit={handleLogin}
-              className="mt-8 space-y-4"
+              className="mt-8 space-y-5"
             >
 
               {/* EMAIL */}
 
-              <div className="relative">
-
-                <Mail
-                  size={23}
-                  strokeWidth={1.8}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500"
-                />
+              <div>
+                <label
+                  htmlFor="login-email"
+                  className="mb-2 block text-sm font-medium text-text-primary"
+                >
+                  Email
+                </label>
 
                 <input
+                  id="login-email"
                   type="email"
                   placeholder="Email Address"
                   value={email}
@@ -764,22 +707,45 @@ export default function LoginPage() {
                   disabled={loading}
                   autoComplete="email"
                   aria-label="Email"
-                  className="h-16 w-full rounded-2xl border border-zinc-200 bg-white pl-14 pr-5 text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-12 w-full rounded-xl border border-input-border bg-input px-4 outline-none transition focus:ring-4 focus:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-60"
                 />
-
               </div>
 
               {/* PASSWORD */}
 
-              <div className="relative">
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label
+                    htmlFor="login-password"
+                    className="text-sm font-medium text-text-primary"
+                  >
+                    Password
+                  </label>
 
-                <LockKeyhole
-                  size={23}
-                  strokeWidth={1.8}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500"
-                />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowPassword(
+                        (previous) => !previous
+                      )
+                    }
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
+                    className="-m-1.5 rounded-lg p-1.5 text-text-muted! transition hover:text-brand!"
+                  >
+                    {showPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+                </div>
 
                 <input
+                  id="login-password"
                   type={
                     showPassword
                       ? "text"
@@ -793,72 +759,35 @@ export default function LoginPage() {
                   disabled={loading}
                   autoComplete="current-password"
                   aria-label="Password"
-                  className="h-16 w-full rounded-2xl border border-zinc-200 bg-white pl-14 pr-14 text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-12 w-full rounded-xl border border-input-border bg-input px-4 outline-none transition focus:ring-4 focus:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-60"
                 />
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowPassword(
-                      (previous) =>
-                        !previous
-                    )
-                  }
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
-                  className="absolute right-5 top-1/2 flex -translate-y-1/2 items-center justify-center text-zinc-500 transition-colors hover:text-orange-600"
-                >
-
-                  {showPassword ? (
-                    <EyeOff
-                      size={23}
-                      strokeWidth={2}
-                    />
-                  ) : (
-                    <Eye
-                      size={23}
-                      strokeWidth={2}
-                    />
-                  )}
-
-                </button>
-
               </div>
 
               {/* REMEMBER / FORGOT */}
 
-              <div className="flex items-center justify-between pt-1">
-
-                <label className="flex cursor-pointer items-center gap-3 text-sm text-zinc-600">
-
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-text-secondary">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) =>
-                      setRememberMe(
-                        e.target.checked
-                      )
+                      setRememberMe(e.target.checked)
                     }
                     disabled={loading}
-                    className="h-5 w-5 cursor-pointer rounded border-zinc-300 accent-orange-600"
+                    className="h-4 w-4 cursor-pointer rounded border-input-border accent-brand-hover"
                   />
 
                   <span>
                     Remember me
                   </span>
-
                 </label>
 
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-orange-700 transition-colors hover:text-orange-900"
+                  className="shrink-0 text-sm font-medium text-brand! transition-colors hover:text-brand-hover!"
                 >
                   Forgot Password?
                 </Link>
-
               </div>
 
               {/* LOGIN BUTTON */}
@@ -866,7 +795,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group mt-2 flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 text-lg font-semibold text-white shadow-[0_12px_30px_rgba(234,88,12,0.35)] transition-all hover:scale-[1.01] hover:shadow-[0_16px_35px_rgba(234,88,12,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand via-brand to-brand-hover font-semibold! text-white! shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:shadow-[0_16px_38px_rgba(104,110,232,0.45)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
 
                 {loading ? (
@@ -878,8 +807,8 @@ export default function LoginPage() {
                     </span>
 
                     <ArrowRight
-                      size={25}
-                      className="ml-3 transition-transform group-hover:translate-x-1"
+                      size={18}
+                      className="transition-transform group-hover:translate-x-0.5"
                     />
                   </>
                 )}
@@ -890,16 +819,14 @@ export default function LoginPage() {
 
             {/* DIVIDER */}
 
-            <div className="my-7 flex items-center gap-4">
+            <div className="my-6 flex items-center gap-4">
+              <div className="h-px flex-1 bg-border" />
 
-              <div className="h-px flex-1 bg-zinc-200" />
-
-              <span className="whitespace-nowrap text-sm text-zinc-500">
+              <span className="whitespace-nowrap text-xs font-medium uppercase tracking-wide text-text-muted">
                 or continue with
               </span>
 
-              <div className="h-px flex-1 bg-zinc-200" />
-
+              <div className="h-px flex-1 bg-border" />
             </div>
 
             {/* GOOGLE LOGIN */}
@@ -908,7 +835,7 @@ export default function LoginPage() {
               type="button"
               disabled={loading}
               onClick={handleGoogleLogin}
-              className="flex h-16 w-full items-center justify-center gap-4 rounded-2xl border border-zinc-200 bg-white font-semibold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-card font-semibold! text-text-primary! shadow-sm transition hover:bg-card-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
             >
 
               <GoogleIcon />
@@ -921,358 +848,36 @@ export default function LoginPage() {
 
             {/* SIGNUP */}
 
-            <p className="mt-7 text-center text-sm text-zinc-600">
-
-              Don't have an account?{" "}
+            <p className="mt-7 text-center text-sm">
+              Don&apos;t have an account?{" "}
 
               <Link
                 href="/signup"
-                className="font-semibold text-orange-700 transition-colors hover:text-orange-900"
+                className="font-semibold text-brand! transition-colors hover:text-brand-hover!"
               >
                 Sign up
               </Link>
-
             </p>
 
             {/* VENDOR ACTIVATION ENTRY POINT */}
 
-            <p className="mt-3 text-center text-sm text-zinc-600">
-
+            <p className="mt-3 text-center text-sm">
               Are you a vendor?{" "}
 
               <Link
                 href="/vendor/activate"
-                className="font-semibold text-orange-700 transition-colors hover:text-orange-900"
+                className="font-semibold text-brand! transition-colors hover:text-brand-hover!"
               >
                 Activate your account
               </Link>
-
             </p>
 
-          </section>
-
-        </div>
-
-      </div>
-
-      {/* ======================================================
-          MOBILE VERSION
-      ====================================================== */}
-
-      <div className="relative flex min-h-screen min-h-[100dvh] w-full flex-col overflow-hidden bg-[#1a0d07] md:hidden">
-
-        {/* MOBILE IMAGE */}
-
-        <section className="relative h-[46dvh] min-h-[390px] w-full shrink-0 overflow-hidden">
-
-          <div
-            className="absolute inset-0 h-full w-full bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage:
-                "url('/images/login-background.jpeg')",
-            }}
-          />
-
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-black/35 to-black/80" />
-
-          <div className="relative z-10 h-full w-full px-6 pt-[max(2rem,env(safe-area-inset-top))]">
-
-            {/* LOGO */}
-
-            <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-lg">
-
-              Campus
-              <span className="text-orange-500">
-                Vita
-              </span>
-
-            </h1>
-
-            {/* WELCOME */}
-
-            <div className="absolute bottom-16 left-6 right-6">
-
-              <h2 className="text-[clamp(36px,10vw,48px)] font-bold leading-tight tracking-tight text-white drop-shadow-xl">
-
-                Welcome{" "}
-
-                <span className="text-orange-500">
-                  Back!
-                </span>
-
-              </h2>
-
-              <p className="mt-2 text-base font-medium text-white/90 drop-shadow-lg">
-
-                From Classrooms to Cravings.
-
-              </p>
-
-            </div>
-
-          </div>
+          </motion.div>
 
         </section>
 
-        {/* MOBILE LOGIN SHEET */}
-
-        <section className="relative z-20 -mt-8 flex min-h-[62dvh] w-full flex-1 flex-col overflow-y-auto rounded-t-[34px] bg-[#fafafa] px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_rgba(0,0,0,0.35)]">
-
-          {/* HANDLE */}
-
-          <div className="mx-auto h-1.5 w-14 shrink-0 rounded-full bg-zinc-300" />
-
-          {/* USER ICON */}
-
-          <div className="mx-auto mt-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
-
-            <UserRoundPlus
-              size={31}
-              strokeWidth={1.8}
-              className="text-orange-600"
-            />
-
-          </div>
-
-          {/* HEADING */}
-
-          <div className="mt-4 shrink-0 text-center">
-
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
-
-              Log in to{" "}
-
-              <span className="text-orange-600">
-                CampusVita
-              </span>
-
-            </h2>
-
-            <p className="mt-1 text-xs text-zinc-500">
-
-              Welcome back! Please enter your details.
-
-            </p>
-
-          </div>
-
-          {/* LOGIN FORM */}
-
-          <form
-            onSubmit={handleLogin}
-            className="mt-6 w-full space-y-3"
-          >
-
-            {/* EMAIL */}
-
-            <div className="relative w-full">
-
-              <Mail
-                size={21}
-                strokeWidth={1.8}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-              />
-
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) =>
-                  setEmail(e.target.value)
-                }
-                disabled={loading}
-                autoComplete="email"
-                aria-label="Email"
-                className="h-14 w-full rounded-xl border border-zinc-200 bg-white pl-12 pr-4 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-
-            </div>
-
-            {/* PASSWORD */}
-
-            <div className="relative w-full">
-
-              <LockKeyhole
-                size={21}
-                strokeWidth={1.8}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-              />
-
-              <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-                placeholder="Password"
-                value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
-                disabled={loading}
-                autoComplete="current-password"
-                aria-label="Password"
-                className="h-14 w-full rounded-xl border border-zinc-200 bg-white pl-12 pr-12 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-
-              <button
-                type="button"
-                onClick={() =>
-                  setShowPassword(
-                    (previous) =>
-                      !previous
-                  )
-                }
-                aria-label={
-                  showPassword
-                    ? "Hide password"
-                    : "Show password"
-                }
-                className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-center text-zinc-500 transition-colors active:scale-95"
-              >
-
-                {showPassword ? (
-                  <EyeOff
-                    size={21}
-                    strokeWidth={2}
-                  />
-                ) : (
-                  <Eye
-                    size={21}
-                    strokeWidth={2}
-                  />
-                )}
-
-              </button>
-
-            </div>
-
-            {/* REMEMBER / FORGOT */}
-
-            <div className="flex w-full items-center justify-between py-1">
-
-              <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
-
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) =>
-                    setRememberMe(
-                      e.target.checked
-                    )
-                  }
-                  disabled={loading}
-                  className="h-5 w-5 cursor-pointer rounded border-zinc-300 accent-orange-600"
-                />
-
-                <span>
-                  Remember me
-                </span>
-
-              </label>
-
-              <Link
-                href="/forgot-password"
-                className="text-xs font-medium text-orange-700"
-              >
-                Forgot Password?
-              </Link>
-
-            </div>
-
-            {/* LOGIN BUTTON */}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="group flex h-14 w-full items-center justify-center rounded-xl bg-gradient-to-r from-orange-600 via-orange-600 to-red-600 font-semibold text-white shadow-[0_10px_25px_rgba(234,88,12,0.32)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-
-              {loading ? (
-                "Logging In..."
-              ) : (
-                <>
-                  <span>
-                    Log In
-                  </span>
-
-                  <ArrowRight
-                    size={21}
-                    className="ml-3"
-                  />
-                </>
-              )}
-
-            </button>
-
-          </form>
-
-          {/* DIVIDER */}
-
-          <div className="my-5 flex w-full items-center gap-3">
-
-            <div className="h-px flex-1 bg-zinc-200" />
-
-            <span className="whitespace-nowrap text-xs text-zinc-500">
-              or continue with
-            </span>
-
-            <div className="h-px flex-1 bg-zinc-200" />
-
-          </div>
-
-          {/* GOOGLE LOGIN */}
-
-          <button
-            type="button"
-            disabled={loading}
-            onClick={handleGoogleLogin}
-            className="flex h-14 w-full items-center justify-center gap-3 rounded-xl border border-zinc-200 bg-white text-sm font-semibold text-zinc-800 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
-          >
-
-            <GoogleIcon />
-
-            <span>
-              Continue with Google
-            </span>
-
-          </button>
-
-          {/* SIGNUP */}
-
-          <p className="mt-5 text-center text-xs text-zinc-600">
-
-            Don't have an account?{" "}
-
-            <Link
-              href="/signup"
-              className="font-semibold text-orange-700"
-            >
-              Sign up
-            </Link>
-
-          </p>
-
-          {/* VENDOR ACTIVATION ENTRY POINT */}
-
-          <p className="mt-3 pb-2 text-center text-xs text-zinc-600">
-
-            Are you a vendor?{" "}
-
-            <Link
-              href="/vendor/activate"
-              className="font-semibold text-orange-700"
-            >
-              Activate your account
-            </Link>
-
-          </p>
-
-        </section>
-
-      </div>
-
-    </main>
+      </main>
+    </MotionConfig>
   );
 }
 

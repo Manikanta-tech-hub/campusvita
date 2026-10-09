@@ -335,12 +335,12 @@ export default function OrdersPage() {
                 }
               }}
               placeholder="Search order, token or customer..."
-              className="flex-1 min-w-0 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-orange-500"
+              className="flex-1 min-w-0 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none focus:border-brand"
             />
 
             <button
               onClick={handleSearch}
-              className="bg-orange-500 hover:bg-orange-600 px-4 rounded-xl shrink-0"
+              className="bg-brand hover:bg-brand-hover px-4 rounded-xl shrink-0"
             >
               <Search size={20} />
             </button>
@@ -511,7 +511,7 @@ export default function OrdersPage() {
 
                       <td className="px-5 py-4">
 
-                        <div className="font-semibold text-orange-400">
+                        <div className="font-semibold text-brand">
                           Token #
                           {order.token ??
                             "—"}
@@ -636,7 +636,7 @@ export default function OrdersPage() {
                       <td className="px-5 py-4">
 
                         <span
-                          className="px-3 py-1 rounded-full text-sm font-semibold bg-orange-500/20 text-orange-400"
+                          className="px-3 py-1 rounded-full text-sm font-semibold bg-brand/20 text-brand"
                         >
                           {order.status ||
                             "—"}
@@ -772,7 +772,7 @@ export default function OrdersPage() {
                   Order Details
                 </h2>
 
-                <p className="text-orange-400 mt-1">
+                <p className="text-brand mt-1">
                   Token #
                   {selectedOrder.token ??
                     "—"}
@@ -1034,7 +1034,7 @@ export default function OrdersPage() {
                     Total Amount
                   </p>
 
-                  <p className="text-3xl font-bold text-orange-500">
+                  <p className="text-3xl font-bold text-brand">
                     {formatAmount(
                       getOrderTotal(
                         selectedOrder
