@@ -17,6 +17,7 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
+import VendorSidebar from "@/components/vendor/vendor-sidebar";
 
 import {
   clearSession,
@@ -307,6 +308,7 @@ function getProgress(status: string) {
 
 export default function VendorDashboardPage() {
   const [orders, setOrders] = useState<VendorOrder[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [todayRevenue, setTodayRevenue] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -724,8 +726,14 @@ export default function VendorDashboardPage() {
 
   if (loading) {
     return (
-      <main
-        className={`min-h-screen transition-colors duration-300 ${
+      <div className="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <VendorSidebar
+          open={sidebarOpen}
+          setOpen={setSidebarOpen}
+          onLogout={handleLogout}
+        />
+        <main
+        className={`min-w-0 flex-1 min-h-screen transition-colors duration-300 ${
           isDark
             ? "bg-[var(--background)] text-white"
             : "bg-[var(--background)] text-[var(--text-primary)]"
@@ -768,12 +776,19 @@ export default function VendorDashboardPage() {
           </div>
         </div>
       </main>
+      </div>
     );
   }
 
   return (
-    <main
-      className={`min-h-screen transition-colors duration-300 ${
+    <div className="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <VendorSidebar
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+        onLogout={handleLogout}
+      />
+      <main
+      className={`min-w-0 flex-1 min-h-screen transition-colors duration-300 ${
         isDark
           ? "bg-[var(--background)] text-white"
           : "bg-[var(--background)] text-[var(--text-primary)]"
@@ -1753,6 +1768,7 @@ export default function VendorDashboardPage() {
           </section>
         )}
       </div>
-    </main>
+      </main>
+    </div>
   );
 }
