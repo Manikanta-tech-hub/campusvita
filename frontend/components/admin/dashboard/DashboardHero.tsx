@@ -21,13 +21,13 @@ export default function DashboardHero({adminName}: DashboardHeroprops) {
   });
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-orange-500/20 via-zinc-900 to-zinc-950 p-8">
+    <section className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-brand/20 via-[var(--surface-secondary)] to-[var(--background)] p-8">
 
       {/* Background Glow */}
 
-      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" />
+      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brand/20 blur-3xl" />
 
-      <div className="absolute -left-20 bottom-0 h-52 w-52 rounded-full bg-orange-500/10 blur-3xl" />
+      <div className="absolute -left-20 bottom-0 h-52 w-52 rounded-full bg-brand/10 blur-3xl" />
 
       <div className="relative">
 
@@ -35,7 +35,7 @@ export default function DashboardHero({adminName}: DashboardHeroprops) {
 
         <div>
 
-          <p className="text-sm uppercase tracking-[0.3em] text-orange-400">
+          <p className="text-sm uppercase tracking-[0.3em] text-brand">
             CampusVita Enterprise
           </p>
 
@@ -58,7 +58,7 @@ export default function DashboardHero({adminName}: DashboardHeroprops) {
 
       {/* Bottom Status */}
 
-      <div className="relative mt-10 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-white/10 bg-black/20 px-6 py-5 backdrop-blur-xl">
+      <div className="relative mt-10 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/70 px-6 py-5 backdrop-blur-xl">
 
         <div>
 

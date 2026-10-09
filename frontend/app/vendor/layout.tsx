@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   getSession,
   clearSession,
@@ -13,11 +13,21 @@ export default function VendorLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [authorized, setAuthorized] = useState(false);
 
+  // Public entry point: the vendor activation placeholder
+  // must be reachable (and render immediately) without a
+  // VENDOR session.
+  const isPublicRoute = pathname === "/vendor/activate";
+
   useEffect(() => {
+    if (isPublicRoute) {
+      return;
+    }
+
     const session = getSession("VENDOR");
 
     if (!session) {
@@ -34,13 +44,21 @@ export default function VendorLayout({
 
     setAuthorized(true);
     setCheckingAuth(false);
-  }, [router]);
+  }, [router, isPublicRoute]);
+
+  if (isPublicRoute) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] text-white">
+        {children}
+      </div>
+    );
+  }
 
   if (checkingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f] text-white">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)] text-white">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-brand" />
           <p className="text-sm text-zinc-400">
             Checking vendor session...
           </p>
@@ -54,7 +72,7 @@ export default function VendorLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen bg-[var(--background)] text-white">
       {children}
     </div>
   );

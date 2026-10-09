@@ -38,7 +38,7 @@ type Props = {
         title: "Peak Ordering Hours",
         value: peakOrderingHours,
         icon: Clock3,
-        color: "text-orange-400",
+        color: "text-brand",
       },
     {
         title: "Completed Orders",
@@ -50,7 +50,7 @@ type Props = {
         title: "Pending Orders",
         value: pendingOrders.toLocaleString(),
         icon: Clock3,
-        color: "text-orange-400",
+        color: "text-brand",
       },
   ];
 
@@ -61,11 +61,11 @@ type Props = {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="rounded-3xl border border-white/10 bg-[#15161d] p-8"
+        className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8"
       >
         <div className="flex items-center gap-3">
           <IndianRupee
-            className="text-orange-500"
+            className="text-brand"
             size={28}
           />
 
@@ -75,7 +75,7 @@ type Props = {
         </div>
 
         <div className="mt-12">
-          <p className="text-4xl font-bold text-orange-500">
+          <p className="text-4xl font-bold text-brand">
             ₹{safeTodayRevenue.toLocaleString("en-IN")}
           </p>
 
@@ -105,7 +105,7 @@ type Props = {
               transition={{
                 delay: index * 0.1,
               }}
-              className="rounded-3xl border border-white/10 bg-[#15161d] p-6"
+              className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6"
             >
               <div className="flex items-center justify-between">
 

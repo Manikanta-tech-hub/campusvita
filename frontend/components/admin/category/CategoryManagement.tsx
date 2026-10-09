@@ -283,7 +283,7 @@ if (!token) {
 
       <div className="mb-6">
 
-        <p className="uppercase tracking-[4px] text-orange-500 text-xs font-semibold">
+        <p className="uppercase tracking-[4px] text-brand text-xs font-semibold">
           FOOD ORGANIZATION
         </p>
 

@@ -1237,17 +1237,17 @@ export default function TrackOrderPage() {
       <>
         <Navbar />
 
-        <main className="min-h-screen bg-[#070809] px-4 pb-28 pt-24 text-white">
+        <main className="min-h-screen bg-[var(--background)] px-4 pb-28 pt-24 text-white">
           <div className="mx-auto max-w-6xl animate-pulse">
-            <div className="h-8 w-40 rounded-lg bg-white/10" />
+            <div className="h-8 w-40 rounded-lg bg-[var(--surface-secondary)]" />
 
-            <div className="mt-3 h-4 w-72 rounded bg-white/5" />
+            <div className="mt-3 h-4 w-72 rounded bg-[var(--surface-secondary)]" />
 
-            <div className="mt-8 h-44 rounded-3xl bg-white/5" />
+            <div className="mt-8 h-44 rounded-3xl bg-[var(--surface-secondary)]" />
 
-            <div className="mt-6 h-32 rounded-3xl bg-white/5" />
+            <div className="mt-6 h-32 rounded-3xl bg-[var(--surface-secondary)]" />
 
-            <div className="mt-6 h-96 rounded-3xl bg-white/5" />
+            <div className="mt-6 h-96 rounded-3xl bg-[var(--surface-secondary)]" />
           </div>
         </main>
       </>
@@ -1263,11 +1263,11 @@ export default function TrackOrderPage() {
       <>
         <Navbar />
 
-        <main className="min-h-screen bg-[#070809] px-4 pb-28 pt-24 text-white">
+        <main className="min-h-screen bg-[var(--background)] px-4 pb-28 pt-24 text-white">
           <div className="mx-auto flex min-h-[70vh] max-w-xl items-center justify-center">
-            <div className="w-full rounded-[28px] border border-white/10 bg-[#111315] p-8 text-center shadow-2xl">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-500/10">
-                <Package className="h-8 w-8 text-orange-500" />
+            <div className="w-full rounded-[28px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-2xl">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10">
+                <Package className="h-8 w-8 text-brand" />
               </div>
 
               <h1 className="mt-6 text-2xl font-black">
@@ -1284,7 +1284,7 @@ export default function TrackOrderPage() {
                   loadOrder(true)
                 }
                 disabled={refreshing}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-black transition hover:bg-orange-400 disabled:opacity-50"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-bold text-[var(--on-primary)] transition hover:bg-brand disabled:opacity-50"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${
@@ -1311,7 +1311,7 @@ export default function TrackOrderPage() {
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-[#070809] px-3 pb-28 pt-20 text-white sm:px-5 sm:pt-24">
+      <main className="min-h-screen bg-[var(--background)] px-3 pb-28 pt-20 text-white sm:px-5 sm:pt-24">
         <div className="mx-auto max-w-6xl">
 
           {/* =====================================================
@@ -1321,7 +1321,7 @@ export default function TrackOrderPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-gray-500">
-                <UtensilsCrossed className="h-4 w-4 text-orange-500" />
+                <UtensilsCrossed className="h-4 w-4 text-brand" />
                 CampusVita
               </div>
 
@@ -1340,7 +1340,7 @@ export default function TrackOrderPage() {
                 loadOrder(true)
               }
               disabled={refreshing}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-[#151719] transition hover:border-orange-500/30 hover:bg-[#1b1d20] disabled:opacity-50 sm:h-11 sm:w-11"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] transition hover:border-brand/30 hover:bg-[var(--surface-secondary)] disabled:opacity-50 sm:h-11 sm:w-11"
               aria-label="Refresh order"
             >
               <RefreshCw
@@ -1360,8 +1360,8 @@ export default function TrackOrderPage() {
           <section
             className={`mt-6 overflow-hidden rounded-[26px] border shadow-[0_20px_70px_rgba(0,0,0,0.35)] ${
               order.cancelled
-                ? "border-white/10 bg-[#090a0b]"
-                : "border-orange-500/25 bg-gradient-to-br from-[#391b09] via-[#24150d] to-[#111315]"
+                ? "border-[var(--border)] bg-[var(--surface)]"
+                : "border-brand/25 bg-gradient-to-br from-[rgba(104,110,232,0.22)] via-[rgba(104,110,232,0.10)] to-[var(--surface)]"
             }`}
           >
             <div
@@ -1374,7 +1374,7 @@ export default function TrackOrderPage() {
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-300/70 sm:text-xs">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand/70 sm:text-xs">
                     Order ID
                   </div>
 
@@ -1385,7 +1385,7 @@ export default function TrackOrderPage() {
                     ).padStart(5, "0")}
                   </div>
 
-                  <div className="mt-2 text-xs text-orange-100/60 sm:text-sm">
+                  <div className="mt-2 text-xs text-[var(--text-secondary)] sm:text-sm">
                     {formatDate(
                       order.created_at ||
                         order.date
@@ -1394,7 +1394,7 @@ export default function TrackOrderPage() {
                 </div>
 
                 <div className="flex items-center justify-between gap-4 sm:block sm:text-right">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-300/70 sm:text-xs">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand/70 sm:text-xs">
                     Total Amount
                   </div>
 
@@ -1409,15 +1409,15 @@ export default function TrackOrderPage() {
                 <div
                   className={`rounded-xl border px-4 py-2 text-center sm:px-5 ${
                     order.cancelled
-                      ? "border-white/10 bg-black text-gray-400"
-                      : "border-orange-400/30 bg-black/20"
+                      ? "border-[var(--border)] bg-black text-gray-400"
+                      : "border-brand/30 bg-[var(--surface)]"
                   }`}
                 >
                   <div
                     className={`text-sm font-bold ${
                       order.cancelled
                         ? "text-gray-400"
-                        : "text-orange-300"
+                        : "text-brand"
                     }`}
                   >
                     {overallStatus}
@@ -1428,7 +1428,7 @@ export default function TrackOrderPage() {
 
               {/* Complete cancellation message */}
               {order.cancelled && (
-                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/60 p-4">
+                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4">
                   <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-gray-500" />
 
                   <div>
@@ -1455,8 +1455,8 @@ export default function TrackOrderPage() {
           <section
             className={`mt-5 rounded-[26px] border p-5 sm:p-7 ${
               order.cancelled
-                ? "border-white/10 bg-[#090a0b]"
-                : "border-white/10 bg-[#101214]"
+                ? "border-[var(--border)] bg-[var(--surface)]"
+                : "border-[var(--border)] bg-[var(--surface)]"
             }`}
           >
             <div className="flex items-start justify-between gap-4">
@@ -1475,8 +1475,8 @@ export default function TrackOrderPage() {
               <div
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-bold sm:text-xs ${
                   order.cancelled
-                    ? "border-white/10 bg-black text-gray-500"
-                    : "border-orange-500/20 bg-orange-500/10 text-orange-400"
+                    ? "border-[var(--border)] bg-black text-gray-500"
+                    : "border-brand/20 bg-brand/10 text-brand"
                 }`}
               >
                 {order.cancelled
@@ -1490,7 +1490,7 @@ export default function TrackOrderPage() {
             ================================================= */}
 
             {order.cancelled ? (
-              <div className="mt-7 rounded-2xl border border-white/10 bg-black/70 p-6 text-center">
+              <div className="mt-7 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
                 <XCircle className="mx-auto h-9 w-9 text-gray-600" />
 
                 <div className="mt-3 text-sm font-black text-gray-400">
@@ -1509,7 +1509,7 @@ export default function TrackOrderPage() {
                     <div className="absolute left-[8%] right-[8%] top-5 h-[2px] bg-white/10" />
 
                     <div
-                      className="absolute left-[8%] top-5 h-[2px] bg-orange-500 transition-all duration-500"
+                      className="absolute left-[8%] top-5 h-[2px] bg-brand transition-all duration-500"
                       style={{
                         width:
                           overallStatus ===
@@ -1567,8 +1567,8 @@ export default function TrackOrderPage() {
                             <div
                               className={`flex h-10 w-10 items-center justify-center rounded-full border ${
                                 step.active
-                                  ? "border-orange-400 bg-orange-500 text-black"
-                                  : "border-white/10 bg-[#191c1f] text-gray-600"
+                                  ? "border-brand bg-brand text-[var(--on-primary)]"
+                                  : "border-[var(--border)] bg-[var(--surface)] text-gray-600"
                               }`}
                             >
                               {step.active ? (
@@ -1632,8 +1632,8 @@ export default function TrackOrderPage() {
                           key={label}
                           className={`rounded-xl border px-2 py-3 text-center ${
                             active
-                              ? "border-orange-500/30 bg-orange-500/10 text-orange-400"
-                              : "border-white/5 bg-white/[0.025] text-gray-600"
+                              ? "border-brand/30 bg-brand/10 text-brand"
+                              : "border-[var(--border)] bg-[var(--surface)] text-gray-600"
                           }`}
                         >
                           <div className="text-[10px] font-bold">
@@ -1667,7 +1667,7 @@ export default function TrackOrderPage() {
 
             {visibleStallStates.length ===
               0 ? (
-              <div className="rounded-[26px] border border-white/10 bg-[#101214] p-8 text-center">
+              <div className="rounded-[26px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
                 <XCircle className="mx-auto h-8 w-8 text-gray-700" />
 
                 <div className="mt-3 text-sm font-bold text-gray-500">
@@ -1728,7 +1728,7 @@ export default function TrackOrderPage() {
                         key={
                           stallState.stall_id
                         }
-                        className="overflow-hidden rounded-[26px] border border-white/10 bg-[#101214] shadow-[0_18px_60px_rgba(0,0,0,0.28)]"
+                        className="overflow-hidden rounded-[26px] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_60px_rgba(0,0,0,0.28)]"
                       >
 
                         {/* =================================================
@@ -1737,7 +1737,7 @@ export default function TrackOrderPage() {
 
                         <div className="p-4 sm:p-5">
                           <div className="flex items-start gap-3">
-                            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-[#1c1f22]">
+                            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-[var(--surface-secondary)]">
                               {stallImage ? (
                                 <img
                                   src={
@@ -1750,7 +1750,7 @@ export default function TrackOrderPage() {
                                 />
                               ) : (
                                 <div className="flex h-full w-full items-center justify-center">
-                                  <Store className="h-6 w-6 text-orange-500" />
+                                  <Store className="h-6 w-6 text-brand" />
                                 </div>
                               )}
                             </div>
@@ -1781,8 +1781,8 @@ export default function TrackOrderPage() {
                                     isReady
                                       ? "bg-emerald-500/15 text-emerald-400"
                                       : isCooking
-                                        ? "bg-orange-500/15 text-orange-400"
-                                        : "bg-white/5 text-gray-400"
+                                        ? "bg-brand/15 text-brand"
+                                        : "bg-[var(--surface-secondary)] text-gray-400"
                                   }`}
                                 >
                                   {getStallStatusLabel(
@@ -1802,7 +1802,7 @@ export default function TrackOrderPage() {
                               className={`mt-4 rounded-2xl border p-4 ${
                                 isOverdue
                                   ? "border-red-500/20 bg-red-500/[0.06]"
-                                  : "border-orange-500/20 bg-orange-500/[0.06]"
+                                  : "border-brand/20 bg-brand/[0.06]"
                               }`}
                             >
                               <div className="flex items-center justify-between gap-4">
@@ -1811,14 +1811,14 @@ export default function TrackOrderPage() {
                                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                                       isOverdue
                                         ? "bg-red-500/10"
-                                        : "bg-orange-500/10"
+                                        : "bg-brand/10"
                                     }`}
                                   >
                                     <Clock3
                                       className={`h-5 w-5 ${
                                         isOverdue
                                           ? "text-red-400"
-                                          : "text-orange-400"
+                                          : "text-brand"
                                       }`}
                                     />
                                   </div>
@@ -1850,7 +1850,7 @@ export default function TrackOrderPage() {
                                 {!isOverdue &&
                                   remaining !==
                                     null && (
-                                    <div className="shrink-0 font-mono text-xl font-black tracking-tight text-orange-400 sm:text-2xl">
+                                    <div className="shrink-0 font-mono text-xl font-black tracking-tight text-brand sm:text-2xl">
                                       {formatCountdown(
                                         remaining
                                       )}
@@ -1865,12 +1865,12 @@ export default function TrackOrderPage() {
                             STALL TIMELINE
                         ================================================= */}
 
-                        <div className="border-t border-white/5 px-4 py-5 sm:px-5">
+                        <div className="border-t border-[var(--border)] px-4 py-5 sm:px-5">
                           <div className="relative">
-                            <div className="absolute left-5 right-5 top-4 h-[2px] bg-white/10" />
+                            <div className="absolute left-5 right-5 top-4 h-[2px] bg-[var(--border)]" />
 
                             <div
-                              className="absolute left-5 top-4 h-[2px] bg-orange-500 transition-all duration-500"
+                              className="absolute left-5 top-4 h-[2px] bg-brand transition-all duration-500"
                               style={{
                                 width: `${Math.min(
                                   100,
@@ -1910,10 +1910,10 @@ export default function TrackOrderPage() {
                                         className={`flex h-8 w-8 items-center justify-center rounded-full border ${
                                           completed ||
                                           isReady
-                                            ? "border-orange-500 bg-orange-500 text-black"
+                                            ? "border-brand bg-brand text-[var(--on-primary)]"
                                             : active
-                                              ? "border-orange-400 bg-orange-500/10 text-orange-400"
-                                              : "border-white/10 bg-[#181b1e] text-gray-700"
+                                              ? "border-brand bg-brand/10 text-brand"
+                                              : "border-[var(--border)] bg-[var(--surface)] text-gray-700"
                                         }`}
                                       >
                                         {completed ||
@@ -1968,13 +1968,13 @@ export default function TrackOrderPage() {
                                     key={`${item.name}-${index}`}
                                     className={`flex items-center gap-3 rounded-2xl border p-2.5 transition-all ${
                                       itemCancelled
-                                        ? "border-white/5 bg-black opacity-55"
-                                        : "border-white/5 bg-[#17191c]"
+                                        ? "border-[var(--border)] bg-[var(--surface)] opacity-55"
+                                        : "border-[var(--border)] bg-[var(--surface)]"
                                     }`}
                                   >
                                     {/* Item image */}
                                     <div
-                                      className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[#202327] ${
+                                      className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-secondary)] ${
                                         itemCancelled
                                           ? "grayscale brightness-[0.25]"
                                           : ""
@@ -2057,7 +2057,7 @@ export default function TrackOrderPage() {
                                         className={`text-xs font-black sm:text-sm ${
                                           itemCancelled
                                             ? "text-gray-700 line-through"
-                                            : "text-orange-400"
+                                            : "text-brand"
                                         }`}
                                       >
                                         ₹
@@ -2101,7 +2101,7 @@ export default function TrackOrderPage() {
 
           {cancelledItemCount > 0 &&
             !order.cancelled && (
-              <div className="mt-6 rounded-2xl border border-white/5 bg-[#0c0e10] px-4 py-3 text-center">
+              <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-center">
                 <div className="text-xs font-bold text-gray-500">
                   {cancelledItemCount} item
                   {cancelledItemCount !==

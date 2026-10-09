@@ -185,7 +185,7 @@ export default function WalletPage() {
         },
 
         theme: {
-          color: "#f97316",
+          color: "#686ee8",
         },
       };
 
@@ -312,13 +312,13 @@ export default function WalletPage() {
       <main className="min-h-screen bg-black text-white p-6 md:p-10">
         <div className="max-w-6xl mx-auto">
 
-          <h1 className="text-5xl font-bold text-orange-500">
+          <h1 className="text-5xl font-bold text-brand">
             My Wallet
           </h1>
 
           {/* WALLET CARD */}
 
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-3xl p-10 mt-10">
+          <div className="bg-gradient-to-r from-brand to-brand-hover rounded-3xl p-10 mt-10">
 
             <div className="flex items-center gap-4">
 
@@ -358,13 +358,13 @@ export default function WalletPage() {
                 onChange={(e) =>
                   setAmount(e.target.value)
                 }
-                className="flex-1 bg-zinc-800 p-4 rounded-2xl outline-none border border-zinc-700 focus:border-orange-500"
+                className="flex-1 bg-zinc-800 p-4 rounded-2xl outline-none border border-zinc-700 focus:border-brand"
               />
 
               <button
                 onClick={handleAddMoney}
                 disabled={processing}
-                className="bg-orange-500 hover:bg-orange-600 transition-all px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 disabled:opacity-50"
+                className="bg-brand hover:bg-brand-hover transition-all px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 disabled:opacity-50"
               >
                 <Plus />
 

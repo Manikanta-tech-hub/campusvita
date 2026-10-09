@@ -73,7 +73,7 @@ export default function FoodFilters({
               text-white
               placeholder:text-zinc-500
               outline-none
-              focus:border-orange-500
+              focus:border-brand
             "
           />
         </div>
@@ -94,7 +94,7 @@ export default function FoodFilters({
             px-4
             text-white
             outline-none
-            focus:border-orange-500
+            focus:border-brand
           "
         >
           <option value="ALL">All Categories</option>
@@ -125,7 +125,7 @@ export default function FoodFilters({
             px-4
             text-white
             outline-none
-            focus:border-orange-500
+            focus:border-brand
           "
         >
           <option value="ALL">
@@ -157,7 +157,7 @@ export default function FoodFilters({
             px-4
             text-white
             outline-none
-            focus:border-orange-500
+            focus:border-brand
           "
         >
           <option value="LATEST">

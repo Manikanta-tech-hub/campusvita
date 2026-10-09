@@ -152,7 +152,7 @@ export default function WalletTransactionsPage() {
               onClick={() =>
                 router.push("/wallet")
               }
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 transition hover:border-orange-500/50 hover:text-orange-400 active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 transition hover:border-brand/50 hover:text-brand active:scale-95"
               aria-label="Back to wallet"
             >
               <ChevronLeft size={21} />
@@ -209,7 +209,7 @@ export default function WalletTransactionsPage() {
               <button
                 type="button"
                 onClick={fetchTransactions}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-orange-600 active:scale-95"
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-xs font-bold text-white transition hover:bg-brand-hover active:scale-95"
               >
                 <RefreshCw size={15} />
                 Try Again
@@ -243,7 +243,7 @@ export default function WalletTransactionsPage() {
                   onClick={() =>
                     router.push("/wallet")
                   }
-                  className="mt-5 rounded-xl bg-orange-500 px-5 py-3 text-xs font-bold text-white transition hover:bg-orange-600 active:scale-95"
+                  className="mt-5 rounded-xl bg-brand px-5 py-3 text-xs font-bold text-white transition hover:bg-brand-hover active:scale-95"
                 >
                   Add Money
                 </button>

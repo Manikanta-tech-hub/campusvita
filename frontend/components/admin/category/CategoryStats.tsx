@@ -26,8 +26,8 @@ export default function CategoryStats({
       value: stats.total_categories,
       subtitle: "Database records",
       icon: Layers3,
-      bg: "bg-orange-500/15",
-      color: "text-orange-400",
+      bg: "bg-brand/15",
+      color: "text-brand",
     },
     {
       title: "Active Categories",
@@ -71,7 +71,7 @@ export default function CategoryStats({
               border-zinc-800
               rounded-2xl
               p-6
-              hover:border-orange-500/40
+              hover:border-brand/40
               transition
             "
           >

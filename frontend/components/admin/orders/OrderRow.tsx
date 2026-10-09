@@ -30,7 +30,7 @@ export default function OrderRow({ order }: Props) {
 
         <div className="flex items-center gap-3">
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
             {order.customer.charAt(0)}
           </div>
 
@@ -72,8 +72,8 @@ export default function OrderRow({ order }: Props) {
             p-2
             text-zinc-400
             transition
-            hover:border-orange-500
-            hover:text-orange-500
+            hover:border-brand
+            hover:text-brand
           "
         >
           <Eye size={18} />

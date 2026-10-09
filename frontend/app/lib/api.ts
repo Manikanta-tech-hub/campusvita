@@ -1,17 +1,65 @@
-import { getAccessToken } from "@/app/lib/auth/session";
+import {
+  getAccessToken,
+  handleExpiredSession,
+  SESSION_EXPIRED_MESSAGE,
+  type UserRole,
+} from "@/app/lib/auth/session";
+
 const API_URL = "http://127.0.0.1:8000";
 
-export async function getDashboard() {
-  const token = getAccessToken("ADMIN");
+// ============================================================
+// CENTRAL AUTHENTICATED FETCH
+//
+// Every authenticated request in this module goes through
+// authFetch(). When the backend answers HTTP 401 (expired or
+// invalid JWT), or when no token exists at all:
+//
+//   1. Clear ONLY that role's stale session
+//      (existing per-role session utilities).
+//   2. Redirect the user to /login.
+//   3. Throw the friendly SESSION_EXPIRED_MESSAGE.
+//
+// Backend JWT error strings such as "Signature has expired"
+// are never surfaced to the user, and backend JWT validation
+// is unchanged.
+// ============================================================
+
+export async function authFetch(
+  path: string,
+  init: RequestInit = {},
+  options?: {
+    role?: UserRole;
+    token?: string | null;
+  }
+): Promise<Response> {
+  const role = options?.role ?? "ADMIN";
+  const token =
+    options?.token || getAccessToken(role);
 
   if (!token) {
-    throw new Error("No admin access token found");
+    // No usable session - same treatment as an expired one.
+    handleExpiredSession(role);
+    throw new Error(SESSION_EXPIRED_MESSAGE);
   }
 
-  const res = await fetch(`${API_URL}/admin/dashboard`, {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
     headers: {
+      ...init.headers,
       Authorization: `Bearer ${token}`,
     },
+  });
+
+  if (res.status === 401) {
+    handleExpiredSession(role);
+    throw new Error(SESSION_EXPIRED_MESSAGE);
+  }
+
+  return res;
+}
+
+export async function getDashboard() {
+  const res = await authFetch("/admin/dashboard", {
     cache: "no-store",
   });
 
@@ -23,37 +71,19 @@ export async function getDashboard() {
 }
 
 export async function getTopSelling() {
-  const token = getAccessToken("ADMIN");
-
-  const res = await fetch(`${API_URL}/admin/top-selling`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const res = await authFetch("/admin/top-selling");
 
   return res.json();
 }
 
 export async function getLiveQueue() {
-  const token = getAccessToken("ADMIN");
-
-  const res = await fetch(`${API_URL}/admin/live-queue`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const res = await authFetch("/admin/live-queue");
 
   return res.json();
 }
 
 export async function getOrders() {
-  const token = getAccessToken("ADMIN");
-
-  const res = await fetch(`${API_URL}/admin/orders`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const res = await authFetch("/admin/orders");
 
   if (!res.ok) {
     throw new Error("Failed to fetch orders");
@@ -65,19 +95,8 @@ export async function getOrders() {
 export async function getTopSellingFoods(
   month: string
 ) {
-  const token = getAccessToken("ADMIN");
-
-if (!token) {
-  throw new Error("No admin access token found");
-}
-
-  const res = await fetch(
-    `${API_URL}/admin/top-selling-foods?month=${encodeURIComponent(month)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+  const res = await authFetch(
+    `/admin/top-selling-foods?month=${encodeURIComponent(month)}`
   );
 
   if (!res.ok) {
@@ -90,18 +109,11 @@ if (!token) {
 }
 
 export async function getSalesDistribution(month: string) {
-  const token = getAccessToken("ADMIN");
-
-  if (!token) {
-    throw new Error("No access token found");
-  }
-
-  const response = await fetch(
-    `${API_URL}/admin/sales-distribution?month=${encodeURIComponent(month)}`,
+  const response = await authFetch(
+    `/admin/sales-distribution?month=${encodeURIComponent(month)}`,
     {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     }
@@ -123,36 +135,28 @@ export async function getSalesDistribution(month: string) {
 
   return response.json();
 }
-export async function getOrderChartData() {
-  const token = getAccessToken("ADMIN");
 
-  const res = await fetch(`${API_URL}/admin/order-chart-data`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function getOrderChartData() {
+  const res = await authFetch(
+    "/admin/order-chart-data"
+  );
 
   if (!res.ok) {
-    throw new Error("Failed to fetch order chart data");
+    throw new Error(
+      "Failed to fetch order chart data"
+    );
   }
 
   return res.json();
 }
 
 export async function getRevenueChartData(year?: number) {
-  const token = getAccessToken("ADMIN");
-
   const params = year
     ? `?year=${year}`
     : "";
 
-  const res = await fetch(
-    `${API_URL}/admin/revenue-chart-data${params}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+  const res = await authFetch(
+    `/admin/revenue-chart-data${params}`
   );
 
   if (!res.ok) {
@@ -168,16 +172,16 @@ export async function updateOrderStatus(
   orderToken: number,
   status: string
 ) {
-  const token = getAccessToken("ADMIN");
-
-  const res = await fetch(`${API_URL}/admin/orders/${orderToken}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ status }),
-  });
+  const res = await authFetch(
+    `/admin/orders/${orderToken}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
 
   if (!res.ok) {
     throw new Error("Failed to update order status");
@@ -185,6 +189,7 @@ export async function updateOrderStatus(
 
   return res.json();
 }
+
 export async function addFood(
   food: any,
   image: File,
@@ -202,15 +207,13 @@ export async function addFood(
   formData.append("is_veg",food.is_veg ?? "unknown");
   formData.append("image", image);
 
-  const res = await fetch(
-    `${API_URL}/add-food`,
+  const res = await authFetch(
+    "/add-food",
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
       body: formData,
-    }
+    },
+    { token }
   );
 
   const data = await res.json().catch(
@@ -226,19 +229,23 @@ export async function addFood(
 
   return data;
 }
+
 export async function updateFood(
   foodName: string,
   food: any,
   token: string
 ) {
-  const res = await fetch(`${API_URL}/update-food/${foodName}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+  const res = await authFetch(
+    `/update-food/${foodName}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(food),
     },
-    body: JSON.stringify(food),
-  });
+    { token }
+  );
 
   if (!res.ok) {
     throw new Error("Failed to update food");
@@ -251,12 +258,13 @@ export async function deleteFood(
   foodName: string,
   token: string
 ) {
-  const res = await fetch(`${API_URL}/delete-food/${foodName}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
+  const res = await authFetch(
+    `/delete-food/${foodName}`,
+    {
+      method: "DELETE",
     },
-  });
+    { token }
+  );
 
   if (!res.ok) {
     throw new Error("Failed to delete food");
@@ -264,6 +272,7 @@ export async function deleteFood(
 
   return res.json();
 }
+
 export async function getRecentOrders(
   page = 1,
   limit = 5,
@@ -272,8 +281,6 @@ export async function getRecentOrders(
   sortBy = "token",
   sortOrder = "desc"
 ) {
-  const token = getAccessToken("ADMIN");
-
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
@@ -283,13 +290,8 @@ export async function getRecentOrders(
     sortOrder,
   });
 
-  const res = await fetch(
-    `${API_URL}/admin/recent-orders?${params}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
+  const res = await authFetch(
+    `/admin/recent-orders?${params}`
   );
 
   if (!res.ok) {
@@ -298,6 +300,7 @@ export async function getRecentOrders(
 
   return res.json();
 }
+
 // ============================================================
 // CUSTOMER MANAGEMENT
 // ============================================================
@@ -309,12 +312,6 @@ export async function getCustomers(
   status = "ALL",
   sort = "LATEST"
 ) {
-  const token = getAccessToken("ADMIN");
-
-  if (!token) {
-    throw new Error("No access token found");
-  }
-
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
@@ -323,12 +320,11 @@ export async function getCustomers(
     sort,
   });
 
-  const res = await fetch(
-    `${API_URL}/admin/customers?${params.toString()}`,
+  const res = await authFetch(
+    `/admin/customers?${params.toString()}`,
     {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     }
@@ -350,26 +346,20 @@ export async function getCustomers(
 
   return res.json();
 }
+
 export async function updateUserRole(
   email: string,
   role: "ADMIN" | "USER" | "VENDOR"
 ) {
-  const token = getAccessToken("ADMIN");
-
-  if (!token) {
-    throw new Error("No admin access token found");
-  }
-
   const params = new URLSearchParams({
     role,
   });
 
-  const res = await fetch(
-    `${API_URL}/admin/users/${encodeURIComponent(email)}/role?${params.toString()}`,
+  const res = await authFetch(
+    `/admin/users/${encodeURIComponent(email)}/role?${params.toString()}`,
     {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     }
@@ -384,4 +374,78 @@ export async function updateUserRole(
   }
 
   return data;
+}
+
+// ============================================================
+// VENDOR INVITATIONS (admin)
+// ============================================================
+
+export type VendorInvitationPayload = {
+  business_name: string;
+  owner_name: string;
+  email: string;
+  phone: string;
+  stall_ids: string[];
+};
+
+export type VendorInvitationResult = {
+  success: boolean;
+  vendor_id: string;
+  activation_code: string;
+  expires_at: string;
+  business_name: string;
+  owner_name: string;
+  email: string;
+};
+
+export async function createVendorInvitation(
+  payload: VendorInvitationPayload
+) {
+  const res = await authFetch(
+    "/admin/vendors/invitations",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    const detail = data?.detail;
+
+    if (Array.isArray(detail)) {
+      const message = detail
+        .map((entry: any) => entry?.msg)
+        .filter(Boolean)
+        .join(", ");
+
+      throw new Error(
+        message || "Failed to create vendor invitation"
+      );
+    }
+
+    throw new Error(
+      typeof detail === "string"
+        ? detail
+        : "Failed to create vendor invitation"
+    );
+  }
+
+  return data as VendorInvitationResult;
+}
+
+export async function getPublicStalls() {
+  const res = await fetch(`${API_URL}/stalls`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch stalls");
+  }
+
+  return res.json();
 }

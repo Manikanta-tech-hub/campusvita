@@ -16,7 +16,7 @@ import {
 import { io } from "socket.io-client";
 import { getAccessToken } from "@/app/lib/auth/session";
 import { getImageUrl } from "@/app/lib/getImageUrl";
-import Navbar from "@/components/layout/Navbar";
+import HomeNavbar from "@/components/layout/HomeNavbar";
 
 import { useCart } from "../../context/CartContext";
 
@@ -634,11 +634,11 @@ Total: ₹${order.total}
       normalizedStatus === "cooking"
     ) {
       return {
-        dot: "bg-orange-500",
+        dot: "bg-warning",
         badge:
-          "bg-orange-500/10 border-orange-500/20",
+          "bg-warning/10 border-warning/20",
         text:
-          "text-orange-700 dark:text-orange-400",
+          "text-warning",
         label: status || "Preparing",
       };
     }
@@ -694,9 +694,9 @@ Total: ₹${order.total}
       normalizedStatus === "PROCESSING"
     ) {
       return {
-        dot: "bg-orange-500",
+        dot: "bg-warning",
         text:
-          "text-orange-700 dark:text-orange-400",
+          "text-warning",
         label: "Refund Processing",
       };
     }
@@ -773,7 +773,7 @@ Total: ₹${order.total}
 
   return (
     <>
-      <Navbar />
+      <HomeNavbar />
 
       <main className="min-h-screen bg-[var(--background)] px-4 pb-28 pt-5 text-[var(--text-primary)] transition-colors duration-300 sm:px-6 sm:pt-8 md:px-10 md:pb-10">
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import BurgerScroll from "@/components/home/BurgerScroll";
 import {
   AlertCircle,
   ArrowRight,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { getImageUrl } from "@/app/lib/getImageUrl";
-import Navbar from "@/components/layout/Navbar";
+import HomeNavbar from "@/components/layout/HomeNavbar";
 import { getAccessToken } from "@/app/lib/auth/session";
 import { useCart } from "@/context/CartContext";
 
@@ -245,7 +246,7 @@ export default function Home() {
           duration-200
         "
       >
-        <Navbar />
+        <HomeNavbar />
 
         <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-5 sm:px-6 sm:pt-8 lg:px-10">
           <HomeSkeleton />
@@ -265,12 +266,14 @@ export default function Home() {
         overflow-x-clip
         bg-[var(--background)]
         text-[var(--text-primary)]
-        selection:bg-orange-500/20
+        selection:bg-brand/20
         transition-colors
         duration-200
       "
     >
-      <Navbar />
+      <HomeNavbar />
+
+      <BurgerScroll />
 
       {/* ========================================================
           MAIN CONTENT
@@ -395,7 +398,7 @@ export default function Home() {
                 hover:border-[var(--border-strong)]
                 focus:border-[var(--brand)]
                 focus:ring-4
-                focus:ring-orange-500/10
+                focus:ring-brand/10
                 sm:h-16
                 sm:pl-14
                 sm:text-base
@@ -919,20 +922,20 @@ export default function Home() {
               items-center
               rounded-2xl
               border
-              border-orange-400/30
+              border-brand/30
               bg-[var(--brand)]
               px-3
               text-white
-              shadow-[0_16px_45px_rgba(249,115,22,0.22)]
+              shadow-[0_16px_45px_rgba(104,110,232,0.22)]
               transition-all
               duration-200
               hover:-translate-y-0.5
               hover:bg-[var(--brand-hover)]
-              hover:shadow-[0_20px_50px_rgba(249,115,22,0.30)]
+              hover:shadow-[0_20px_50px_rgba(104,110,232,0.30)]
               active:scale-[0.97]
               focus:outline-none
               focus-visible:ring-2
-              focus-visible:ring-orange-300
+              focus-visible:ring-brand
               focus-visible:ring-offset-2
               focus-visible:ring-offset-[var(--background)]
             "
@@ -961,7 +964,7 @@ export default function Home() {
                   text-[9px]
                   font-black
                   leading-none
-                  text-orange-600
+                  text-brand-hover
                 "
               >
                 {cartItemCount}
@@ -1450,13 +1453,13 @@ function SearchEmptyState({
           text-sm
           font-semibold
           text-white
-          shadow-[0_10px_25px_rgba(249,115,22,0.2)]
+          shadow-[0_10px_25px_rgba(104,110,232,0.2)]
           transition-all
           hover:-translate-y-0.5
           hover:bg-[var(--brand-hover)]
           focus:outline-none
           focus-visible:ring-2
-          focus-visible:ring-orange-400
+          focus-visible:ring-brand
           focus-visible:ring-offset-2
           focus-visible:ring-offset-[var(--background)]
         "

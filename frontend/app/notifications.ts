@@ -33,9 +33,16 @@ export async function requestNotificationPermission() {
     }
 
     const serviceWorkerRegistration =
-      await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js"
-      );
+  await navigator.serviceWorker.register(
+    "/firebase-messaging-sw.js"
+  );
+
+await navigator.serviceWorker.ready;
+
+console.log(
+  "✅ Firebase service worker active:",
+  serviceWorkerRegistration.scope
+);
 
     console.log(
       "✅ Firebase service worker registered:",

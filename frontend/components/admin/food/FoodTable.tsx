@@ -229,7 +229,7 @@ export default function FoodTable({
                     {food.category}
                   </p>
 
-                  <p className="mt-2 font-semibold text-orange-400">
+                  <p className="mt-2 font-semibold text-brand">
                     ₹{food.price}
                   </p>
 

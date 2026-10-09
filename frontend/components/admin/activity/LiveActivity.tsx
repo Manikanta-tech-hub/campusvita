@@ -32,7 +32,7 @@ const activities = [
     subtitle: "Chicken Biryani was added",
     time: "12 min ago",
     icon: ChefHat,
-    color: "text-orange-400",
+    color: "text-brand",
   },
   {
     id: 4,
@@ -54,7 +54,7 @@ const activities = [
 
 export default function LiveActivity() {
   return (
-    <div className="h-full rounded-3xl border border-zinc-800 bg-[#17171f] p-6">
+    <div className="h-full rounded-3xl border border-zinc-800 bg-[var(--surface)] p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">

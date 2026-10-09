@@ -31,7 +31,7 @@ export default function KPICard({
       transition={{
         duration: 0.25,
       }}
-      className="rounded-2xl border border-zinc-800 bg-[#17171d] p-6 shadow-lg"
+      className="rounded-2xl border border-zinc-800 bg-[var(--surface)] p-6 shadow-lg"
     >
       <div className="flex items-start justify-between">
         <div>

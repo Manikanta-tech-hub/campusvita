@@ -904,7 +904,7 @@ export default function CartPage() {
 
           theme: {
             color:
-              "#f97316",
+              "#686ee8",
           },
 
           handler:

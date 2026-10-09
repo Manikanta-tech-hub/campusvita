@@ -451,11 +451,11 @@ export default function AddFoodModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] p-4">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-xl">
 
         {/* Header */}
-        <h2 className="mb-5 text-2xl font-bold text-black">
+        <h2 className="mb-5 text-2xl font-bold text-[var(--text-primary)]">
           Add Food
         </h2>
 
@@ -469,7 +469,7 @@ export default function AddFoodModal({
           placeholder="Food Name"
           value={form.name}
           onChange={handleChange}
-          className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="mb-3 w-full rounded-lg border border-gray-300 bg-input px-3 py-2 text-[var(--text-primary)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand"
         />
 
         {/* =====================================================
@@ -482,7 +482,7 @@ export default function AddFoodModal({
           value={form.description}
           onChange={handleChange}
           rows={3}
-          className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="mb-3 w-full rounded-lg border border-gray-300 bg-input px-3 py-2 text-[var(--text-primary)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand"
         />
 
         {/* =====================================================
@@ -490,7 +490,7 @@ export default function AddFoodModal({
         ====================================================== */}
 
         <div className="mb-3">
-          <label className="mb-2 block text-sm font-medium text-gray-700">
+          <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
             Food Type
           </label>
 
@@ -508,7 +508,7 @@ export default function AddFoodModal({
               className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
                 form.is_veg === "veg"
                   ? "border-green-500 bg-green-50 text-green-700"
-                  : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                  : "border-[var(--input-border)] bg-card text-[var(--text-secondary)] hover:bg-[var(--card-hover)]"
               }`}
             >
               🟢 VEG
@@ -526,7 +526,7 @@ export default function AddFoodModal({
               className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
                 form.is_veg === "non-veg"
                   ? "border-red-500 bg-red-50 text-red-700"
-                  : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                  : "border-[var(--input-border)] bg-card text-[var(--text-secondary)] hover:bg-[var(--card-hover)]"
               }`}
             >
               🔴 NON-VEG
@@ -543,8 +543,8 @@ export default function AddFoodModal({
               }
               className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
                 form.is_veg === "unknown"
-                  ? "border-gray-500 bg-gray-100 text-gray-700"
-                  : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                  ? "border-gray-500 bg-[var(--surface-tertiary)] text-[var(--text-primary)]"
+                  : "border-[var(--input-border)] bg-card text-[var(--text-secondary)] hover:bg-[var(--card-hover)]"
               }`}
             >
               Unknown
@@ -566,7 +566,7 @@ export default function AddFoodModal({
                 (prev) => !prev
               )
             }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-left text-black focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full rounded-lg border border-gray-300 bg-input px-3 py-2 text-left text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand"
           >
             {selectedCategory ? (
               selectedCategory.name
@@ -578,7 +578,7 @@ export default function AddFoodModal({
           </button>
 
           {categoryDropdownOpen && (
-            <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-gray-200 bg-white shadow-lg">
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-[var(--border)] bg-card shadow-lg">
 
               {/* Search */}
               <div className="border-b border-gray-200 p-2">
@@ -591,7 +591,7 @@ export default function AddFoodModal({
                       e.target.value
                     )
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full rounded-md border border-gray-300 bg-input px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
 
@@ -655,7 +655,7 @@ export default function AddFoodModal({
                               ""
                             );
                           }}
-                          className="block w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                          className="block w-full px-4 py-3 text-left text-sm text-[var(--text-secondary)] hover:bg-brand-soft hover:text-brand-hover"
                         >
                           {category.name}
                         </button>
@@ -680,7 +680,7 @@ export default function AddFoodModal({
             value={form.stall_id}
             onChange={handleChange}
             disabled={stallLoading}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full rounded-lg border border-gray-300 bg-input px-3 py-2 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value="">
               {stallLoading
@@ -722,7 +722,7 @@ export default function AddFoodModal({
           step="0.01"
           value={form.price}
           onChange={handleChange}
-          className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="mb-3 w-full rounded-lg border border-gray-300 bg-input px-3 py-2 text-[var(--text-primary)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand"
         />
 
         {/* =====================================================
@@ -738,7 +738,7 @@ export default function AddFoodModal({
 
             setImageFile(file);
           }}
-          className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-black"
+          className="mb-3 w-full rounded-lg border border-gray-300 bg-input px-3 py-2 text-[var(--text-primary)]"
         />
 
         {/* =====================================================
@@ -766,7 +766,7 @@ export default function AddFoodModal({
             AVAILABILITY
         ====================================================== */}
 
-        <label className="mb-5 flex items-center gap-2 text-black">
+        <label className="mb-5 flex items-center gap-2 text-[var(--text-primary)]">
 
           <input
             type="checkbox"
@@ -795,7 +795,7 @@ export default function AddFoodModal({
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="rounded-lg bg-gray-300 px-4 py-2 text-black hover:bg-gray-400 disabled:opacity-50"
+            className="rounded-lg bg-[var(--surface-tertiary)] px-4 py-2 text-[var(--text-primary)] hover:bg-[var(--border-strong)] disabled:opacity-50"
           >
             Cancel
           </button>
@@ -809,7 +809,7 @@ export default function AddFoodModal({
               stallLoading ||
               categoryLoading
             }
-            className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-brand px-4 py-2 text-[var(--on-primary)] hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
               ? "Adding..."

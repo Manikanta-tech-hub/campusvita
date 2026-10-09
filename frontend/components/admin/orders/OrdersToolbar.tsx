@@ -44,14 +44,14 @@ export default function OrdersToolbar({
             rounded-2xl
             border
             border-zinc-800
-            bg-[#17171f]
+            bg-[var(--surface)]
             py-3
             pl-11
             pr-4
             text-white
             outline-none
             transition
-            focus:border-orange-500
+            focus:border-brand
           "
         />
       </div>
@@ -75,8 +75,8 @@ export default function OrdersToolbar({
 
               ${
                 filter === item
-                  ? "bg-orange-500 text-white"
-                  : "border border-zinc-800 bg-[#17171f] text-zinc-400 hover:border-orange-500 hover:text-white"
+                  ? "bg-brand text-white"
+                  : "border border-zinc-800 bg-[var(--surface)] text-zinc-400 hover:border-brand hover:text-white"
               }
             `}
           >

@@ -38,8 +38,8 @@ export default function FoodStats({ foods }: Props) {
       value: totalFoods,
       subtitle: `${totalFoods} items`,
       icon: UtensilsCrossed,
-      iconBg: "bg-orange-500/15",
-      iconColor: "text-orange-400",
+      iconBg: "bg-brand/15",
+      iconColor: "text-brand",
     },
     {
       title: "Available",
@@ -89,7 +89,7 @@ export default function FoodStats({ foods }: Props) {
               border-zinc-800
               rounded-2xl
               p-6
-              hover:border-orange-500/40
+              hover:border-brand/40
               transition-all
               duration-300
             "

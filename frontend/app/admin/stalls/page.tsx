@@ -351,13 +351,13 @@ export default function StallsPage() {
   const filteredStalls = stalls;
 
   return (
-    <div className="min-h-full bg-[#0b0c10] p-6 text-white lg:p-8">
+    <div className="min-h-full bg-[var(--background)] p-6 text-white lg:p-8">
       {/* Header */}
       <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/15">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/15">
             <Store
-              className="text-orange-500"
+              className="text-brand"
               size={25}
             />
           </div>
@@ -376,7 +376,7 @@ export default function StallsPage() {
         <button
           type="button"
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 font-semibold text-white transition hover:bg-orange-600"
+          className="flex items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-3 font-semibold text-white transition hover:bg-brand-hover"
         >
           <Plus size={20} />
           Add Stall
@@ -384,7 +384,7 @@ export default function StallsPage() {
       </div>
 
       {/* Controls */}
-      <div className="mb-6 rounded-3xl border border-zinc-800 bg-[#12131a] p-5">
+      <div className="mb-6 rounded-3xl border border-zinc-800 bg-[var(--surface)] p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-md">
             <Search
@@ -401,7 +401,7 @@ export default function StallsPage() {
                 }
               }}
               placeholder="Search stalls..."
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 py-2.5 pl-10 pr-4 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 py-2.5 pl-10 pr-4 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
             />
           </div>
 
@@ -413,7 +413,7 @@ export default function StallsPage() {
                 onClick={() => setStatusFilter(filter)}
                 className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
                   statusFilter === filter
-                    ? "bg-orange-500 text-white"
+                    ? "bg-brand text-white"
                     : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white"
                 }`}
               >
@@ -430,7 +430,7 @@ export default function StallsPage() {
 
       {/* Stats */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-zinc-800 bg-[#12131a] p-5">
+        <div className="rounded-3xl border border-zinc-800 bg-[var(--surface)] p-5">
           <p className="text-sm text-zinc-500">
             Total Stalls
           </p>
@@ -440,7 +440,7 @@ export default function StallsPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-zinc-800 bg-[#12131a] p-5">
+        <div className="rounded-3xl border border-zinc-800 bg-[var(--surface)] p-5">
           <p className="text-sm text-zinc-500">
             Active Stalls
           </p>
@@ -454,12 +454,12 @@ export default function StallsPage() {
           </p>
         </div>
 
-        <div className="rounded-3xl border border-zinc-800 bg-[#12131a] p-5">
+        <div className="rounded-3xl border border-zinc-800 bg-[var(--surface)] p-5">
           <p className="text-sm text-zinc-500">
             Currently Open
           </p>
 
-          <p className="mt-2 text-3xl font-bold text-orange-400">
+          <p className="mt-2 text-3xl font-bold text-brand">
             {
               stalls.filter(
                 (stall) =>
@@ -472,13 +472,13 @@ export default function StallsPage() {
 
       {/* Stall Grid */}
       {loading ? (
-        <div className="flex min-h-[300px] items-center justify-center rounded-3xl border border-zinc-800 bg-[#12131a]">
+        <div className="flex min-h-[300px] items-center justify-center rounded-3xl border border-zinc-800 bg-[var(--surface)]">
           <p className="text-zinc-500">
             Loading stalls...
           </p>
         </div>
       ) : filteredStalls.length === 0 ? (
-        <div className="flex min-h-[350px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-700 bg-[#12131a] text-center">
+        <div className="flex min-h-[350px] flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-700 bg-[var(--surface)] text-center">
           <Store
             size={50}
             className="mb-4 text-zinc-700"
@@ -496,7 +496,7 @@ export default function StallsPage() {
           <button
             type="button"
             onClick={openCreateModal}
-            className="mt-5 rounded-xl bg-orange-500 px-5 py-2.5 font-medium hover:bg-orange-600"
+            className="mt-5 rounded-xl bg-brand px-5 py-2.5 font-medium hover:bg-brand-hover"
           >
             Add First Stall
           </button>
@@ -506,7 +506,7 @@ export default function StallsPage() {
           {filteredStalls.map((stall) => (
             <div
               key={stall._id}
-              className="overflow-hidden rounded-3xl border border-zinc-800 bg-[#12131a]"
+              className="overflow-hidden rounded-3xl border border-zinc-800 bg-[var(--surface)]"
             >
               <div className="relative h-48 bg-zinc-900">
                 {stall.image ? (
@@ -633,10 +633,10 @@ export default function StallsPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-3xl border border-zinc-800 bg-[#12131a] shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:items-center">
+          <div className="flex w-full max-w-xl flex-col rounded-3xl border border-zinc-800 bg-[var(--surface)] shadow-2xl sm:max-h-[calc(100vh-2rem)]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-zinc-800 p-6">
+            <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 p-6">
               <div>
                 <h2 className="text-xl font-bold">
                   {editingStall
@@ -661,7 +661,7 @@ export default function StallsPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="space-y-5 p-6">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
               {/* Stall Name */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
@@ -677,7 +677,7 @@ export default function StallsPage() {
                     })
                   }
                   placeholder="Example: Main Canteen"
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                 />
               </div>
 
@@ -695,7 +695,7 @@ export default function StallsPage() {
                       owner_email: e.target.value,
                     })
                   }
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none focus:border-orange-500"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none focus:border-brand"
                 >
                   <option value="">
                     Select a vendor
@@ -735,7 +735,7 @@ export default function StallsPage() {
       })
     }
     placeholder="Example: 15"
-    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+    className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
   />
 
   <p className="mt-2 text-xs text-zinc-500">
@@ -758,7 +758,7 @@ export default function StallsPage() {
                     })
                   }
                   placeholder="https://..."
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                 />
               </div>
 
@@ -778,7 +778,7 @@ export default function StallsPage() {
                   }
                   rows={4}
                   placeholder="Describe this stall..."
-                  className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-orange-500"
+                  className="w-full resize-none rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                 />
               </div>
 
@@ -804,7 +804,7 @@ export default function StallsPage() {
                         is_open: e.target.checked,
                       })
                     }
-                    className="h-5 w-5 accent-orange-500"
+                    className="h-5 w-5 accent-brand"
                   />
                 </label>
 
@@ -828,14 +828,14 @@ export default function StallsPage() {
                         active: e.target.checked,
                       })
                     }
-                    className="h-5 w-5 accent-orange-500"
+                    className="h-5 w-5 accent-brand"
                   />
                 </label>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="flex justify-end gap-3 border-t border-zinc-800 p-6">
+            <div className="flex shrink-0 justify-end gap-3 border-t border-zinc-800 p-6">
               <button
                 type="button"
                 onClick={closeModal}
@@ -849,7 +849,7 @@ export default function StallsPage() {
                 type="button"
                 onClick={saveStall}
                 disabled={saving}
-                className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving
                   ? "Saving..."

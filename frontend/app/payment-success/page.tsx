@@ -101,7 +101,7 @@ function PaymentSuccessHeader({
           <ArrowLeft size={24} strokeWidth={2} />
         </button>
 
-        <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-orange-500">
+        <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-brand">
           CampusVita
         </h1>
 
@@ -344,7 +344,7 @@ export default function PaymentSuccessPage() {
               />
             </button>
 
-            <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-orange-500">
+            <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-brand">
               CampusVita
             </h1>
 
@@ -354,7 +354,7 @@ export default function PaymentSuccessPage() {
 
         <main className="flex min-h-screen items-center justify-center bg-black text-white">
           <div className="text-center">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-zinc-800 border-t-orange-500" />
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-zinc-800 border-t-brand" />
 
             <p className="mt-4 text-sm text-zinc-400">
               Loading order confirmation...
@@ -386,7 +386,7 @@ export default function PaymentSuccessPage() {
               />
             </button>
 
-            <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-orange-500">
+            <h1 className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-xl font-bold tracking-tight text-brand">
               CampusVita
             </h1>
 
@@ -405,7 +405,7 @@ export default function PaymentSuccessPage() {
               onClick={() =>
                 router.push("/")
               }
-              className="mt-5 rounded-xl bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
+              className="mt-5 rounded-xl bg-brand px-6 py-3 font-semibold text-white transition hover:bg-brand-hover"
             >
               Go to Home
             </button>
@@ -499,10 +499,10 @@ export default function PaymentSuccessPage() {
                   </p>
                 </div>
 
-                <div className="hidden rounded-2xl bg-orange-500/10 p-3 sm:block">
+                <div className="hidden rounded-2xl bg-brand/10 p-3 sm:block">
                   <ShoppingBag
                     size={24}
-                    className="text-orange-500"
+                    className="text-brand"
                   />
                 </div>
               </div>
@@ -553,7 +553,7 @@ export default function PaymentSuccessPage() {
                                 <div className="flex h-full w-full items-center justify-center">
                                   <Store
                                     size={21}
-                                    className="text-orange-500"
+                                    className="text-brand"
                                   />
                                 </div>
                               )}
@@ -685,7 +685,7 @@ export default function PaymentSuccessPage() {
                   </p>
                 </div>
 
-                <p className="text-2xl font-extrabold text-orange-500 sm:text-3xl">
+                <p className="text-2xl font-extrabold text-brand sm:text-3xl">
                   ₹{total.toFixed(2)}
                 </p>
               </div>
@@ -704,7 +704,7 @@ export default function PaymentSuccessPage() {
               onClick={
                 handleTrackOrder
               }
-              className="group flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-5 py-4 text-base font-bold text-white transition hover:bg-orange-600 active:scale-[0.99]"
+              className="group flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-brand px-5 py-4 text-base font-bold text-white transition hover:bg-brand-hover active:scale-[0.99]"
             >
               <ShoppingBag size={21} />
 
@@ -723,7 +723,7 @@ export default function PaymentSuccessPage() {
               onClick={
                 handleBackToHome
               }
-              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 text-base font-bold text-white transition hover:border-orange-500 hover:text-orange-500 active:scale-[0.99]"
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 text-base font-bold text-white transition hover:border-brand hover:text-brand active:scale-[0.99]"
             >
               <Home size={20} />
 

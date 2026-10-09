@@ -83,6 +83,35 @@ export function saveSession(session: Session): void {
     return;
   }
 
+  // ============================================================
+  // REPLACE THIS TAB'S IDENTITY
+  //
+  // A successful login safely replaces any previously
+  // signed-in USER/VENDOR account in the same tab.
+  //
+  // Without this, a stale USER session would remain
+  // active beside a new VENDOR session and the app
+  // would still present the old user on "/" routes
+  // ("already logged in as user").
+  //
+  // ADMIN is stored in localStorage on purpose
+  // (cross-tab) and is intentionally left untouched.
+  // ============================================================
+
+  if (role === "USER" || role === "VENDOR") {
+    const otherRole: UserRole =
+      role === "USER" ? "VENDOR" : "USER";
+
+    sessionStorage.removeItem(
+      SESSION_KEYS[otherRole]
+    );
+
+    // Remove stale copies from the old
+    // localStorage implementation as well.
+    localStorage.removeItem(SESSION_KEYS[otherRole]);
+    localStorage.removeItem(SESSION_KEYS[role]);
+  }
+
   storage.setItem(
     getStorageKey(role),
     JSON.stringify(session)
@@ -243,6 +272,134 @@ export function clearSession(
   storage.removeItem(
     getStorageKey(role)
   );
+}
+
+// ============================================================
+// CENTRAL EXPIRED-SESSION HANDLING
+//
+// Used by the API layer when an authenticated request comes
+// back HTTP 401 (expired or invalid JWT). Backend JWT error
+// strings (e.g. "Signature has expired") are intentionally
+// NEVER shown to the user.
+// ============================================================
+
+/**
+ * Friendly message shown when an authenticated request
+ * fails because the session/token is missing or expired.
+ */
+export const SESSION_EXPIRED_MESSAGE =
+  "Your session has expired. Please log in again.";
+
+/**
+ * One-shot flag consumed by the login page for the toast.
+ */
+export const SESSION_EXPIRED_FLAG =
+  "campusvita_session_expired";
+
+/**
+ * Handle a failed authenticated request centrally:
+ *
+ * 1. Clear ONLY the stale role's session.
+ *    ADMIN keeps its localStorage behavior; USER/VENDOR keep
+ *    sessionStorage. Unrelated role sessions are never touched.
+ * 2. Leave a one-shot flag so /login can show a friendly message.
+ * 3. Redirect to /login.
+ */
+export function handleExpiredSession(
+  role: UserRole
+): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  // Clears only this role's storage key via the existing
+  // per-role session utilities above.
+  clearSession(role);
+
+  try {
+    window.sessionStorage.setItem(
+      SESSION_EXPIRED_FLAG,
+      "1"
+    );
+  } catch {
+    // Storage may be unavailable - the redirect still happens.
+  }
+
+  if (
+    !window.location.pathname.startsWith("/login")
+  ) {
+    window.location.assign("/login");
+  }
+}
+
+/**
+ * Read and consume the one-shot session-expired flag.
+ * Returns true exactly once per expired session.
+ */
+export function consumeSessionExpiredFlag(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    if (
+      window.sessionStorage.getItem(
+        SESSION_EXPIRED_FLAG
+      ) === "1"
+    ) {
+      window.sessionStorage.removeItem(
+        SESSION_EXPIRED_FLAG
+      );
+
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+
+  return false;
+}
+
+/**
+ * Friendly toast shown on /login after a vendor account was
+ * activated successfully at /vendor/activate.
+ */
+export const VENDOR_ACTIVATED_MESSAGE =
+  "Vendor account activated successfully. You can now log in.";
+
+/**
+ * One-shot flag set by /vendor/activate just before it
+ * redirects to /login. sessionStorage keeps it tab-scoped.
+ */
+export const VENDOR_ACTIVATED_FLAG =
+  "campusvita_vendor_activated";
+
+/**
+ * Read and consume the vendor-activated flag.
+ * Returns true exactly once per activation.
+ */
+export function consumeVendorActivatedFlag(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    if (
+      window.sessionStorage.getItem(
+        VENDOR_ACTIVATED_FLAG
+      ) === "1"
+    ) {
+      window.sessionStorage.removeItem(
+        VENDOR_ACTIVATED_FLAG
+      );
+
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+
+  return false;
 }
 
 /**

@@ -203,7 +203,7 @@ export default function EditFoodModal({
               value={form.name}
               onChange={handleChange}
               disabled={loading}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-orange-500"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-brand"
               placeholder="Food Name"
             />
           </div>
@@ -221,7 +221,7 @@ export default function EditFoodModal({
               onChange={handleChange}
               disabled={loading}
               rows={3}
-              className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-orange-500"
+              className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-brand"
               placeholder="Description"
             />
           </div>
@@ -238,7 +238,7 @@ export default function EditFoodModal({
               value={form.category}
               onChange={handleChange}
               disabled={loading}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-orange-500"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-brand"
               placeholder="Category"
             />
           </div>
@@ -255,7 +255,7 @@ export default function EditFoodModal({
               value={form.stall_id}
               onChange={handleChange}
               disabled={loading}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-orange-500"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-brand"
               placeholder="Stall ID"
             />
           </div>
@@ -275,7 +275,7 @@ export default function EditFoodModal({
               disabled={loading}
               min="1"
               step="0.01"
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-orange-500"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-brand"
               placeholder="Price"
             />
           </div>
@@ -292,7 +292,7 @@ export default function EditFoodModal({
               value={form.image}
               onChange={handleChange}
               disabled={loading}
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-orange-500"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-3 text-white outline-none focus:border-brand"
               placeholder="Image URL"
             />
           </div>
@@ -413,7 +413,7 @@ export default function EditFoodModal({
             type="button"
             disabled={loading}
             onClick={handleSubmit}
-            className="rounded-lg bg-orange-500 px-5 py-2 font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-brand px-5 py-2 font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Updating..." : "Update Food"}
           </button>

@@ -26,7 +26,7 @@ export default function FoodHeader({ onAddFood }: Props) {
 
         <div>
 
-          <p className="uppercase tracking-[4px] text-orange-500 text-xs font-semibold">
+          <p className="uppercase tracking-[4px] text-brand text-xs font-semibold">
             CANTEEN ADMIN
           </p>
 
@@ -46,8 +46,8 @@ export default function FoodHeader({ onAddFood }: Props) {
           flex
           items-center
           gap-2
-          bg-orange-500
-          hover:bg-orange-600
+          bg-brand
+          hover:bg-brand-hover
           transition
           px-6
           py-3
@@ -55,7 +55,7 @@ export default function FoodHeader({ onAddFood }: Props) {
           text-white
           font-semibold
           shadow-lg
-          shadow-orange-500/20
+          shadow-brand/20
           "
         >
           <Plus size={18} />
