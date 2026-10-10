@@ -10,10 +10,12 @@ try:
     db = client.get_database(os.getenv("MONGODB_DB_NAME", "campusvita"))
     whatsapp_notifications = db.get_collection("whatsapp_notifications")
     rating_tokens = db.get_collection("rating_tokens")
+    whatsapp_outbox = db.get_collection("whatsapp_outbox")
 except Exception:
     # Fallback for environments without MongoDB running (tests without DB)
     whatsapp_notifications = None
     rating_tokens = None
+    whatsapp_outbox = None
 
 TEMPLATES = {
     "confirmation": "campusvita_order_confirmation",

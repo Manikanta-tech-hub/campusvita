@@ -2,6 +2,8 @@
 # IMPORTS
 # =====================================
 from websocket_manager import manager
+from whatsapp_order_hook import notify_order_after_status_update
+from whatsapp_webhook_endpoint import webhook_endpoint
 import os
 import re
 import time
@@ -3125,6 +3127,16 @@ async def update_vendor_stall_order_status(
         stall_id,
         requested_status,
     )
+
+    # ============================================================
+    # WHATSAPP NOTIFICATION (isolated, after DB save succeeds)
+    # ============================================================
+    try:
+        customer_phone = updated_order.get("customer_phone") or updated_order.get("phone") or updated_order.get("customerPhone")
+        if customer_phone and isinstance(customer_phone, str):
+            notify_order_after_status_update(updated_order, requested_status)
+    except Exception as exc:
+        logger.warning("WhatsApp notification hook failed for vendor status update order %s stall %s: %s", updated_order.get("token"), stall_id, exc)
 
     # ============================================================
     # SEND REALTIME WEBSOCKET UPDATE
@@ -6845,6 +6857,16 @@ async def place_order(
         # ============================================================
 
         wallet_payment_id = f"WALLET-{result.inserted_id}"
+
+        # ============================================================
+        # 8b. WHATSAPP NOTIFICATION (isolated, safe) - after DB save
+        # ============================================================
+        try:
+            customer_phone = saved_order.get("customer_phone") or saved_order.get("phone") or saved_order.get("customerPhone") or order_dict.get("customer_phone") or current_user.get("phone")
+            if customer_phone:
+                notify_order_after_status_update(saved_order, "Placed")
+        except Exception as exc:
+            logger.warning("WhatsApp notification hook failed for placed order %s: %s", saved_order.get("token"), exc)
 
         payment = {
             "payment_id": wallet_payment_id,
@@ -12894,9 +12916,16 @@ async def razorpay_webhook(
 
 
 # =====================================
+# WHATSAPP WEBHOOK ENDPOINT
+# =====================================
+@fastapi_app.get("/webhooks/whatsapp")
+@fastapi_app.post("/webhooks/whatsapp")
+async def whatsapp_webhook_route(request: Request):
+    return await webhook_endpoint(request)
+
+# =====================================
 # FINAL SOCKET APP
 # =====================================
-
 app = socketio.ASGIApp(
     sio,
     fastapi_app
