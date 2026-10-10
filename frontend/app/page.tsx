@@ -6,8 +6,6 @@ import BurgerScroll from "@/components/home/BurgerScroll";
 import {
   AlertCircle,
   ArrowRight,
-  CheckCircle2,
-  MapPin,
   RefreshCw,
   Search,
   ShoppingCart,
@@ -17,6 +15,10 @@ import {
 } from "lucide-react";
 
 import { getImageUrl } from "@/app/lib/getImageUrl";
+import FindYourCraving from "@/components/home/FindYourCraving";
+import FeaturedCollection from "@/components/home/FeaturedCollection";
+import StallCard from "@/components/ui/cards-1";
+import Footer from "@/components/home/Footer";
 import HomeNavbar from "@/components/layout/HomeNavbar";
 import { getAccessToken } from "@/app/lib/auth/session";
 import { useCart } from "@/context/CartContext";
@@ -37,6 +39,8 @@ type Stall = {
   description: string;
   is_open: boolean;
   active: boolean;
+  rating?: number;
+  preparation_time?: string | number;
 };
 
 export default function Home() {
@@ -467,208 +471,6 @@ export default function Home() {
             HERO
             ====================================================== */}
 
-        {!hasSearch && (
-          <section className="mb-8">
-            <div
-              className="
-                group
-                relative
-                isolate
-                min-h-[280px]
-                overflow-hidden
-                rounded-[28px]
-                border
-                border-[var(--border)]
-                bg-[var(--surface)]
-                shadow-[var(--shadow-card)]
-                sm:min-h-[320px]
-                lg:min-h-[350px]
-              "
-            >
-              {/* IMAGE */}
-
-              <img
-                src="/images/campus-canteen-banner.jpeg"
-                alt="Campus canteen"
-                className="
-                  absolute
-                  inset-0
-                  h-full
-                  w-full
-                  object-cover
-                  object-center
-                  transition-transform
-                  duration-700
-                  ease-out
-                  group-hover:scale-[1.025]
-                "
-                onError={(event) => {
-                  console.error(
-                    "❌ CampusVita banner image failed to load."
-                  );
-
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-
-              {/* LIGHT/DARK IMAGE OVERLAYS */}
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  inset-0
-                  bg-gradient-to-r
-                  from-white/95
-                  via-white/75
-                  to-white/10
-                  dark:from-black
-                  dark:via-black/75
-                  dark:to-black/20
-                "
-              />
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  inset-0
-                  bg-gradient-to-t
-                  from-white/80
-                  via-transparent
-                  to-white/20
-                  dark:from-black/80
-                  dark:to-black/20
-                "
-              />
-
-              {/* CONTENT */}
-
-              <div
-                className="
-                  relative
-                  z-10
-                  flex
-                  min-h-[280px]
-                  flex-col
-                  justify-between
-                  p-6
-                  sm:min-h-[320px]
-                  sm:p-9
-                  lg:min-h-[350px]
-                  lg:p-12
-                "
-              >
-                <div>
-                  <div
-                    className="
-                      inline-flex
-                      items-center
-                      gap-2
-                      rounded-full
-                      border
-                      border-black/10
-                      bg-white/75
-                      px-3
-                      py-1.5
-                      shadow-sm
-                      backdrop-blur-md
-                      dark:border-white/10
-                      dark:bg-black/35
-                    "
-                  >
-                    <MapPin
-                      size={14}
-                      className="text-[var(--brand)]"
-                    />
-
-                    <span
-                      className="
-                        text-[10px]
-                        font-bold
-                        uppercase
-                        tracking-[0.16em]
-                        text-zinc-800
-                        dark:text-white/85
-                        sm:text-xs
-                      "
-                    >
-                      Campus Canteen
-                    </span>
-                  </div>
-
-                  <h2
-                    className="
-                      mt-5
-                      max-w-3xl
-                      text-3xl
-                      font-black
-                      leading-[1.02]
-                      tracking-[-0.035em]
-                      text-zinc-950
-                      sm:text-4xl
-                      lg:text-5xl
-                      dark:text-white
-                    "
-                  >
-                    Your campus food,
-                    <br className="hidden sm:block" />
-                    <span className="text-[var(--brand)]">
-                      all in one place.
-                    </span>
-                  </h2>
-
-                  <p
-                    className="
-                      mt-4
-                      max-w-xl
-                      text-sm
-                      leading-6
-                      text-zinc-700
-                      sm:text-base
-                      dark:text-zinc-200
-                    "
-                  >
-                    Browse active stalls, check what is
-                    accepting orders, and choose where you
-                    want to eat next.
-                  </p>
-                </div>
-
-                {/* LIVE STATS */}
-
-                <div className="mt-7 flex flex-wrap gap-2.5">
-                  <HeroStat
-                    icon={
-                      <Store
-                        size={15}
-                        strokeWidth={2}
-                      />
-                    }
-                    value={activeStalls.length}
-                    label={
-                      activeStalls.length === 1
-                        ? "active stall"
-                        : "active stalls"
-                    }
-                  />
-
-                  <HeroStat
-                    icon={
-                      <CheckCircle2
-                        size={15}
-                        strokeWidth={2}
-                      />
-                    }
-                    value={openStalls.length}
-                    label="open now"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* ======================================================
             ERROR / RETRY
             ====================================================== */}
@@ -754,143 +556,33 @@ export default function Home() {
           </section>
         )}
 
-        {/* ======================================================
-            STALL SECTION HEADER
-            ====================================================== */}
+        {/* NEW SECTIONS BELOW HERO */}
+        <FindYourCraving stalls={activeStalls} />
+        <FeaturedCollection />
 
-        <section>
-          <div className="mb-5 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2
-                  className="
-                    text-2xl
-                    font-bold
-                    tracking-[-0.025em]
-                    text-[var(--text-primary)]
-                    sm:text-3xl
-                  "
-                >
-                  {hasSearch
-                    ? "Search results"
-                    : "Explore campus stalls"}
-                </h2>
-
-                {!hasSearch &&
-                  openStalls.length > 0 && (
-                    <span
-                      className="
-                        hidden
-                        rounded-full
-                        bg-green-100
-                        px-2.5
-                        py-1
-                        text-[10px]
-                        font-bold
-                        uppercase
-                        tracking-wider
-                        text-green-700
-                        sm:inline-flex
-                        dark:bg-green-500/10
-                        dark:text-green-400
-                      "
-                    >
-                      {openStalls.length} open
-                    </span>
-                  )}
-              </div>
-
-              <p className="mt-1.5 text-sm text-[var(--text-muted)]">
-                {hasSearch
-                  ? "Matching active campus stalls"
-                  : "Choose a stall to explore its menu"}
-              </p>
-            </div>
-
-            {/* REFRESH */}
-
-            <button
-              type="button"
-              onClick={() => void loadStalls(true)}
-              disabled={refreshing}
-              aria-label="Refresh campus stalls"
-              className="
-                inline-flex
-                h-10
-                shrink-0
-                items-center
-                justify-center
-                gap-2
-                self-start
-                rounded-xl
-                border
-                border-[var(--border)]
-                bg-[var(--surface)]
-                px-3.5
-                text-xs
-                font-semibold
-                text-[var(--text-secondary)]
-                shadow-sm
-                transition-all
-                hover:border-[var(--border-strong)]
-                hover:bg-[var(--surface-secondary)]
-                hover:text-[var(--text-primary)]
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-                sm:self-auto
-                focus:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-[var(--brand)]
-              "
-            >
-              <RefreshCw
-                size={15}
-                className={
-                  refreshing
-                    ? "animate-spin"
-                    : ""
-                }
+        {/* Discover campus food */}
+        <section className="mb-12">
+          <h2 className="mb-2 text-3xl font-black tracking-[-0.03em] text-[var(--text-primary)]">Your Campus, Your Cravings</h2>
+          <p className="mb-6 text-sm text-[var(--text-secondary)]">Discover the best food stalls around your campus.</p>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {activeStalls.slice(0, 6).map((stall) => (
+              <StallCard
+                key={stall._id}
+                _id={stall._id}
+                name={stall.name}
+                image={stall.image ? getImageUrl(stall.image) : undefined}
+                description={stall.description || ""}
+                cuisine={stall.description ? undefined : undefined}
+                rating={stall.rating || undefined}
+                preparationTime={stall.preparation_time ? String(stall.preparation_time) : undefined}
+                priceMin={undefined}
+                priceMax={undefined}
+                isOpen={stall.is_open}
               />
-
-              <span className="hidden sm:inline">
-                Refresh
-              </span>
-            </button>
+            ))}
           </div>
-
-          {/* NO ACTIVE STALLS */}
-
-          {activeStalls.length === 0 && !error && (
-            <EmptyStallsState />
-          )}
-
-          {/* NO SEARCH RESULTS */}
-
-          {activeStalls.length > 0 &&
-            hasSearch &&
-            filteredStalls.length === 0 && (
-              <SearchEmptyState
-                query={searchQuery.trim()}
-                onClear={clearSearch}
-              />
-            )}
-
-          {/* STALL GRID */}
-
-          {filteredStalls.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredStalls.map((stall) => (
-                <StallCard
-                  key={stall._id}
-                  stall={stall}
-                  onOpen={() =>
-                    handleStallClick(stall)
-                  }
-                />
-              ))}
-            </div>
-          )}
         </section>
+
 
 
       </div>
@@ -989,328 +681,12 @@ export default function Home() {
           </button>
         </div>
       )}
+
+      <Footer />
     </main>
   );
 }
 
-/* ================================================================
-   STALL CARD
-================================================================ */
-
-function StallCard({
-  stall,
-  onOpen,
-}: {
-  stall: Stall;
-  onOpen: () => void;
-}) {
-  const isOpen = stall.is_open;
-
-  return (
-    <button
-      type="button"
-      disabled={!isOpen}
-      onClick={onOpen}
-      aria-label={
-        isOpen
-          ? `Open ${stall.name}`
-          : `${stall.name} is currently closed`
-      }
-      className={`
-        group
-        relative
-        flex
-        w-full
-        flex-col
-        overflow-hidden
-        rounded-[22px]
-        border
-        text-left
-        outline-none
-        transition-all
-        duration-300
-        ${
-          isOpen
-            ? `
-              cursor-pointer
-              border-[var(--border)]
-              bg-[var(--surface)]
-              shadow-[var(--shadow-soft)]
-              hover:-translate-y-1
-              hover:border-[var(--brand)]
-              hover:shadow-[var(--shadow-card)]
-              focus-visible:ring-2
-              focus-visible:ring-[var(--brand)]
-              focus-visible:ring-offset-2
-              focus-visible:ring-offset-[var(--background)]
-            `
-            : `
-              cursor-not-allowed
-              border-[var(--border)]
-              bg-[var(--surface)]
-            `
-        }
-      `}
-    >
-      {/* ======================================================
-          IMAGE
-      ====================================================== */}
-
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-[var(--surface-secondary)]">
-        {stall.image ? (
-          <img
-            src={getImageUrl(stall.image)}
-            alt={stall.name}
-            loading="lazy"
-            className={`
-              h-full
-              w-full
-              object-cover
-              transition-transform
-              duration-500
-              ease-out
-              ${
-                isOpen
-                  ? "group-hover:scale-[1.04]"
-                  : "grayscale-[20%] brightness-[0.78]"
-              }
-            `}
-            onError={(event) => {
-              event.currentTarget.style.display = "none";
-
-              const fallback =
-                event.currentTarget.parentElement?.querySelector(
-                  "[data-stall-image-fallback]"
-                );
-
-              if (fallback instanceof HTMLElement) {
-                fallback.classList.remove("hidden");
-              }
-            }}
-          />
-        ) : null}
-
-        {/* IMAGE FALLBACK */}
-
-        <div
-          data-stall-image-fallback
-          className={`
-            ${
-              stall.image ? "hidden" : "flex"
-            }
-            absolute
-            inset-0
-            items-center
-            justify-center
-            bg-[var(--surface-secondary)]
-          `}
-        >
-          <div
-            className="
-              flex
-              h-16
-              w-16
-              items-center
-              justify-center
-              rounded-2xl
-              border
-              border-[var(--border)]
-              bg-[var(--surface)]
-              text-[var(--text-muted)]
-              shadow-sm
-            "
-          >
-            <UtensilsCrossed size={28} strokeWidth={1.8} />
-          </div>
-        </div>
-
-        {/* IMAGE BOTTOM GRADIENT */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-x-0
-            bottom-0
-            h-24
-            bg-gradient-to-t
-            from-black/45
-            to-transparent
-          "
-        />
-
-        {/* ====================================================
-            STATUS BADGE
-        ==================================================== */}
-
-        <div
-          className={`
-            absolute
-            left-3.5
-            top-3.5
-            inline-flex
-            items-center
-            gap-2
-            rounded-full
-            border
-            px-3
-            py-1.5
-            text-[10px]
-            font-bold
-            tracking-wide
-            backdrop-blur-md
-            sm:text-[11px]
-            ${
-              isOpen
-                ? `
-                  border-white/15
-                  bg-black/55
-                  text-white
-                `
-                : `
-                  border-[var(--border)]
-                  bg-[var(--surface)]/95
-                  text-[var(--text-secondary)]
-                `
-            }
-          `}
-        >
-          <span
-            className={`
-              h-1.5
-              w-1.5
-              rounded-full
-              ${
-                isOpen
-                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.65)]"
-                  : "bg-red-400"
-              }
-            `}
-          />
-
-          {isOpen ? "Open now" : "Closed"}
-        </div>
-
-        
-      </div>
-
-      {/* ======================================================
-          CONTENT
-      ====================================================== */}
-
-      <div className="flex flex-1 flex-col p-4 sm:p-[18px]">
-        {/* NAME + DESCRIPTION */}
-
-        <div className="min-w-0">
-          <h3
-            className={`
-              line-clamp-1
-              text-[17px]
-              font-bold
-              leading-6
-              tracking-[-0.02em]
-              ${
-                isOpen
-                  ? "text-[var(--text-primary)]"
-                  : "text-[var(--text-secondary)]"
-              }
-            `}
-          >
-            {stall.name}
-          </h3>
-
-          {stall.description ? (
-            <p
-              className="
-                mt-1.5
-                line-clamp-2
-                min-h-[40px]
-                text-[12px]
-                leading-5
-                text-[var(--text-secondary)]
-                sm:text-[13px]
-              "
-            >
-              {stall.description}
-            </p>
-          ) : (
-            <p className="mt-1.5 min-h-[40px] text-[12px] leading-5 text-[var(--text-muted)]">
-              Explore the menu from this campus stall.
-            </p>
-          )}
-        </div>
-
-        {/* ====================================================
-            FOOTER
-        ==================================================== */}
-
-        <div
-          className="
-            mt-4
-            flex
-            items-center
-            justify-between
-            border-t
-            border-[var(--border)]
-            pt-3.5
-          "
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className={`
-                h-1.5
-                w-1.5
-                shrink-0
-                rounded-full
-                ${
-                  isOpen
-                    ? "bg-emerald-500"
-                    : "bg-[var(--text-muted)]"
-                }
-              `}
-            />
-
-            <span
-              className={`
-                truncate
-                text-[11px]
-                font-semibold
-                sm:text-xs
-                ${
-                  isOpen
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-[var(--text-muted)]"
-                }
-              `}
-            >
-              {isOpen
-                ? "Accepting orders"
-                : "Currently unavailable"}
-            </span>
-          </div>
-
-          {isOpen && (
-            <span
-              className="
-                ml-3
-                shrink-0
-                text-[11px]
-                font-bold
-                text-[var(--brand)]
-                transition-transform
-                duration-200
-                group-hover:translate-x-0.5
-                sm:text-xs
-              "
-            >
-              View menu
-            </span>
-          )}
-        </div>
-      </div>
-    </button>
-  );
-}
 
 /* ================================================================
    HERO STAT

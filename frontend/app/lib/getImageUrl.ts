@@ -11,12 +11,7 @@ export function getImageUrl(image: string) {
     return image;
   }
 
-  const API_URL = "http://127.0.0.1:8000";
-
-  // Make sure there is exactly one /
-  const normalizedPath = image.startsWith("/")
-    ? image
-    : `/${image}`;
-
-  return `${API_URL}${normalizedPath}`;
+  // Local public path (served by Next.js directly)
+  const normalizedPath = image.startsWith("/") ? image : `/${image}`;
+  return normalizedPath;
 }

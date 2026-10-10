@@ -28,6 +28,7 @@ type Stall = {
 type StallForm = {
   name: string;
   image: string;
+  imageSource: string;
   description: string;
   is_open: boolean;
   active: boolean;
@@ -46,6 +47,7 @@ const API_URL =
 const emptyForm: StallForm = {
   name: "",
   image: "",
+  imageSource: "url",
   description: "",
   is_open: true,
   active: true,
@@ -186,6 +188,7 @@ export default function StallsPage() {
     setForm({
       name: stall.name || "",
       image: stall.image || "",
+      imageSource: (stall.image || "").startsWith("http") ? "url" : "local",
       description: stall.description || "",
       is_open: stall.is_open,
       active: stall.active,
@@ -743,23 +746,55 @@ export default function StallsPage() {
   </p>
 </div>
 
-              {/* Image URL */}
+              {/* Image Source */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-zinc-300">Image Source</label>
+                <div className="flex gap-3">
+                  {[
+                    { key: "url", label: "Image URL" },
+                    { key: "local", label: "Local image path" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setForm({ ...form, imageSource: opt.key })}
+                      className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+                        form.imageSource === opt.key ? "bg-brand text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-zinc-500">
+                  {form.imageSource === "local"
+                    ? "Place images in frontend/public/images/tiles/ and enter the public path (e.g., /images/tiles/biryani.jpg)"
+                    : "Paste a direct image URL (e.g., https://example.com/photo.jpg)"}
+                </p>
+              </div>
+
+              {/* Image Input */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-zinc-300">
-                  Image URL
+                  {form.imageSource === "local" ? "Local Image Path" : "Image URL"}
                 </label>
-
                 <input
                   value={form.image}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      image: e.target.value,
-                    })
-                  }
-                  placeholder="https://..."
+                  onChange={(e) => setForm({ ...form, image: e.target.value })}
+                  placeholder={form.imageSource === "local" ? (form.name ? `/images/tiles/${form.name.toLowerCase().replace(/\s+/g, '-')}.jpg` : "/images/tiles/name.jpg") : "https://..."}
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white outline-none placeholder:text-zinc-600 focus:border-brand"
                 />
+                <p className="mt-2 text-xs text-emerald-400 font-medium">
+                  {form.imageSource === "local" && form.name
+                    ? `Image file should be named: ${form.name.toLowerCase().replace(/\s+/g, '-')}.jpg and saved in frontend/public/images/tiles/`
+                    : form.imageSource === "local" ? "Name your image file to match the stall name (e.g., biryani.jpg)"
+                    : ""}
+                </p>
+                {form.image && (
+                  <div className="mt-2">
+                    <img src={form.image.startsWith("http") ? form.image : (form.image.startsWith("/") ? form.image : `/${form.image}`)} alt="Preview" className="h-24 rounded-lg object-cover border border-zinc-700" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  </div>
+                )}
               </div>
 
               {/* Description */}

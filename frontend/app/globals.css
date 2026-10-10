@@ -762,3 +762,14 @@ html:not(.dark) .border-slate-200,
 .dark .border-slate-200 {
   border-color: var(--input-border) !important;
 }
+
+/* Hide the horizontal scrollbar in the food category section */
+.hide-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
