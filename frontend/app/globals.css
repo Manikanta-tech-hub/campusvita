@@ -1,4 +1,14 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================================
+   CAMPUSVITA FONT SYSTEM
+   Primary UI font: Plus Jakarta Sans
+========================================================= */
+
+@theme {
+  --font-sans: var(--font-jakarta), sans-serif;
+}
 
 /* =========================================================
    CAMPUSVITA DESIGN SYSTEM
@@ -23,7 +33,7 @@
 :root {
   color-scheme: light;
 
-  /* 70% — Primary canvas (page background) */
+  /* 70% — Primary canvas */
   --background: #e6e7eb;
   --foreground: #1a1b23;
 
@@ -42,21 +52,21 @@
   --border: #d5d8e0;
   --border-strong: #c4c8d3;
 
-  /* 10% — Brand / primary (indigo) */
+  /* 10% — Brand / primary */
   --primary: #686ee8;
   --primary-hover: #5a60dd;
   --primary-active: #4c52cc;
   --primary-soft: #e2e8fd;
   --primary-soft-strong: #d0d8fb;
 
-  /* Legacy aliases (kept so existing var(--brand-*) usage works) */
+  /* Legacy aliases */
   --brand: var(--primary);
   --brand-hover: var(--primary-hover);
   --brand-active: var(--primary-active);
   --brand-soft: var(--primary-soft);
   --brand-soft-strong: var(--primary-soft-strong);
 
-  /* Text that sits on solid brand surfaces */
+  /* Text on solid brand surfaces */
   --on-primary: #ffffff;
 
   /* Warm accent / danger */
@@ -88,7 +98,7 @@
   --input-border: #ccd0db;
   --input-focus: var(--primary);
 
-  /* Navbar (floating / translucent) */
+  /* Navbar */
   --navbar: rgba(255, 255, 255, 0.88);
   --navbar-border: rgba(206, 210, 220, 0.9);
 
@@ -97,10 +107,13 @@
 
   /* Shadows */
   --shadow-soft: 0 1px 2px rgba(24, 26, 45, 0.05);
+
   --shadow-card:
     0 8px 30px rgba(24, 26, 45, 0.07);
+
   --shadow-elevated:
     0 18px 50px rgba(24, 26, 45, 0.11);
+
   --shadow-brand:
     0 6px 18px rgba(104, 110, 232, 0.3);
 
@@ -119,7 +132,7 @@
 .dark {
   color-scheme: dark;
 
-  /* 70% — Primary canvas (page background) */
+  /* 70% — Primary canvas */
   --background: #303746;
   --foreground: #e9ebf3;
 
@@ -138,7 +151,7 @@
   --border: #474f61;
   --border-strong: #576078;
 
-  /* 10% — Brand / primary (bright indigo) */
+  /* 10% — Brand / primary */
   --primary: #8691f0;
   --primary-hover: #9aa3f4;
   --primary-active: #727ee9;
@@ -154,8 +167,8 @@
 
   /*
      Text on solid brand surfaces.
-     Dark mode uses a brighter primary, so a dark
-     foreground keeps contrast strong (Material-3 style).
+     Dark mode uses a brighter primary, so dark foreground
+     improves contrast against the primary brand color.
   */
   --on-primary: #232637;
 
@@ -188,7 +201,7 @@
   --input-border: #576078;
   --input-focus: var(--primary);
 
-  /* Navbar (floating / translucent) */
+  /* Navbar */
   --navbar: rgba(48, 55, 70, 0.88);
   --navbar-border: rgba(74, 83, 101, 0.9);
 
@@ -215,6 +228,8 @@
 html {
   width: 100%;
   min-width: 100%;
+  min-height: 100%;
+
   margin: 0;
   padding: 0;
 
@@ -224,6 +239,9 @@ html {
   color: var(--foreground);
 
   scroll-behavior: smooth;
+
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -240,7 +258,8 @@ body {
   background: var(--background);
   color: var(--foreground);
 
-  font-family: Arial, Helvetica, sans-serif;
+  /* Global CampusVita font */
+  font-family: var(--font-jakarta), sans-serif;
 
   transition:
     background-color 180ms ease,
@@ -302,7 +321,8 @@ body {
   --color-warning-soft: var(--warning-soft);
   --color-info-soft: var(--info-soft);
 
-  --font-sans: var(--font-geist-sans);
+  /* Tailwind font configuration */
+  --font-sans: var(--font-jakarta), sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -464,16 +484,6 @@ img {
 }
 
 /* =========================================================
-   MOBILE SAFARI
-========================================================= */
-
-html,
-body {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-/* =========================================================
    GLOBAL WIDTH SAFETY
 ========================================================= */
 
@@ -486,10 +496,6 @@ div {
 
 /* =========================================================
    CAMPUSVITA LEGACY CLASS COMPATIBILITY
-   Legacy admin / vendor / auth components are styled with
-   hard-coded dark chrome (zinc, near-black hexes) and white
-   text. These rules map them onto the semantic tokens above
-   so BOTH themes render consistently from one source of truth.
 ========================================================= */
 
 html:not(.dark) {
@@ -548,12 +554,8 @@ html:not(.dark) .text-white {
   color: var(--text-primary) !important;
 }
 
-/*
-   Keep text readable on solid brand / accent fills.
-   --on-primary is white in light mode and dark ink in dark
-   mode so contrast stays strong on the brighter dark primary.
-   Self and descendant forms are both listed.
-*/
+/* Brand surfaces: maintain appropriate text contrast */
+
 html:not(.dark) .bg-brand.text-white,
 html:not(.dark) .bg-primary.text-white,
 html:not(.dark) [class*="bg-brand"].text-white,
@@ -575,7 +577,8 @@ html:not(.dark) [class*="from-brand"] .text-white,
   color: var(--on-primary) !important;
 }
 
-/* Status fills always keep light text */
+/* Status and orange fills: retain white text */
+
 html:not(.dark) [class*="bg-danger"].text-white,
 html:not(.dark) [class*="bg-success"].text-white,
 html:not(.dark) [class*="bg-warning"].text-white,
@@ -597,7 +600,11 @@ html:not(.dark) [class*="bg-emerald-"] .text-white,
 .dark [class*="bg-blue-"].text-white,
 .dark [class*="bg-amber-"].text-white,
 .dark [class*="bg-red-"] .text-white,
-.dark [class*="bg-emerald-"] .text-white {
+.dark [class*="bg-emerald-"] .text-white,
+html:not(.dark) .bg-orange-400.text-white,
+html:not(.dark) .bg-orange-500.text-white,
+html:not(.dark) .bg-orange-600.text-white,
+html:not(.dark) .bg-orange-700.text-white {
   color: #ffffff !important;
 }
 
@@ -732,12 +739,6 @@ html:not(.dark) .shadow-2xl {
 
 /* ---------- DARK THEME: LIGHT-DARK TEXT FIXES ---------- */
 
-/*
-   Legacy components hard-code near-black text that becomes
-   invisible once surfaces are themed dark. Remap only in dark
-   mode so light-mode dark-on-light text is untouched.
-*/
-
 .dark .text-zinc-800,
 .dark .text-zinc-900,
 .dark .text-zinc-950,
@@ -766,10 +767,10 @@ html:not(.dark) .border-slate-200,
 /* Hide the horizontal scrollbar in the food category section */
 .hide-scrollbar,
 .hide-scrollbar::-webkit-scrollbar {
-  display: none !important;
+display: none !important;
 }
 
 .hide-scrollbar {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
+scrollbar-width: none !important;
+-ms-overflow-style: none !important;
 }

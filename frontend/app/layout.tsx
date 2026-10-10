@@ -1,15 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
+import { jakarta } from "./fonts";
 import ThemeProvider from "@/components/providers/ThemeProvider";
 import { CartProvider } from "../context/CartContext";
 import { Toaster } from "react-hot-toast";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -47,7 +41,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body className={inter.className}>
+      <body className={`${jakarta.variable} font-sans antialiased`}>
         <ThemeProvider>
           <CartProvider>
             <Toaster
@@ -57,7 +51,6 @@ export default function RootLayout({
                 duration: 3000,
               }}
             />
-
             {children}
           </CartProvider>
         </ThemeProvider>
