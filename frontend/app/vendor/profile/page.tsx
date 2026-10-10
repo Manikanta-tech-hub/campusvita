@@ -455,7 +455,7 @@ export default function VendorProfilePage() {
   if (!vendor) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
-        <LoaderCircle className="h-8 w-8 animate-spin text-orange-500" />
+        <LoaderCircle className="h-8 w-8 animate-spin text-violet-500" />
       </div>
     );
   }
@@ -512,7 +512,7 @@ export default function VendorProfilePage() {
                 onClick: () => {
                   profileImageInputRef.current?.click();
                 },
-                backgroundColor: "#f97316",
+                backgroundColor: "#8b5cf6",
               }}
             />
 
@@ -521,7 +521,7 @@ export default function VendorProfilePage() {
               type="button"
               onClick={() => profileImageInputRef.current?.click()}
               disabled={uploadingImage}
-              className="mx-auto mb-5 flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mx-auto mb-5 flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploadingImage ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -647,7 +647,7 @@ export default function VendorProfilePage() {
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
                   !isDark
-                    ? "bg-white text-orange-500 shadow-sm"
+                    ? "bg-white text-violet-500 shadow-sm"
                     : "text-zinc-400"
                 }`}
               >
@@ -657,7 +657,7 @@ export default function VendorProfilePage() {
               <span
                 className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
                   isDark
-                    ? "bg-zinc-800 text-orange-400"
+                    ? "bg-zinc-800 text-violet-400"
                     : "text-slate-400"
                 }`}
               >
@@ -681,7 +681,7 @@ export default function VendorProfilePage() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-orange-500/10 p-2.5 text-orange-500">
+              <div className="rounded-xl bg-violet-500/10 p-2.5 text-violet-500">
                 <KeyRound className="h-5 w-5" />
               </div>
 
@@ -694,7 +694,7 @@ export default function VendorProfilePage() {
               </div>
             </div>
 
-            <span className="text-sm text-orange-500" aria-hidden="true">
+            <span className="text-sm text-violet-500" aria-hidden="true">
               →
             </span>
           </button>
@@ -760,7 +760,7 @@ export default function VendorProfilePage() {
           >
             <div className="mb-6 flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-orange-500/10 p-3 text-orange-500">
+                <div className="rounded-xl bg-violet-500/10 p-3 text-violet-500">
                   <KeyRound className="h-6 w-6" />
                 </div>
 
@@ -875,7 +875,7 @@ export default function VendorProfilePage() {
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {passwordLoading && (
                     <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -993,7 +993,7 @@ function PasswordField({
           autoComplete={autoComplete}
           minLength={minLength}
           required
-          className={`w-full rounded-xl border px-4 py-3 pr-12 text-sm outline-none transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 ${
+          className={`w-full rounded-xl border px-4 py-3 pr-12 text-sm outline-none transition-colors focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 ${
             dark
               ? "border-white/10 bg-[#090909] text-white placeholder:text-zinc-600"
               : "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
