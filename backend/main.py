@@ -492,7 +492,21 @@ sio = socketio.AsyncServer(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_indexes()
+    # Safe scheduler start (idempotent; does not auto-start duplicates in same process)
+    try:
+        from whatsapp_scheduler import start_scheduler, stop_scheduler, is_scheduler_active
+        # Only start if explicitly enabled via env; keep off by default for safe deployment
+        if os.getenv("WHATSAPP_SCHEDULER_ENABLED", "false").lower() == "true" and not is_scheduler_active():
+            start_scheduler(interval=30, batch_size=5)
+    except Exception as exc:
+        logger.warning("WhatsApp scheduler startup skipped: %s", exc)
     yield
+    # Graceful shutdown: signal scheduler to stop; existing claims complete within lease window
+    try:
+        from whatsapp_scheduler import stop_scheduler
+        stop_scheduler()
+    except Exception as exc:
+        logger.warning("WhatsApp scheduler shutdown skipped: %s", exc)
 
 
 fastapi_app = FastAPI(lifespan=lifespan)
@@ -1492,6 +1506,23 @@ async def create_indexes():
         logger.info(
             "✅ Counters collection index created"
         )
+
+        # ============================================================
+        # WHATSAPP OUTBOX / NOTIFICATIONS / RATING TOKENS INDEXES
+        # ============================================================
+        try:
+            from whatsapp_notifications import whatsapp_notifications, whatsapp_outbox, rating_tokens
+            if whatsapp_notifications is not None:
+                whatsapp_notifications.create_index([("order_id", 1), ("status", 1)], unique=True, name="order_status_unique")
+                whatsapp_notifications.create_index("provider_message_id", unique=True, sparse=True, name="provider_msg_unique")
+            if whatsapp_outbox is not None:
+                whatsapp_outbox.create_index([("state", 1), ("next_attempt", 1)], name="state_due_index")
+                whatsapp_outbox.create_index("order_id", name="order_lookup")
+            if rating_tokens is not None:
+                rating_tokens.create_index("token", unique=True, name="rating_token_unique")
+            logger.info("✅ WhatsApp indexes created")
+        except Exception as e:
+            logger.warning("⚠️ WhatsApp index warning: %s", e)
 
     except Exception as e:
         logger.warning(

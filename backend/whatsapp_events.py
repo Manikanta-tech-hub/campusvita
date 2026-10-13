@@ -28,7 +28,10 @@ def record_notification(order_id: str, status: str, provider_id: Optional[str] =
         "error": error,
         "test_mode": TEST_MODE,
         "retry_count": retry_count,
+        "state": "submitted" if (not error and provider_id) else ("failed_permanent" if error else "pending"),
         "notification_state": "sent" if not error else "failed",
+        "next_attempt": None if (not error and provider_id) else (datetime.now(timezone.utc) if error else None),
+        "last_error": error,
     }
     if whatsapp_outbox is not None:
         try:
