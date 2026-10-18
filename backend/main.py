@@ -2158,6 +2158,10 @@ class RatingData(BaseModel):
     rating: int = Field(ge=1, le=5)
     feedback: str = Field(max_length=500)
 
+class StallRatingData(BaseModel):
+    stall_id: str = Field(min_length=1, max_length=100)
+    rating: int = Field(ge=1, le=5)
+    feedback: str = Field(default="", max_length=500)
 
 class FoodData(BaseModel):
     name: str = Field(min_length=1, max_length=100)
@@ -7361,6 +7365,73 @@ def rate_order(rating: RatingData, current_user: Dict[str, Any] = Depends(get_cu
             detail="Internal Server Error"
         )
 
+@fastapi_app.post("/rate-stall")
+def rate_stall(
+    rating: StallRatingData,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    try:
+        stall_id = rating.stall_id.strip()
+
+        # Validate the stall ID before querying MongoDB.
+        if not ObjectId.is_valid(stall_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid stall ID",
+            )
+
+        # Verify that the requested stall exists and is active.
+        stall = stalls_collection.find_one({
+            "_id": ObjectId(stall_id),
+            "active": True,
+        })
+
+        if not stall:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Stall not found or inactive",
+            )
+
+        user_email = str(current_user["email"]).strip().lower()
+
+        rating_document = {
+            "stall_id": stall_id,
+            "rating": rating.rating,
+            "feedback": rating.feedback.strip(),
+            "user_email": user_email,
+            "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+        }
+
+        # Allow each user to update their rating for a stall.
+        ratings_collection.update_one(
+            {
+                "stall_id": stall_id,
+                "user_email": user_email,
+            },
+            {"$set": rating_document},
+            upsert=True,
+        )
+
+        logger.info(
+            "Stall rating saved for %s by %s",
+            stall.get("name", stall_id),
+            user_email,
+        )
+
+        return {
+            "success": True,
+            "message": "Stall rating saved successfully",
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        logger.exception("Rate stall error")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save stall rating",
+        )
 
 # =====================================
 # FOOD ROUTES (Admin Only)
@@ -7925,37 +7996,50 @@ def delete_stall(
 @fastapi_app.get("/stalls")
 def get_public_stalls():
     """
-    Return all active stalls for the user home page.
+    Return active stalls with real ratings calculated from
+    the MongoDB ratings collection.
 
-    IMPORTANT:
-    - Open and closed stalls are both returned.
-    - The real MongoDB `is_open` value is preserved.
-    - Inactive/deleted stalls are not returned.
-    - No fake/default Open status is created.
+    Only ratings explicitly associated with a stall_id
+    are included in the stall average.
     """
 
     try:
         stalls = []
 
         cursor = stalls_collection.find(
-            {
-                "active": True,
-            }
+            {"active": True}
         ).sort(
             "created_at",
-            DESCENDING
+            DESCENDING,
         )
 
         for stall in cursor:
-
             stall_id = str(stall["_id"])
 
-            is_open = bool(
-                stall.get("is_open", False)
+            # Find ratings explicitly associated with this stall.
+            rating_documents = ratings_collection.find(
+                {"stall_id": stall_id},
+                {"rating": 1},
             )
 
-            active = bool(
-                stall.get("active", False)
+            rating_values = []
+
+            for rating_document in rating_documents:
+                try:
+                    value = float(rating_document.get("rating"))
+
+                    if 1 <= value <= 5:
+                        rating_values.append(value)
+
+                except (TypeError, ValueError):
+                    continue
+
+            rating_count = len(rating_values)
+
+            average_rating = (
+                round(sum(rating_values) / rating_count, 1)
+                if rating_count > 0
+                else None
             )
 
             stalls.append({
@@ -7969,8 +8053,14 @@ def get_public_stalls():
                 "description": str(
                     stall.get("description", "")
                 ).strip(),
-                "is_open": is_open,
-                "active": active,
+                "is_open": bool(
+                    stall.get("is_open", False)
+                ),
+                "active": bool(
+                    stall.get("active", False)
+                ),
+                "rating": average_rating,
+                "rating_count": rating_count,
             })
 
         return {
@@ -7979,11 +8069,8 @@ def get_public_stalls():
             "total": len(stalls),
         }
 
-    except Exception as e:
-
-        logger.exception(
-            f"Get public stalls error: {e}"
-        )
+    except Exception:
+        logger.exception("Get public stalls error")
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
