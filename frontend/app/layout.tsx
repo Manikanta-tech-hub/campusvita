@@ -1,17 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-
+import { jakarta } from "./fonts";
 import ThemeProvider from "@/components/providers/ThemeProvider";
 import { CartProvider } from "../context/CartContext";
 import { Toaster } from "react-hot-toast";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-plus-jakarta",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -45,12 +37,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className={plusJakartaSans.variable}
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body>
+      <body className={`${jakarta.variable} font-sans antialiased`}>
         <ThemeProvider>
           <CartProvider>
             <Toaster
@@ -60,7 +51,6 @@ export default function RootLayout({
                 duration: 3000,
               }}
             />
-
             {children}
           </CartProvider>
         </ThemeProvider>

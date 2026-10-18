@@ -3,14 +3,17 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
-import { ArrowLeft, Eye, EyeOff, KeyRound } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  KeyRound,
+} from "lucide-react";
 
 import { VENDOR_ACTIVATED_FLAG } from "@/app/lib/auth/session";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 const GENERIC_VERIFY_ERROR =
   "Invalid or expired activation credentials.";
@@ -23,12 +26,8 @@ type InvitationPreview = {
   email: string;
 };
 
-function extractError(
-  data: unknown,
-  fallback: string
-): string {
-  const detail = (data as { detail?: unknown } | null)
-    ?.detail;
+function extractError(data: unknown, fallback: string): string {
+  const detail = (data as { detail?: unknown } | null)?.detail;
 
   if (typeof detail === "string" && detail.trim()) {
     return detail;
@@ -42,6 +41,7 @@ function extractError(
         typeof item === "object" &&
         typeof (item as { msg?: unknown }).msg === "string"
     );
+
     if (message) {
       return (message as { msg: string }).msg;
     }
@@ -62,9 +62,9 @@ export default function VendorActivatePage() {
 
   const [invitation, setInvitation] =
     useState<InvitationPreview | null>(null);
+
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activating, setActivating] = useState(false);
   const [activateError, setActivateError] = useState("");
@@ -106,10 +106,7 @@ export default function VendorActivatePage() {
 
       if (!response.ok) {
         setVerifyError(
-          extractError(
-            data,
-            GENERIC_VERIFY_ERROR
-          )
+          extractError(data, GENERIC_VERIFY_ERROR)
         );
         return;
       }
@@ -130,12 +127,6 @@ export default function VendorActivatePage() {
 
   // ============================================================
   // STEP 2 - choose a password and activate
-  //
-  // The invited email comes back from the server and is only
-  // ever displayed - never editable, never in a query param.
-  // The activation code lives in component state only (no
-  // localStorage / sessionStorage / URL), so it is wiped on
-  // unmount or navigation.
   // ============================================================
 
   async function handleActivate(event: FormEvent) {
@@ -177,8 +168,7 @@ export default function VendorActivatePage() {
         return;
       }
 
-      // Success: wipe credentials from state, leave a
-      // one-shot flag for the login page toast, then go.
+      // Clear credentials from component state after success.
       setPassword("");
       setConfirmPassword("");
       setActivationCode("");
@@ -214,26 +204,49 @@ export default function VendorActivatePage() {
 
   return (
     <main className="flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[var(--background)] px-6 py-12">
-      <div className="cv-glass-elevated w-full max-w-md rounded-3xl p-7">
+      <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-[var(--surface)] p-7 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)]">
-            <KeyRound className="h-5 w-5 text-[var(--on-accent)]" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-hover">
+            <KeyRound className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
               Step {step} of 2
             </p>
-            <h1 className="text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
+            <h1 className="text-[22px] font-bold tracking-tight text-white">
               Vendor Account Activation
             </h1>
-          </div>
-        </div>
 
-        <p className="mt-4 text-sm leading-relaxed text-[var(--text-secondary)]">
-          {step === 1
-            ? "Enter the Vendor ID and activation code your administrator gave you."
-            : "Confirm your invitation details and choose a password for your vendor account."}
-        </p>
+            <p className="mt-3 text-sm leading-relaxed text-text-secondary sm:text-[15px]">
+              {step === 1
+                ? "Enter the Vendor ID and activation code provided by your CampusVita administrator to get started."
+                : "Your invitation is verified. Confirm your details and create a secure password to finish setting up your vendor account."}
+            </p>
+          </div>
+
+          </div>
+
+          {/* Step indicator */}
+          <div className="mb-7">
+            <div
+              className="flex items-center gap-2"
+              aria-label={`Step ${step} of 2`}
+            >
+              <span
+                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                  step >= 1 ? "bg-brand" : "bg-input-border"
+                }`}
+              />
+              <span
+                className={`h-1.5 flex-1 rounded-full transition-colors ${
+                  step >= 2 ? "bg-brand" : "bg-input-border"
+                }`}
+              />
+              <span className="ml-2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] text-text-secondary">
+                Step {step} of 2
+              </span>
+            </div>
+          </div>
 
         {step === 1 ? (
           <form
@@ -258,7 +271,7 @@ export default function VendorActivatePage() {
                 autoComplete="off"
                 spellCheck={false}
                 autoCapitalize="characters"
-                className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
+                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
               />
             </div>
 
@@ -280,14 +293,14 @@ export default function VendorActivatePage() {
                 autoComplete="off"
                 spellCheck={false}
                 autoCapitalize="characters"
-                className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 text-sm uppercase tracking-[0.3em] text-[var(--text-primary)] placeholder:normal-case placeholder:tracking-normal placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
+                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm uppercase tracking-[0.3em] text-[var(--text-primary)] placeholder-white/30 placeholder:normal-case placeholder:tracking-normal outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
               />
             </div>
 
             {verifyError && (
               <p
                 role="alert"
-                className="rounded-lg border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]"
+                className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
               >
                 {verifyError}
               </p>
@@ -296,7 +309,7 @@ export default function VendorActivatePage() {
             <button
               type="submit"
               disabled={verifying}
-              className="cv-press flex h-13 w-full items-center justify-center rounded-2xl bg-[var(--accent)] text-base! font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:scale-[1.01] hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand to-brand-hover text-base font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {verifying ? "Checking..." : "Continue"}
             </button>
@@ -306,12 +319,12 @@ export default function VendorActivatePage() {
             onSubmit={handleActivate}
             className="mt-6 space-y-4"
           >
-            <div className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-tertiary)] p-4">
+            <div className="space-y-3 rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] p-4">
               <div className="flex items-start justify-between gap-4">
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Business
                 </span>
-                <span className="text-right text-sm font-medium text-[var(--text-primary)]">
+                <span className="text-right text-sm font-medium text-white">
                   {invitation?.business_name}
                 </span>
               </div>
@@ -319,7 +332,7 @@ export default function VendorActivatePage() {
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Owner
                 </span>
-                <span className="text-right text-sm font-medium text-[var(--text-primary)]">
+                <span className="text-right text-sm font-medium text-white">
                   {invitation?.owner_name}
                 </span>
               </div>
@@ -327,7 +340,7 @@ export default function VendorActivatePage() {
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Email
                 </span>
-                <span className="break-all text-right text-sm font-medium text-[var(--text-primary)]">
+                <span className="break-all text-right text-sm font-medium text-white">
                   {invitation?.email}
                 </span>
               </div>
@@ -335,7 +348,7 @@ export default function VendorActivatePage() {
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Vendor ID
                 </span>
-                <span className="text-right text-sm font-medium text-[var(--text-primary)]">
+                <span className="text-right text-sm font-medium text-white">
                   {invitation?.vendor_id}
                 </span>
               </div>
@@ -360,7 +373,7 @@ export default function VendorActivatePage() {
                   }
                   placeholder="Create a password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 pr-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
+                  className="w-full rounded-xl border border-input-border bg-input px-4 py-3 pr-12 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
                 />
                 <button
                   type="button"
@@ -399,20 +412,24 @@ export default function VendorActivatePage() {
                 }
                 placeholder="Re-enter your password"
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
+                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
               />
             </div>
 
-            <p className="text-xs leading-relaxed text-[var(--text-subtle)]">
-              Password must be at least 8 characters with an
-              uppercase letter, a lowercase letter, a number,
-              and a special character.
-            </p>
+              <div className="rounded-xl bg-surface px-4 py-3">
+                <p className="text-xs font-semibold text-text-primary">
+                  Password requirements
+                </p>
+
+                <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+                  At least 8 characters, including an uppercase letter, a lowercase letter, a number, and a special character.
+                </p>
+              </div>
 
             {activateError && (
               <p
                 role="alert"
-                className="rounded-lg border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]"
+                className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
               >
                 {activateError}
               </p>
@@ -421,25 +438,25 @@ export default function VendorActivatePage() {
             <button
               type="submit"
               disabled={activating}
-              className="cv-press flex h-13 w-full items-center justify-center rounded-2xl bg-[var(--accent)] text-base! font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:scale-[1.01] hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand to-brand-hover text-base font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {activating
                 ? "Activating..."
                 : "Activate Account"}
             </button>
 
-            <button
-              type="button"
-              onClick={handleBackToStepOne}
-              className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to credentials
-            </button>
-          </form>
-        )}
+              <button
+                type="button"
+                onClick={handleBackToStepOne}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-input-border text-sm font-semibold text-text-secondary transition hover:border-brand/40 hover:text-brand"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to credentials
+              </button>
+            </form>
+          )}
 
-        <div className="mt-6 border-t border-[var(--border)] pt-5 text-center">
+        <div className="mt-6 border-t border-zinc-800 pt-5 text-center">
           <Link
             href="/login"
             className="text-sm font-medium text-[var(--text-secondary)] transition hover:text-brand"

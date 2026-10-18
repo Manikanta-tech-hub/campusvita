@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -17,6 +17,7 @@ import {
   UserRound,
   XCircle,
 } from "lucide-react";
+import VendorSidebar from "@/components/vendor/vendor-sidebar";
 
 import {
   clearSession,
@@ -307,6 +308,7 @@ function getProgress(status: string) {
 
 export default function VendorDashboardPage() {
   const [orders, setOrders] = useState<VendorOrder[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [todayRevenue, setTodayRevenue] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -339,7 +341,9 @@ export default function VendorDashboardPage() {
       ).matches;
     }
 
-    setIsDark(dark);
+    startTransition(() => {
+      setIsDark(dark);
+    });
 
     document.documentElement.classList.toggle("dark", dark);
 
@@ -397,11 +401,11 @@ export default function VendorDashboardPage() {
         setRefreshing(true);
       }
 
-      setError("");
-
       const token = getAccessToken("VENDOR");
 
       if (!token) {
+        // Defer the error state update until after this async task yields.
+        await Promise.resolve();
         throw new Error(
           "Vendor session expired. Please log in again."
         );
@@ -420,6 +424,8 @@ export default function VendorDashboardPage() {
 
       const data: VendorOrdersResponse =
         await response.json();
+
+      setError("");
 
       if (!response.ok) {
         throw new Error(
@@ -454,7 +460,9 @@ export default function VendorDashboardPage() {
   // ============================================================
 
   useEffect(() => {
-    loadOrders();
+    startTransition(() => {
+      void loadOrders();
+    });
 
     const interval = setInterval(() => {
       loadOrders();
@@ -724,7 +732,19 @@ export default function VendorDashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] transition-colors duration-300">
+      <div className="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <VendorSidebar
+          open={sidebarOpen}
+          setOpen={setSidebarOpen}
+          onLogout={handleLogout}
+        />
+        <main
+          className={`min-w-0 min-h-screen flex-1 transition-colors duration-300 ${
+            isDark
+              ? "bg-[var(--background)] text-white"
+              : "bg-[var(--background)] text-[var(--text-primary)]"
+          }`}
+        >
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
           <div className="animate-pulse">
             <div className="h-8 w-40 rounded-lg bg-[var(--surface-secondary)]" />
@@ -743,12 +763,25 @@ export default function VendorDashboardPage() {
             <div className="mt-8 h-72 rounded-3xl border border-[var(--border)] bg-[var(--surface)]" />
           </div>
         </div>
-      </main>
+        </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] transition-colors duration-300">
+    <div className="flex min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <VendorSidebar
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+        onLogout={handleLogout}
+      />
+      <main
+        className={`min-w-0 min-h-screen flex-1 transition-colors duration-300 ${
+          isDark
+            ? "bg-[var(--background)] text-white"
+            : "bg-[var(--background)] text-[var(--text-primary)]"
+        }`}
+      >
       {/* HEADER */}
 
       <header className="cv-glass-elevated sticky top-0 z-40 transition-colors duration-300">
@@ -852,7 +885,7 @@ export default function VendorDashboardPage() {
 
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  Today's Revenue
+                  Today&apos;s Revenue
                 </p>
 
                 <p className="cv-tnum mt-0.5 text-xl font-bold text-[var(--text-primary)]">
@@ -1522,6 +1555,7 @@ export default function VendorDashboardPage() {
           </section>
         )}
       </div>
-    </main>
+      </main>
+    </div>
   );
 }

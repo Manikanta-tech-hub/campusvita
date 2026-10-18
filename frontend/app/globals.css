@@ -1,4 +1,14 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================================
+   CAMPUSVITA FONT SYSTEM
+   Primary UI font: Plus Jakarta Sans
+========================================================= */
+
+@theme {
+  --font-sans: var(--font-jakarta), sans-serif;
+}
 
 /* =========================================================
    CAMPUSVITA DESIGN SYSTEM
@@ -25,22 +35,9 @@
 :root {
   color-scheme: light;
 
-  /* One application type family, with script-aware system fallbacks. */
-  --font-body: var(--font-plus-jakarta), "Noto Sans Telugu", "Gautami",
-    "Nirmala UI", "Noto Sans Devanagari", "Noto Sans Malayalam", system-ui,
-    sans-serif;
-  --font-heading: var(--font-body);
-  --cv-text-xs: 0.75rem;
-  --cv-text-sm: 0.875rem;
-  --cv-text-base: 1rem;
-  --cv-text-lg: 1.125rem;
-  --cv-text-xl: 1.25rem;
-  --cv-leading-body: 1.5;
-  --cv-leading-heading: 1.15;
-
-  /* Canvas */
-  --background: #f5f5f7;
-  --foreground: #111111;
+  /* 70% — Primary canvas (page background) */
+  --background: #e6e7eb;
+  --foreground: #1a1b23;
 
   /* Surfaces */
   --surface: #ffffff;
@@ -57,21 +54,21 @@
   --border: rgba(0, 0, 0, 0.08);
   --border-strong: rgba(0, 0, 0, 0.14);
 
-  /* Canonical CampusVita logo indigo — recovered from the prior theme. */
+  /* 10% — Brand / primary (indigo) */
   --primary: #686ee8;
   --primary-hover: #5a60dd;
   --primary-active: #4e54cb;
   --primary-soft: rgba(104, 110, 232, 0.1);
   --primary-soft-strong: rgba(104, 110, 232, 0.18);
 
-  /* Legacy aliases (kept so existing var(--brand-*) usage works) */
+  /* Legacy aliases */
   --brand: var(--primary);
   --brand-hover: var(--primary-hover);
   --brand-active: var(--primary-active);
   --brand-soft: var(--primary-soft);
   --brand-soft-strong: var(--primary-soft-strong);
 
-  /* Text on solid primary surfaces */
+  /* Text that sits on solid brand surfaces */
   --on-primary: #ffffff;
 
   /* Brand accent — intentionally the same logo indigo, never orange. */
@@ -108,19 +105,20 @@
   --input-focus: var(--primary);
 
   /* Navbar (floating / translucent) */
-  --navbar: rgba(255, 255, 255, 0.72);
-  --navbar-border: rgba(255, 255, 255, 0.65);
-  --navbar-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --navbar: rgba(255, 255, 255, 0.88);
+  --navbar-border: rgba(206, 210, 220, 0.9);
 
   /* Overlay */
   --overlay: rgba(17, 17, 17, 0.4);
 
-  /* Shadows — neutral, layered, soft */
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.06);
-  --shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.1);
-  --shadow-brand: 0 6px 18px rgba(104, 110, 232, 0.28);
-  --shadow-accent: var(--accent-shadow);
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgba(24, 26, 45, 0.05);
+  --shadow-card:
+    0 8px 30px rgba(24, 26, 45, 0.07);
+  --shadow-elevated:
+    0 18px 50px rgba(24, 26, 45, 0.11);
+  --shadow-brand:
+    0 6px 18px rgba(104, 110, 232, 0.3);
 
   /* Radius */
   --radius-sm: 0.5rem;
@@ -161,9 +159,9 @@
 .dark {
   color-scheme: dark;
 
-  /* Canvas */
-  --background: #0c0c0e;
-  --foreground: #f5f5f7;
+  /* 70% — Primary canvas (page background) */
+  --background: #303746;
+  --foreground: #e9ebf3;
 
   /* Surfaces */
   --surface: #161619;
@@ -180,7 +178,7 @@
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.14);
 
-  /* Canonical logo indigo, raised for dark-surface contrast. */
+  /* 10% — Brand / primary (bright indigo) */
   --primary: #8691f0;
   --primary-hover: #9aa3f4;
   --primary-active: #727ee9;
@@ -194,16 +192,18 @@
   --brand-soft: var(--primary-soft);
   --brand-soft-strong: var(--primary-soft-strong);
 
-  --on-primary: #ffffff;
+  /*
+     Text on solid brand surfaces.
+     Dark mode uses a brighter primary, so a dark
+     foreground keeps contrast strong (Material-3 style).
+  */
+  --on-primary: #232637;
 
-  --accent: #8691f0;
-  --accent-hover: #9aa3f4;
-  --accent-active: #727ee9;
-  --accent-soft: rgba(134, 145, 240, 0.16);
-  --accent-soft-strong: rgba(134, 145, 240, 0.26);
-  --on-accent: #ffffff;
-  --accent-text: #aeb5ff;
-  --accent-shadow: 0 8px 24px rgba(134, 145, 240, 0.3);
+  /* Warm accent / danger */
+  --accent: #d5544b;
+  --accent-hover: #e0665c;
+  --accent-active: #c1483f;
+  --accent-soft: rgba(213, 84, 75, 0.16);
 
   /* Status */
   --success: #4ade80;
@@ -228,10 +228,9 @@
   --input-border: rgba(255, 255, 255, 0.14);
   --input-focus: var(--primary);
 
-  /* Navbar */
-  --navbar: rgba(22, 22, 25, 0.72);
-  --navbar-border: rgba(255, 255, 255, 0.1);
-  --navbar-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Navbar (floating / translucent) */
+  --navbar: rgba(48, 55, 70, 0.88);
+  --navbar-border: rgba(74, 83, 101, 0.9);
 
   /* Overlay */
   --overlay: rgba(0, 0, 0, 0.6);
@@ -264,6 +263,8 @@
 html {
   width: 100%;
   min-width: 100%;
+  min-height: 100%;
+
   margin: 0;
   padding: 0;
 
@@ -273,6 +274,9 @@ html {
   color: var(--foreground);
 
   scroll-behavior: smooth;
+
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 @media (max-width: 767px) {
@@ -308,12 +312,7 @@ body {
     var(--background);
   color: var(--foreground);
 
-  font-family: var(--font-body);
-  line-height: var(--cv-leading-body);
-
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  font-family: Arial, Helvetica, sans-serif;
 
   transition:
     background-color 180ms ease,
@@ -377,8 +376,8 @@ body {
   --color-warning-soft: var(--warning-soft);
   --color-info-soft: var(--info-soft);
 
-  --font-sans: var(--font-body);
-  --font-heading: var(--font-body);
+  --font-sans: var(--font-jakarta), sans-serif;
+  --font-mono: var(--font-geist-mono);
 }
 
 /* =========================================================
@@ -1216,16 +1215,6 @@ img {
 }
 
 /* =========================================================
-   MOBILE SAFARI
-========================================================= */
-
-html,
-body {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-/* =========================================================
    GLOBAL WIDTH SAFETY
 ========================================================= */
 
@@ -1238,10 +1227,6 @@ div {
 
 /* =========================================================
    CAMPUSVITA LEGACY CLASS COMPATIBILITY
-   Legacy admin / vendor / auth components are styled with
-   hard-coded dark chrome (zinc, near-black hexes) and white
-   text. These rules map them onto the semantic tokens above
-   so BOTH themes render consistently from one source of truth.
 ========================================================= */
 
 html:not(.dark) {
@@ -1303,8 +1288,8 @@ html:not(.dark) .text-white {
 /*
    Keep text readable on solid brand / accent fills.
    --on-primary is white in light mode and dark ink in dark
-   mode so contrast stays strong. Self and descendant forms
-   are both listed.
+   mode so contrast stays strong on the brighter dark primary.
+   Self and descendant forms are both listed.
 */
 html:not(.dark) .bg-brand.text-white,
 html:not(.dark) .bg-primary.text-white,
@@ -1335,7 +1320,8 @@ html:not(.dark) [class*="bg-accent"] .text-white,
   color: var(--on-accent) !important;
 }
 
-/* Status fills always keep light text */
+/* Status and orange fills: retain white text */
+
 html:not(.dark) [class*="bg-danger"].text-white,
 html:not(.dark) [class*="bg-success"].text-white,
 html:not(.dark) [class*="bg-warning"].text-white,
@@ -1357,7 +1343,11 @@ html:not(.dark) [class*="bg-emerald-"] .text-white,
 .dark [class*="bg-blue-"].text-white,
 .dark [class*="bg-amber-"].text-white,
 .dark [class*="bg-red-"] .text-white,
-.dark [class*="bg-emerald-"] .text-white {
+.dark [class*="bg-emerald-"] .text-white,
+html:not(.dark) .bg-orange-400.text-white,
+html:not(.dark) .bg-orange-500.text-white,
+html:not(.dark) .bg-orange-600.text-white,
+html:not(.dark) .bg-orange-700.text-white {
   color: #ffffff !important;
 }
 
@@ -1492,12 +1482,6 @@ html:not(.dark) .shadow-2xl {
 
 /* ---------- DARK THEME: LIGHT-DARK TEXT FIXES ---------- */
 
-/*
-   Legacy components hard-code near-black text that becomes
-   invisible once surfaces are themed dark. Remap only in dark
-   mode so light-mode dark-on-light text is untouched.
-*/
-
 .dark .text-zinc-800,
 .dark .text-zinc-900,
 .dark .text-zinc-950,
@@ -1526,10 +1510,10 @@ html:not(.dark) .border-slate-200,
 /* Hide the horizontal scrollbar in the food category section */
 .hide-scrollbar,
 .hide-scrollbar::-webkit-scrollbar {
-  display: none !important;
+display: none !important;
 }
 
 .hide-scrollbar {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
+scrollbar-width: none !important;
+-ms-overflow-style: none !important;
 }
