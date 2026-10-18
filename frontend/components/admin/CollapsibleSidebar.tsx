@@ -152,7 +152,7 @@ export default function CollapsibleSidebar({
   return (
     <aside
       className={[
-        "sticky top-0 flex h-full shrink-0 flex-col border-r border-border bg-card transition-[width] duration-300 ease-in-out lg:h-screen",
+        "cv-glass-card cv-glass-edge sticky top-0 flex h-full shrink-0 flex-col border-r border-border transition-[width] duration-300 ease-in-out lg:h-screen",
         collapsed ? "w-20" : "w-72",
       ].join(" ")}
     >

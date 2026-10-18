@@ -106,7 +106,7 @@ function StatCard({
   icon: typeof IndianRupee;
 }) {
   return (
-    <div className="group rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-[var(--shadow-card)]">
+    <div className="cv-glass-card cv-glass-edge group rounded-2xl border border-[var(--glass-border)] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-[var(--shadow-card)]">
       <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand transition-colors duration-200 group-hover:bg-brand group-hover:text-white!">
         <Icon size={20} />
       </span>
@@ -201,7 +201,7 @@ function QuickStatsPanel({
       : 0;
 
   return (
-    <div className="flex h-full flex-col rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-card)] transition-colors duration-200">
+    <div className="cv-glass-card cv-glass-edge flex h-full flex-col rounded-3xl border border-[var(--glass-border)] p-6 transition-colors duration-200">
       <div className="mb-6">
         <h2 className="text-xl font-semibold">
           Quick Stats

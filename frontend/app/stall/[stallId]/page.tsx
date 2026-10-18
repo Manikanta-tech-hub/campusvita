@@ -567,24 +567,24 @@ export default function StallPage() {
                 </span>
 
                 {stall.rating !== null && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-md">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-semibold text-[#fff] backdrop-blur-md">
                     <Star
                       size={12}
                       fill="currentColor"
-                      className="text-yellow-400"
+                      className="text-[#fbbf24]"
                     />
 
-                    {stall.rating}
+                    <span className="cv-tnum">{stall.rating}</span>
                   </span>
                 )}
               </div>
 
-              <h1 className="mt-3 max-w-4xl text-[clamp(2rem,5vw,3.6rem)] font-black leading-none tracking-[-0.045em] text-white">
+              <h1 className="mt-3 max-w-4xl text-[clamp(1.9rem,4.6vw,3.4rem)] font-bold leading-[1.04] tracking-[-0.035em] text-[#fff]">
                 {stall.name}
               </h1>
 
               {stall.description && (
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 sm:text-base">
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[#e6e6e6] sm:text-base">
                   {stall.description}
                 </p>
               )}
@@ -635,7 +635,7 @@ export default function StallPage() {
                 className="text-[var(--brand)]"
               />
 
-              <h2 className="text-2xl font-black tracking-[-0.03em] text-[var(--text-primary)] sm:text-3xl">
+              <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--text-primary)] sm:text-3xl">
                 Menu
               </h2>
 
@@ -939,18 +939,20 @@ export default function StallPage() {
               min-w-[145px]
               items-center
               rounded-2xl
-              bg-[var(--brand)]
+              border
+              border-transparent
+              bg-[var(--accent)]
               px-3
-              text-white
-              shadow-[0_14px_38px_rgba(104,110,232,0.28)]
+              text-[var(--on-accent)]
+              shadow-[0_14px_36px_rgba(255,107,36,0.32)]
               transition-all
               duration-200
               hover:-translate-y-0.5
-              hover:bg-[var(--brand-hover)]
+              hover:bg-[var(--accent-hover)]
               active:scale-[0.97]
               focus:outline-none
               focus-visible:ring-2
-              focus-visible:ring-[var(--brand)]
+              focus-visible:ring-[var(--accent)]
               focus-visible:ring-offset-2
               focus-visible:ring-offset-[var(--background)]
             "
@@ -961,7 +963,7 @@ export default function StallPage() {
                 strokeWidth={2.2}
               />
 
-              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[var(--brand)] bg-white px-1 text-[9px] font-black leading-none text-brand-hover">
+              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-[var(--accent)] bg-white px-1 text-[9px] font-black leading-none text-[var(--text-primary)]">
                 {cartItemCount}
               </span>
             </div>
@@ -971,7 +973,7 @@ export default function StallPage() {
                 View cart
               </span>
 
-              <span className="mt-1 text-[10px] font-medium text-white/75">
+              <span className="mt-1 text-[10px] font-medium text-[color-mix(in_srgb,var(--on-accent)_75%,transparent)]">
                 {cartItemCount}{" "}
                 {cartLabel}
               </span>

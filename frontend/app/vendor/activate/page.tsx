@@ -214,16 +214,16 @@ export default function VendorActivatePage() {
 
   return (
     <main className="flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[var(--background)] px-6 py-12">
-      <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-[var(--surface)] p-7 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+      <div className="cv-glass-elevated w-full max-w-md rounded-3xl p-7">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-hover">
-            <KeyRound className="h-5 w-5 text-white" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent)]">
+            <KeyRound className="h-5 w-5 text-[var(--on-accent)]" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent-text)]">
               Step {step} of 2
             </p>
-            <h1 className="text-[22px] font-bold tracking-tight text-white">
+            <h1 className="text-[22px] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
               Vendor Account Activation
             </h1>
           </div>
@@ -258,7 +258,7 @@ export default function VendorActivatePage() {
                 autoComplete="off"
                 spellCheck={false}
                 autoCapitalize="characters"
-                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
+                className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
               />
             </div>
 
@@ -280,14 +280,14 @@ export default function VendorActivatePage() {
                 autoComplete="off"
                 spellCheck={false}
                 autoCapitalize="characters"
-                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm uppercase tracking-[0.3em] text-[var(--text-primary)] placeholder-white/30 placeholder:normal-case placeholder:tracking-normal outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
+                className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 text-sm uppercase tracking-[0.3em] text-[var(--text-primary)] placeholder:normal-case placeholder:tracking-normal placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
               />
             </div>
 
             {verifyError && (
               <p
                 role="alert"
-                className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                className="rounded-lg border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]"
               >
                 {verifyError}
               </p>
@@ -296,7 +296,7 @@ export default function VendorActivatePage() {
             <button
               type="submit"
               disabled={verifying}
-              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand to-brand-hover text-base font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="cv-press flex h-13 w-full items-center justify-center rounded-2xl bg-[var(--accent)] text-base! font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:scale-[1.01] hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {verifying ? "Checking..." : "Continue"}
             </button>
@@ -306,12 +306,12 @@ export default function VendorActivatePage() {
             onSubmit={handleActivate}
             className="mt-6 space-y-4"
           >
-            <div className="space-y-3 rounded-2xl border border-zinc-800 bg-[var(--surface-tertiary)] p-4">
+            <div className="space-y-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-tertiary)] p-4">
               <div className="flex items-start justify-between gap-4">
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Business
                 </span>
-                <span className="text-right text-sm font-medium text-white">
+                <span className="text-right text-sm font-medium text-[var(--text-primary)]">
                   {invitation?.business_name}
                 </span>
               </div>
@@ -319,7 +319,7 @@ export default function VendorActivatePage() {
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Owner
                 </span>
-                <span className="text-right text-sm font-medium text-white">
+                <span className="text-right text-sm font-medium text-[var(--text-primary)]">
                   {invitation?.owner_name}
                 </span>
               </div>
@@ -327,7 +327,7 @@ export default function VendorActivatePage() {
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Email
                 </span>
-                <span className="break-all text-right text-sm font-medium text-white">
+                <span className="break-all text-right text-sm font-medium text-[var(--text-primary)]">
                   {invitation?.email}
                 </span>
               </div>
@@ -335,7 +335,7 @@ export default function VendorActivatePage() {
                 <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-subtle)]">
                   Vendor ID
                 </span>
-                <span className="text-right text-sm font-medium text-white">
+                <span className="text-right text-sm font-medium text-[var(--text-primary)]">
                   {invitation?.vendor_id}
                 </span>
               </div>
@@ -360,7 +360,7 @@ export default function VendorActivatePage() {
                   }
                   placeholder="Create a password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-input-border bg-input px-4 py-3 pr-12 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
+                  className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 pr-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
                 />
                 <button
                   type="button"
@@ -399,7 +399,7 @@ export default function VendorActivatePage() {
                 }
                 placeholder="Re-enter your password"
                 autoComplete="new-password"
-                className="w-full rounded-xl border border-input-border bg-input px-4 py-3 text-sm text-[var(--text-primary)] placeholder-white/30 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/30"
+                className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
               />
             </div>
 
@@ -412,7 +412,7 @@ export default function VendorActivatePage() {
             {activateError && (
               <p
                 role="alert"
-                className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+                className="rounded-lg border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)] px-3 py-2 text-sm text-[var(--danger)]"
               >
                 {activateError}
               </p>
@@ -421,7 +421,7 @@ export default function VendorActivatePage() {
             <button
               type="submit"
               disabled={activating}
-              className="flex h-13 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand to-brand-hover text-base font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="cv-press flex h-13 w-full items-center justify-center rounded-2xl bg-[var(--accent)] text-base! font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:scale-[1.01] hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {activating
                 ? "Activating..."
@@ -439,7 +439,7 @@ export default function VendorActivatePage() {
           </form>
         )}
 
-        <div className="mt-6 border-t border-zinc-800 pt-5 text-center">
+        <div className="mt-6 border-t border-[var(--border)] pt-5 text-center">
           <Link
             href="/login"
             className="text-sm font-medium text-[var(--text-secondary)] transition hover:text-brand"

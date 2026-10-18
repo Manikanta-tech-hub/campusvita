@@ -118,13 +118,13 @@ function Field({
         className={`
           relative flex w-full min-w-0 items-center
           rounded-2xl
-          border border-input-border
-          bg-input
-          shadow-[0_3px_12px_rgba(0,0,0,0.025)]
+          border border-[var(--input-border)]
+          bg-[var(--input)]
+          shadow-[var(--shadow-soft)]
           transition-all duration-200
-          group-focus-within:border-brand
+          group-focus-within:border-[var(--primary)]
           group-focus-within:ring-4
-          group-focus-within:ring-brand/40
+          group-focus-within:ring-[var(--primary-soft-strong)]
           ${mobile ? "h-[62px] px-5" : "h-[64px] px-5"}
         `}
       >
@@ -752,20 +752,20 @@ export default function SignupPage() {
             {/* HERO */}
 
             <div className="my-auto max-w-[760px] pb-10">
-              <div className="mb-7 h-[4px] w-12 rounded-full bg-brand" />
+              <div className="mb-7 h-[4px] w-12 rounded-full bg-[var(--accent)]" />
 
               <h1
                 className="
                   text-[50px]
                   font-bold
                   leading-[1.1]
-                  tracking-[-0.045em]
-                  text-white
+                  tracking-[-0.03em]
+                  text-white!
                   xl:text-[62px]
                 "
               >
                 Join{" "}
-                <span className="text-brand">
+                <span className="text-[var(--accent)]!">
                   CampusVita
                 </span>
               </h1>
@@ -776,8 +776,8 @@ export default function SignupPage() {
                   text-[38px]
                   font-semibold
                   leading-[1.2]
-                  tracking-[-0.04em]
-                  text-white
+                  tracking-[-0.03em]
+                  text-white!
                   xl:text-[50px]
                 "
               >
@@ -791,15 +791,14 @@ export default function SignupPage() {
 
             <div
               className="
+                cv-glass-dark
                 mb-5
                 flex
                 w-full
                 min-w-0
                 gap-4
                 rounded-[26px]
-                bg-black/50
                 p-5
-                backdrop-blur-md
                 xl:gap-5
               "
             >
@@ -837,6 +836,7 @@ export default function SignupPage() {
           >
             <div
               className="
+                cv-glass-elevated
                 flex
                 h-[95dvh]
                 w-full
@@ -846,11 +846,9 @@ export default function SignupPage() {
                 justify-center
                 overflow-y-auto
                 overflow-x-hidden
-                rounded-[34px]
-                bg-card
+                rounded-3xl
                 px-8
                 py-8
-                shadow-[0_25px_80px_rgba(0,0,0,0.28)]
                 xl:px-12
                 xl:py-10
               "
@@ -953,16 +951,15 @@ export default function SignupPage() {
         >
           <section
             className="
+              cv-glass-elevated
               min-h-[65dvh]
               w-full
               max-w-full
               overflow-x-hidden
-              rounded-t-[38px]
-              bg-card
+              rounded-3xl
               px-6
               pb-12
               pt-5
-              shadow-[0_-12px_40px_rgba(0,0,0,0.18)]
             "
           >
             <div className="mb-6 flex justify-center">
@@ -1037,9 +1034,9 @@ function SignupForm({
             className={`
               flex items-center justify-center
               rounded-full
-              bg-card
-              text-brand-hover
-              shadow-[0_5px_20px_rgba(0,0,0,0.10)]
+              bg-[var(--surface)]
+              text-[var(--accent-text)]
+              shadow-[var(--shadow-card)]
               ${
                 mobile
                   ? "h-[58px] w-[58px]"
@@ -1057,7 +1054,7 @@ function SignupForm({
         <h2
           className={`
             font-bold
-            tracking-[-0.045em]
+            tracking-[-0.03em]
             text-[var(--text-primary)]
             ${
               mobile
@@ -1066,7 +1063,7 @@ function SignupForm({
             }
           `}
         >
-          <span className="text-brand-hover">
+          <span className="text-[var(--accent-text)]">
             Create
           </span>{" "}
           your account
@@ -1189,25 +1186,31 @@ function SignupForm({
         onClick={handleSignup}
         disabled={isDisabled}
         className={`
+          cv-press
           flex
           w-full
           items-center
           justify-center
           gap-3
           rounded-2xl
-          bg-[var(--primary)]
-          font-bold
-          text-white
-          shadow-[0_12px_25px_rgba(104,110,232,0.3)]
+          bg-[var(--accent)]
+          font-bold!
+          text-[var(--on-accent)]
+          text-[17px]!
+          shadow-[var(--accent-shadow)]
           transition-all
-          hover:bg-[var(--primary-hover)]
+          hover:bg-[var(--accent-hover)]
+          active:bg-[var(--accent-active)]
           active:scale-[0.99]
+          focus-visible:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-[var(--accent)]
           disabled:cursor-not-allowed
           disabled:opacity-60
           ${
             mobile
-              ? "mt-5 h-[62px] text-[17px]"
-              : "mt-5 h-[64px] text-[17px]"
+              ? "mt-5 h-[62px]"
+              : "mt-5 h-[64px]"
           }
         `}
       >
@@ -1240,6 +1243,7 @@ function SignupForm({
         onClick={handleGoogleSignup}
         disabled={isDisabled}
         className="
+          cv-press
           flex
           h-[60px]
           w-full
@@ -1248,16 +1252,18 @@ function SignupForm({
           gap-3
           rounded-2xl
           border
-          border-border
-          bg-card
-          text-[16px]
-          font-semibold
+          border-[var(--border)]
+          bg-[var(--surface)]
+          text-[16px]!
+          font-semibold!
           text-[var(--text-primary)]
-          shadow-[0_3px_12px_rgba(0,0,0,0.03)]
+          shadow-[var(--shadow-card)]
           transition-all
-          hover:border-brand
-          hover:bg-brand-soft
-          hover:shadow-[0_8px_20px_rgba(0,0,0,0.07)]
+          hover:border-[var(--primary)]
+          hover:bg-[var(--primary-soft)]
+          focus-visible:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-[var(--primary)]
           active:scale-[0.99]
           disabled:cursor-not-allowed
           disabled:opacity-60
@@ -1329,8 +1335,8 @@ function Feature({
           items-center
           justify-center
           rounded-2xl
-          bg-brand/20
-          text-brand
+          bg-[var(--accent)]/15
+          text-[var(--accent)]
         "
       >
         <Icon
@@ -1340,11 +1346,11 @@ function Feature({
       </div>
 
       <div className="min-w-0">
-        <p className="text-[15px] font-bold text-white">
+        <p className="text-[15px] font-bold text-white!">
           {title}
         </p>
 
-        <p className="mt-1 text-[13px] leading-5 text-[var(--text-secondary)]">
+        <p className="mt-1 text-[13px] leading-5 text-white/70!">
           {description}
         </p>
       </div>

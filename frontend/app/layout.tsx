@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 import ThemeProvider from "@/components/providers/ThemeProvider";
 import { CartProvider } from "../context/CartContext";
 import { Toaster } from "react-hot-toast";
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-plus-jakarta",
 });
 
 export const metadata: Metadata = {
@@ -27,11 +29,11 @@ export const viewport: Viewport = {
   themeColor: [
     {
       media: "(prefers-color-scheme: light)",
-      color: "#e6e7eb",
+      color: "#f5f5f7",
     },
     {
       media: "(prefers-color-scheme: dark)",
-      color: "#303746",
+      color: "#0c0c0e",
     },
   ],
 };
@@ -43,11 +45,12 @@ export default function RootLayout({
 }>) {
   return (
     <html
+      className={plusJakartaSans.variable}
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body className={inter.className}>
+      <body>
         <ThemeProvider>
           <CartProvider>
             <Toaster

@@ -159,85 +159,85 @@ function getStatusStyles(status: string) {
     case "Pending":
       return {
         badge:
-          "border-brand/20 bg-brand/10 text-brand-hover",
+          "border-[color-mix(in_srgb,var(--warning)_30%,transparent)] bg-[var(--warning-soft)] text-[var(--warning)]",
         badgeDark:
-          "dark:text-brand",
+          "dark:border-[color-mix(in_srgb,var(--warning)_40%,transparent)]",
         dot:
-          "bg-brand",
+          "bg-[var(--warning)]",
         dotDark:
-          "dark:bg-brand",
+          "dark:bg-[var(--warning)]",
       };
 
     case "Accepted":
       return {
         badge:
-          "border-blue-400/20 bg-blue-500/10 text-blue-600",
+          "border-[color-mix(in_srgb,var(--info)_30%,transparent)] bg-[var(--info-soft)] text-[var(--info)]",
         badgeDark:
-          "dark:text-blue-300",
+          "dark:border-[color-mix(in_srgb,var(--info)_40%,transparent)]",
         dot:
-          "bg-blue-500",
+          "bg-[var(--info)]",
         dotDark:
-          "dark:bg-blue-400",
+          "dark:bg-[var(--info)]",
       };
 
     case "Placed":
       return {
         badge:
-          "border-violet-400/20 bg-violet-500/10 text-violet-600",
+          "border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--text-secondary)]",
         badgeDark:
-          "dark:text-violet-300",
+          "dark:border-[var(--border)]",
         dot:
-          "bg-violet-500",
+          "bg-[var(--text-secondary)]",
         dotDark:
-          "dark:bg-violet-400",
+          "dark:bg-[var(--text-secondary)]",
       };
 
     case "Cooking":
       return {
         badge:
-          "border-brand/20 bg-brand/10 text-brand-hover",
+          "border-[color-mix(in_srgb,var(--info)_30%,transparent)] bg-[var(--info-soft)] text-[var(--info)]",
         badgeDark:
-          "dark:text-brand",
+          "dark:border-[color-mix(in_srgb,var(--info)_40%,transparent)]",
         dot:
-          "bg-brand",
+          "bg-[var(--info)]",
         dotDark:
-          "dark:bg-brand",
+          "dark:bg-[var(--info)]",
       };
 
     case "Ready For Pickup":
       return {
         badge:
-          "border-emerald-400/20 bg-emerald-500/10 text-emerald-600",
+          "border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[var(--success-soft)] text-[var(--success)]",
         badgeDark:
-          "dark:text-emerald-300",
+          "dark:border-[color-mix(in_srgb,var(--success)_40%,transparent)]",
         dot:
-          "bg-emerald-500",
+          "bg-[var(--success)]",
         dotDark:
-          "dark:bg-emerald-400",
+          "dark:bg-[var(--success)]",
       };
 
     case "Cancelled":
       return {
         badge:
-          "border-red-400/20 bg-red-500/10 text-red-600",
+          "border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)] text-[var(--danger)]",
         badgeDark:
-          "dark:text-red-300",
+          "dark:border-[color-mix(in_srgb,var(--danger)_40%,transparent)]",
         dot:
-          "bg-red-500",
+          "bg-[var(--danger)]",
         dotDark:
-          "dark:bg-red-400",
+          "dark:bg-[var(--danger)]",
       };
 
     default:
       return {
         badge:
-          "border-black/10 bg-black/5 text-[var(--text-muted)]",
+          "border-[var(--border)] bg-[var(--surface-secondary)] text-[var(--text-muted)]",
         badgeDark:
-          "dark:border-white/10 dark:bg-white/5 dark:text-white/60",
+          "dark:border-[var(--border)]",
         dot:
-          "bg-black/30",
+          "bg-[var(--text-muted)]",
         dotDark:
-          "dark:bg-white/40",
+          "dark:bg-[var(--text-muted)]",
       };
   }
 }
@@ -724,47 +724,23 @@ export default function VendorDashboardPage() {
 
   if (loading) {
     return (
-      <main
-        className={`min-h-screen transition-colors duration-300 ${
-          isDark
-            ? "bg-[var(--background)] text-white"
-            : "bg-[var(--background)] text-[var(--text-primary)]"
-        }`}
-      >
+      <main className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] transition-colors duration-300">
         <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
           <div className="animate-pulse">
-            <div
-              className={`h-8 w-40 rounded-lg ${
-                isDark ? "bg-[var(--surface)]" : "bg-slate-200"
-              }`}
-            />
+            <div className="h-8 w-40 rounded-lg bg-[var(--surface-secondary)]" />
 
-            <div
-              className={`mt-3 h-4 w-64 rounded ${
-                isDark ? "bg-[var(--surface)]" : "bg-slate-100"
-              }`}
-            />
+            <div className="mt-3 h-4 w-64 rounded bg-[var(--surface-tertiary)]" />
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4].map((item) => (
                 <div
                   key={item}
-                  className={`h-28 rounded-2xl ${
-                    isDark
-                      ? "border border-white/[0.05] bg-[var(--surface)]"
-                      : "border border-slate-200 bg-card"
-                  }`}
+                  className="h-28 rounded-2xl border border-[var(--border)] bg-[var(--surface)]"
                 />
               ))}
             </div>
 
-            <div
-              className={`mt-8 h-72 rounded-3xl ${
-                isDark
-                  ? "border border-white/[0.05] bg-[var(--surface)]"
-                  : "border border-slate-200 bg-card"
-              }`}
-            />
+            <div className="mt-8 h-72 rounded-3xl border border-[var(--border)] bg-[var(--surface)]" />
           </div>
         </div>
       </main>
@@ -772,30 +748,18 @@ export default function VendorDashboardPage() {
   }
 
   return (
-    <main
-      className={`min-h-screen transition-colors duration-300 ${
-        isDark
-          ? "bg-[var(--background)] text-white"
-          : "bg-[var(--background)] text-[var(--text-primary)]"
-      }`}
-    >
+    <main className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] transition-colors duration-300">
       {/* HEADER */}
 
-      <header
-        className={`sticky top-0 z-40 border-b backdrop-blur-xl transition-colors duration-300 ${
-          isDark
-            ? "border-white/[0.07] bg-navbar"
-            : "border-[var(--border)] bg-navbar"
-        }`}
-      >
+      <header className="cv-glass-elevated sticky top-0 z-40 transition-colors duration-300">
         <div className="mx-auto flex h-[72px] max-w-[1500px] items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand shadow-lg shadow-brand/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] shadow-[var(--shadow-soft)]">
               <Store className="h-5 w-5 text-[var(--on-primary)]" />
             </div>
 
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand dark:text-brand">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 CampusVita
               </p>
 
@@ -819,11 +783,7 @@ export default function VendorDashboardPage() {
                   ? "Switch to light theme"
                   : "Switch to dark theme"
               }
-              className={`group flex h-10 w-10 items-center justify-center rounded-xl border transition ${
-                isDark
-                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-brand/30 hover:bg-brand/10 hover:text-brand"
-                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-brand/30 hover:bg-brand/10 hover:text-brand-hover"
-              }`}
+              className="group flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)]"
             >
               {isDark ? (
                 <Sun className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12" />
@@ -838,11 +798,7 @@ export default function VendorDashboardPage() {
               disabled={refreshing}
               aria-label="Refresh orders"
               title="Refresh orders"
-              className={`group flex h-10 w-10 items-center justify-center rounded-xl border transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                isDark
-                  ? "border-white/10 bg-white/[0.04] text-white/70 hover:border-brand/30 hover:bg-brand/10 hover:text-brand"
-                  : "border-black/10 bg-black/[0.03] text-slate-600 hover:border-brand/30 hover:bg-brand/10 hover:text-brand-hover"
-              }`}
+              className="group flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-secondary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw
                 className={`h-4 w-4 ${
@@ -856,11 +812,7 @@ export default function VendorDashboardPage() {
               onClick={handleLogout}
               aria-label="Log out"
               title="Log out"
-              className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${
-                isDark
-                  ? "border-white/10 bg-white/[0.04] text-white/55 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-                  : "border-black/10 bg-black/[0.03] text-slate-500 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600"
-              }`}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] transition hover:border-[color-mix(in_srgb,var(--danger)_35%,transparent)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)]"
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -871,75 +823,39 @@ export default function VendorDashboardPage() {
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         {/* HERO */}
 
-        <section
-          className={`relative overflow-hidden rounded-[28px] border p-5 shadow-2xl transition-colors duration-300 sm:p-7 lg:p-8 ${
-            isDark
-              ? "border-brand/10 bg-gradient-to-br from-[rgba(104,110,232,0.22)] via-[rgba(104,110,232,0.10)] to-[var(--surface)] shadow-black/20"
-              : "border-brand/10 bg-gradient-to-br from-brand-soft via-white to-slate-100 shadow-black/5"
-          }`}
-        >
-          <div className="absolute -right-20 -top-32 h-72 w-72 rounded-full bg-brand/10 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[28px] border border-[var(--border-strong)] bg-[var(--surface-secondary)] p-5 shadow-[var(--shadow-soft)] transition-colors duration-300 sm:p-7 lg:p-8">
+          <div className="absolute -right-20 -top-32 h-72 w-72 rounded-full bg-[var(--primary)]/[0.04] blur-3xl" />
 
-          <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-brand/[0.06] blur-3xl" />
+          <div className="absolute -bottom-40 left-1/3 h-72 w-72 rounded-full bg-[var(--primary)]/[0.03] blur-3xl" />
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-3 py-1.5 text-xs font-semibold text-brand-hover dark:text-brand">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-[0_0_10px_rgba(134,145,240,0.75)] dark:bg-brand" />
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)] shadow-none" />
                 LIVE VENDOR DASHBOARD
               </div>
 
-              <h2
-                className={`text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl ${
-                  isDark
-                    ? "text-white"
-                    : "text-slate-950"
-                }`}
-              >
+              <h2 className="text-3xl font-bold tracking-tight text-[var(--text-primary)] sm:text-4xl lg:text-5xl">
                 My Stall
               </h2>
 
-              <p
-                className={`mt-3 max-w-xl text-sm leading-6 sm:text-base ${
-                  isDark
-                    ? "text-white/45"
-                    : "text-slate-600"
-                }`}
-              >
+              <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-secondary)] sm:text-base">
                 Manage incoming orders, prepare food, and keep
                 customers updated in real time.
               </p>
             </div>
 
-            <div
-              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm backdrop-blur-sm ${
-                isDark
-                  ? "border-white/10 bg-[var(--surface)]/90"
-                  : "border-[var(--border)] bg-card/90"
-              }`}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
-                <Store className="h-5 w-5 text-brand dark:text-brand" />
+            <div className="cv-glass-subtle cv-glass-edge flex items-center gap-3 rounded-2xl border border-[var(--glass-border)] px-4 py-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-tertiary)]">
+                <Store className="h-5 w-5 text-[var(--text-secondary)]" />
               </div>
 
               <div>
-                <p
-                  className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                    isDark
-                      ? "text-white/35"
-                      : "text-slate-500"
-                  }`}
-                >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                   Today's Revenue
                 </p>
 
-                <p
-                  className={`mt-0.5 text-xl font-bold ${
-                    isDark
-                      ? "text-white"
-                      : "text-slate-950"
-                  }`}
-                >
+                <p className="cv-tnum mt-0.5 text-xl font-bold text-[var(--text-primary)]">
                   {formatMoney(todayRevenue)}
                 </p>
               </div>
@@ -950,7 +866,7 @@ export default function VendorDashboardPage() {
         {/* ERROR */}
 
         {error && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.08] px-4 py-3 text-sm text-red-600 dark:text-red-300">
+          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--danger)_25%,transparent)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)] dark:text-red-300">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <p>{error}</p>
           </div>
@@ -964,74 +880,53 @@ export default function VendorDashboardPage() {
               label: "Orders",
               value: statistics.total,
               description: "Active order groups",
-              border: "border-black/[0.07]",
+              valueClass:
+                "text-[var(--text-primary)]",
             },
             {
               label: "Pending",
               value: statistics.pending,
               description: "Need attention",
-              border: "border-brand/10",
               valueClass:
-                "text-brand dark:text-brand",
+                "text-[var(--warning)]",
             },
             {
               label: "Cooking",
               value: statistics.cooking,
               description: "Currently preparing",
-              border: "border-brand/10",
               valueClass:
-                "text-brand dark:text-brand",
+                "text-[var(--info)]",
             },
             {
               label: "Ready",
               value: statistics.ready,
               description: "Waiting for pickup",
-              border: "border-emerald-400/10",
               valueClass:
-                "text-emerald-500 dark:text-emerald-300",
+                "text-[var(--success)]",
             },
             {
               label: "Cancelled",
               value: statistics.cancelled,
               description: "Cancelled orders",
-              border: "border-red-400/10",
               valueClass:
-                "text-red-500 dark:text-red-300",
+                "text-[var(--danger)]",
             },
           ].map((stat) => (
             <div
               key={stat.label}
-              className={`rounded-2xl border p-4 shadow-sm transition-colors duration-300 sm:p-5 ${
-                isDark
-                  ? `${stat.border} bg-[var(--surface)]`
-                  : `${stat.border} bg-card`
-              }`}
+              className="cv-glass-card rounded-2xl p-4 transition-colors duration-300 sm:p-5"
             >
-              <p
-                className={`text-xs font-medium ${
-                  isDark
-                    ? "text-white/40"
-                    : "text-slate-500"
-                }`}
-              >
+              <p className="text-xs font-medium text-[var(--text-muted)]">
                 {stat.label}
               </p>
 
               <p
-                className={`mt-4 text-2xl font-black ${
-                  stat.valueClass || ""
-                }`}
+                className={`cv-tnum mt-4 text-2xl font-bold ${stat.valueClass}`}
               >
                 {stat.value}
               </p>
 
-              <p
-                className={`mt-1 text-[11px] ${
-                  isDark
-                    ? "text-white/30"
-                    : "text-slate-400"
-                }`}
-              >
+              <p className="mt-1 text-[11px] text-[var(--text-muted)]">
                 {stat.description}
               </p>
             </div>
@@ -1042,7 +937,7 @@ export default function VendorDashboardPage() {
 
         <div className="mb-4 mt-8 flex items-end justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand dark:text-brand">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
               Order Management
             </p>
 
@@ -1051,13 +946,7 @@ export default function VendorDashboardPage() {
             </h3>
           </div>
 
-          <p
-            className={`hidden text-xs sm:block ${
-              isDark
-                ? "text-white/25"
-                : "text-slate-400"
-            }`}
-          >
+          <p className="hidden text-xs text-[var(--text-muted)] sm:block">
             Live updates every few seconds
           </p>
         </div>
@@ -1065,28 +954,16 @@ export default function VendorDashboardPage() {
         {/* EMPTY */}
 
         {orders.length === 0 ? (
-          <section
-            className={`rounded-[28px] border px-6 py-16 text-center shadow-sm transition-colors duration-300 ${
-              isDark
-                ? "border-white/[0.07] bg-[var(--surface)]"
-                : "border-black/[0.07] bg-card"
-            }`}
-          >
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10">
-              <PackageCheck className="h-7 w-7 text-brand dark:text-brand" />
+          <section className="cv-glass-card cv-glass-edge rounded-[28px] border border-[var(--glass-border)] px-6 py-16 text-center transition-colors duration-300">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-tertiary)]">
+              <PackageCheck className="h-7 w-7 text-[var(--text-muted)]" />
             </div>
 
             <h3 className="mt-5 text-xl font-bold">
               No orders yet
             </h3>
 
-            <p
-              className={`mx-auto mt-2 max-w-md text-sm leading-6 ${
-                isDark
-                  ? "text-white/35"
-                  : "text-slate-500"
-              }`}
-            >
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-secondary)]">
               Orders containing items from your assigned stall
               will appear here automatically.
             </p>
@@ -1175,69 +1052,39 @@ export default function VendorDashboardPage() {
                 return (
                   <article
                     key={updateKey}
-                    className={`overflow-hidden rounded-[28px] border shadow-xl transition-colors duration-300 ${
+                    className={`cv-glass-card cv-glass-edge overflow-hidden rounded-[28px] border border-[var(--glass-border)] transition-colors duration-300 ${
                       orderCancelled || stallCancelled
-                        ? "border-red-500/10"
-                        : isDark
-                        ? "border-white/[0.07]"
-                        : "border-black/[0.07]"
-                    } ${
-                      isDark
-                        ? "bg-[var(--surface)] shadow-black/10"
-                        : "bg-card shadow-black/5"
+                        ? "border-[color-mix(in_srgb,var(--danger)_25%,transparent)]"
+                        : "border-[var(--border)]"
                     }`}
                   >
                     {/* ORDER HEADER */}
 
-                    <div
-                      className={`border-b p-4 transition-colors duration-300 sm:p-5 lg:p-6 ${
-                        isDark
-                          ? "border-white/[0.06]"
-                          : "border-black/[0.06]"
-                      }`}
-                    >
+                    <div className="border-b border-[var(--border)] p-4 transition-colors duration-300 sm:p-5 lg:p-6">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/10">
-                            <UserRound className="h-5 w-5 text-brand dark:text-brand" />
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-tertiary)]">
+                            <UserRound className="h-5 w-5 text-[var(--text-secondary)]" />
                           </div>
 
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-bold">
+                              <p className="cv-tnum font-bold">
                                 Order #
                                 {order.token ??
                                   order.order_id}
                               </p>
 
-                              <span
-                                className={`h-1 w-1 rounded-full ${
-                                  isDark
-                                    ? "bg-white/20"
-                                    : "bg-black/20"
-                                }`}
-                              />
+                              <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
 
-                              <span
-                                className={`text-xs ${
-                                  isDark
-                                    ? "text-white/35"
-                                    : "text-slate-400"
-                                }`}
-                              >
+                              <span className="cv-tnum text-xs text-[var(--text-muted)]">
                                 {formatDate(
                                   order.created_at
                                 )}
                               </span>
                             </div>
 
-                            <p
-                              className={`mt-1 text-sm ${
-                                isDark
-                                  ? "text-white/40"
-                                  : "text-slate-500"
-                              }`}
-                            >
+                            <p className="mt-1 text-sm text-[var(--text-secondary)]">
                               {order.name || "Customer"}
                             </p>
                           </div>
@@ -1245,17 +1092,11 @@ export default function VendorDashboardPage() {
 
                         <div className="flex flex-wrap items-center gap-3 lg:justify-end">
                           <div>
-                            <p
-                              className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                                isDark
-                                  ? "text-white/30"
-                                  : "text-slate-400"
-                              }`}
-                            >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                               Your Total
                             </p>
 
-                            <p className="mt-1 text-xl font-black text-brand dark:text-brand">
+                            <p className="cv-tnum mt-1 text-xl font-bold text-[var(--text-primary)]">
                               {formatMoney(vendorTotal)}
                             </p>
                           </div>
@@ -1284,23 +1125,11 @@ export default function VendorDashboardPage() {
                         <div>
                           <div className="mb-4 flex items-center justify-between">
                             <div>
-                              <p
-                                className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                                  isDark
-                                    ? "text-white/30"
-                                    : "text-slate-400"
-                                }`}
-                              >
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                                 Order Items
                               </p>
 
-                              <p
-                                className={`mt-1 text-sm font-semibold ${
-                                  isDark
-                                    ? "text-white/70"
-                                    : "text-slate-700"
-                                }`}
-                              >
+                              <p className="mt-1 text-sm font-semibold text-[var(--text-secondary)]">
                                 {stallItems.length}{" "}
                                 {stallItems.length === 1
                                   ? "item"
@@ -1308,13 +1137,7 @@ export default function VendorDashboardPage() {
                               </p>
                             </div>
 
-                            <div
-                              className={`hidden items-center gap-2 text-xs sm:flex ${
-                                isDark
-                                  ? "text-white/25"
-                                  : "text-slate-400"
-                              }`}
-                            >
+                            <div className="hidden items-center gap-2 text-xs text-[var(--text-muted)] sm:flex">
                               <Store className="h-3.5 w-3.5" />
                               Your Stall
                             </div>
@@ -1348,20 +1171,12 @@ export default function VendorDashboardPage() {
                                     key={`${item.name}-${originalIndex}`}
                                     className={`rounded-2xl border p-3 transition sm:p-4 ${
                                       itemCancelled
-                                        ? "border-red-500/10 bg-red-500/[0.04]"
-                                        : isDark
-                                        ? "border-white/[0.06] bg-[var(--surface)]"
-                                        : "border-black/[0.06] bg-[var(--background)]"
+                                        ? "border-[color-mix(in_srgb,var(--danger)_20%,transparent)] bg-[var(--danger-soft)]"
+                                        : "border-[var(--border)] bg-[var(--surface-secondary)]"
                                     }`}
                                   >
                                     <div className="flex items-center gap-3 sm:gap-4">
-                                      <div
-                                        className={`relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl sm:h-[84px] sm:w-[84px] ${
-                                          isDark
-                                            ? "bg-[var(--surface-tertiary)]"
-                                            : "bg-slate-100"
-                                        }`}
-                                      >
+                                      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl bg-[var(--surface-tertiary)] sm:h-[84px] sm:w-[84px]">
                                         {imageUrl ? (
                                           <img
                                             src={imageUrl}
@@ -1374,19 +1189,13 @@ export default function VendorDashboardPage() {
                                           />
                                         ) : (
                                           <div className="flex h-full w-full items-center justify-center">
-                                            <CookingPot
-                                              className={`h-6 w-6 ${
-                                                isDark
-                                                  ? "text-white/20"
-                                                  : "text-[var(--border-strong)]"
-                                              }`}
-                                            />
+                                            <CookingPot className="h-6 w-6 text-[var(--text-muted)]" />
                                           </div>
                                         )}
 
                                         {itemCancelled && (
                                           <div className="absolute inset-0 flex items-center justify-center">
-                                            <XCircle className="h-7 w-7 text-red-400" />
+                                            <XCircle className="h-7 w-7 text-[var(--danger)]" />
                                           </div>
                                         )}
                                       </div>
@@ -1395,46 +1204,24 @@ export default function VendorDashboardPage() {
                                         <h4
                                           className={`truncate text-sm font-bold sm:text-base ${
                                             itemCancelled
-                                              ? isDark
-                                                ? "text-white/35 line-through"
-                                                : "text-slate-400 line-through"
-                                              : isDark
-                                              ? "text-white"
+                                              ? "text-[var(--text-muted)] line-through"
                                               : "text-[var(--text-primary)]"
                                           }`}
                                         >
                                           {item.name}
                                         </h4>
 
-                                        <div
-                                          className={`mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${
-                                            isDark
-                                              ? "text-white/35"
-                                              : "text-slate-500"
-                                          }`}
-                                        >
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-muted)]">
                                           <span>
                                             Qty:{" "}
-                                            <span
-                                              className={`font-semibold ${
-                                                isDark
-                                                  ? "text-white/60"
-                                                  : "text-slate-700"
-                                              }`}
-                                            >
+                                            <span className="cv-tnum font-semibold text-[var(--text-secondary)]">
                                               {item.quantity}
                                             </span>
                                           </span>
 
-                                          <span
-                                            className={`h-1 w-1 rounded-full ${
-                                              isDark
-                                                ? "bg-white/15"
-                                                : "bg-black/15"
-                                            }`}
-                                          />
+                                          <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
 
-                                          <span>
+                                          <span className="cv-tnum">
                                             {formatMoney(
                                               Number(item.price)
                                             )}{" "}
@@ -1443,7 +1230,7 @@ export default function VendorDashboardPage() {
                                         </div>
 
                                         {itemCancelled && (
-                                          <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">
+                                          <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--danger)] dark:text-red-400">
                                             Item Cancelled
                                           </p>
                                         )}
@@ -1451,13 +1238,9 @@ export default function VendorDashboardPage() {
 
                                       <div className="shrink-0 text-right">
                                         <p
-                                          className={`text-sm font-bold sm:text-base ${
+                                          className={`cv-tnum text-sm font-bold sm:text-base ${
                                             itemCancelled
-                                              ? isDark
-                                                ? "text-white/25 line-through"
-                                                : "text-slate-300 line-through"
-                                              : isDark
-                                              ? "text-white"
+                                              ? "text-[var(--text-muted)] line-through"
                                               : "text-[var(--text-primary)]"
                                           }`}
                                         >
@@ -1483,7 +1266,7 @@ export default function VendorDashboardPage() {
                                               item
                                             )
                                           }
-                                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2 text-xs font-semibold text-red-500 transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-300 dark:hover:text-red-200 sm:ml-auto sm:w-auto"
+                                          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--danger)_20%,transparent)] bg-[var(--danger-soft)] px-3 py-2 text-xs font-semibold text-[var(--danger)] transition hover:border-[color-mix(in_srgb,var(--danger)_40%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-300 dark:hover:text-red-200 sm:ml-auto sm:w-auto"
                                         >
                                           {cancellingItem ? (
                                             <>
@@ -1507,22 +1290,10 @@ export default function VendorDashboardPage() {
 
                         {/* STATUS */}
 
-                        <div
-                          className={`rounded-2xl border p-4 transition-colors duration-300 ${
-                            isDark
-                              ? "border-white/[0.06] bg-[var(--surface)]"
-                              : "border-black/[0.06] bg-[var(--background)]"
-                          }`}
-                        >
+                        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-secondary)] p-4 transition-colors duration-300">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p
-                                className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                                  isDark
-                                    ? "text-white/30"
-                                    : "text-slate-400"
-                                }`}
-                              >
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                                 Order Status
                               </p>
 
@@ -1543,28 +1314,16 @@ export default function VendorDashboardPage() {
                           {!orderCancelled &&
                             !stallCancelled && (
                               <div className="mt-5">
-                                <div
-                                  className={`h-1.5 overflow-hidden rounded-full ${
-                                    isDark
-                                      ? "bg-white/5"
-                                      : "bg-black/5"
-                                  }`}
-                                >
+                                <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-tertiary)]">
                                   <div
-                                    className="h-full rounded-full bg-gradient-to-r from-brand-hover to-brand transition-all duration-500"
+                                    className="h-full rounded-full bg-[var(--primary)] transition-all duration-500"
                                     style={{
                                       width: `${progress}%`,
                                     }}
                                   />
                                 </div>
 
-                                <div
-                                  className={`mt-2 flex justify-between text-[9px] font-medium uppercase tracking-wider ${
-                                    isDark
-                                      ? "text-white/20"
-                                      : "text-slate-400"
-                                  }`}
-                                >
+                                <div className="mt-2 flex justify-between text-[9px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
                                   <span>New</span>
                                   <span>Cooking</span>
                                   <span>Ready</span>
@@ -1579,26 +1338,38 @@ export default function VendorDashboardPage() {
                               <div
                                 className={`mt-5 rounded-xl border p-3 ${
                                   isTakingLonger
-                                    ? "border-brand/20 bg-brand/10"
-                                    : "border-brand/10 bg-brand/[0.06]"
+                                    ? "border-[color-mix(in_srgb,var(--warning)_30%,transparent)] bg-[var(--warning-soft)]"
+                                    : "border-[var(--border)] bg-[var(--surface)]"
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <TimerReset className="h-4 w-4 text-brand dark:text-brand" />
+                                    <TimerReset
+                                      className={`h-4 w-4 ${
+                                        isTakingLonger
+                                          ? "text-[var(--warning)]"
+                                          : "text-[var(--text-secondary)]"
+                                      }`}
+                                    />
 
                                     <span
                                       className={`text-xs font-semibold ${
-                                        isDark
-                                          ? "text-white/50"
-                                          : "text-slate-600"
+                                        isTakingLonger
+                                          ? "text-[var(--warning)]"
+                                          : "text-[var(--text-secondary)]"
                                       }`}
                                     >
                                       Preparation
                                     </span>
                                   </div>
 
-                                  <span className="font-mono text-sm font-bold text-brand dark:text-brand">
+                                  <span
+                                    className={`cv-tnum font-mono text-sm font-bold ${
+                                      isTakingLonger
+                                        ? "text-[var(--warning)]"
+                                        : "text-[var(--text-primary)]"
+                                    }`}
+                                  >
                                     {formatCountdown(
                                       remainingSeconds
                                     )}
@@ -1606,19 +1377,13 @@ export default function VendorDashboardPage() {
                                 </div>
 
                                 {isTakingLonger ? (
-                                  <p className="mt-2 text-[11px] leading-4 text-brand-hover/80 dark:text-brand/70">
+                                  <p className="mt-2 text-[11px] leading-4 text-[var(--warning)]">
                                     Taking longer than expected.
                                     Mark the order ready when it
                                     is actually prepared.
                                   </p>
                                 ) : (
-                                  <p
-                                    className={`mt-2 text-[11px] ${
-                                      isDark
-                                        ? "text-white/25"
-                                        : "text-slate-400"
-                                    }`}
-                                  >
+                                  <p className="mt-2 text-[11px] text-[var(--text-muted)]">
                                     Estimated preparation:{" "}
                                     {
                                       stallOrder.estimatedPreparationMinutes
@@ -1633,18 +1398,18 @@ export default function VendorDashboardPage() {
                             "Ready For Pickup" &&
                             !orderCancelled &&
                             !stallCancelled && (
-                              <div className="mt-5 rounded-xl border border-emerald-400/10 bg-emerald-500/[0.06] p-3">
+                              <div className="mt-5 rounded-xl border border-[color-mix(in_srgb,var(--success)_30%,transparent)] bg-[var(--success-soft)] p-3">
                                 <div className="flex items-center gap-2">
-                                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10">
-                                    <Check className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--success-soft)]">
+                                    <Check className="h-3.5 w-3.5 text-[var(--success)] dark:text-emerald-400" />
                                   </div>
 
                                   <div>
-                                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-300">
+                                    <p className="text-xs font-bold text-[var(--success)] dark:text-emerald-300">
                                       Ready for pickup
                                     </p>
 
-                                    <p className="mt-0.5 text-[10px] text-emerald-600/50 dark:text-emerald-300/40">
+                                    <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
                                       Customer can collect the
                                       order
                                     </p>
@@ -1655,20 +1420,20 @@ export default function VendorDashboardPage() {
 
                           {(orderCancelled ||
                             stallCancelled) && (
-                            <div className="mt-5 rounded-xl border border-red-400/10 bg-red-500/[0.06] p-3">
+                            <div className="mt-5 rounded-xl border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)] p-3">
                               <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10">
-                                  <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--danger-soft)]">
+                                  <XCircle className="h-4 w-4 text-[var(--danger)] dark:text-red-400" />
                                 </div>
 
                                 <div>
-                                  <p className="text-xs font-bold text-red-600 dark:text-red-300">
+                                  <p className="text-xs font-bold text-[var(--danger)] dark:text-red-300">
                                     {orderCancelled
                                       ? "Order cancelled"
                                       : "Stall order cancelled"}
                                   </p>
 
-                                  <p className="mt-0.5 text-[10px] text-red-500/50 dark:text-red-300/40">
+                                  <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
                                     {orderCancelled
                                       ? "This order is no longer being prepared."
                                       : "This stall is no longer preparing its items."}
@@ -1689,7 +1454,11 @@ export default function VendorDashboardPage() {
                                   action.next
                                 )
                               }
-                              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-bold text-[var(--on-primary)] shadow-lg shadow-brand/10 transition hover:bg-brand active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                              className={`mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${
+                                action.next === "Accepted"
+                                  ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-[var(--accent-shadow)] hover:bg-[var(--accent-hover)]"
+                                  : "bg-[var(--primary)] text-[var(--on-primary)] shadow-[var(--shadow-soft)] hover:bg-[var(--primary-hover)]"
+                              }`}
                             >
                               {isUpdating ? (
                                 <>
@@ -1719,7 +1488,7 @@ export default function VendorDashboardPage() {
                                     stallOrder
                                   )
                                 }
-                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.04] px-4 py-3 text-sm font-semibold text-red-500 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-300 dark:hover:text-red-200"
+                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--danger)_25%,transparent)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)] transition hover:border-[color-mix(in_srgb,var(--danger)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-300 dark:hover:text-red-200"
                               >
                                 {cancellingStallOrder ? (
                                   <>
@@ -1737,8 +1506,8 @@ export default function VendorDashboardPage() {
 
                           {stallCancelled &&
                             !orderCancelled && (
-                              <div className="mt-5 rounded-xl border border-red-400/10 bg-red-500/[0.06] p-3 text-center">
-                                <p className="text-xs font-semibold text-red-500 dark:text-red-300">
+                              <div className="mt-5 rounded-xl border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[var(--danger-soft)] p-3 text-center">
+                                <p className="text-xs font-semibold text-[var(--danger)] dark:text-red-300">
                                   This stall order is cancelled
                                 </p>
                               </div>

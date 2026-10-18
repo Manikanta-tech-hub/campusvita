@@ -89,7 +89,13 @@ export default function useOrdersSocket(
 
       connectingRef.current = true;
 
-      const socket = new WebSocket(socketUrl);
+      // The browser WebSocket API does not permit Authorization headers.
+      // Send the short-lived access token as a negotiated subprotocol,
+      // never as a query parameter where it could be logged.
+      const socket = new WebSocket(socketUrl, [
+        "campusvita-v1",
+        token,
+      ]);
 
       socketRef.current = socket;
 

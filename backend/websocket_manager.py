@@ -1,13 +1,17 @@
 from fastapi import WebSocket
-from typing import List
+from typing import List, Optional
 import json
 
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
+    async def connect(
+        self,
+        websocket: WebSocket,
+        subprotocol: Optional[str] = None,
+    ):
+        await websocket.accept(subprotocol=subprotocol)
 
         self.active_connections.append(websocket)
 

@@ -736,7 +736,10 @@ export default function TrackOrderPage() {
       return;
     }
 
-    const socket = io(API_URL, {
+const socket = io(API_URL, {
+  auth: {
+    token: accessToken,
+  },
       transports: [
         "polling",
         "websocket",
@@ -1270,7 +1273,7 @@ export default function TrackOrderPage() {
                 <Package className="h-8 w-8 text-brand" />
               </div>
 
-              <h1 className="mt-6 text-2xl font-black">
+              <h1 className="mt-6 text-2xl font-bold">
                 No order found
               </h1>
 
@@ -1325,7 +1328,7 @@ export default function TrackOrderPage() {
                 CampusVita
               </div>
 
-              <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-4xl">
+              <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-4xl">
                 Track Order
               </h1>
 
@@ -1358,10 +1361,10 @@ export default function TrackOrderPage() {
           ===================================================== */}
 
           <section
-            className={`mt-6 overflow-hidden rounded-[26px] border shadow-[0_20px_70px_rgba(0,0,0,0.35)] ${
+            className={`cv-glass-card mt-6 overflow-hidden rounded-[26px] ${
               order.cancelled
-                ? "border-[var(--border)] bg-[var(--surface)]"
-                : "border-brand/25 bg-gradient-to-br from-[rgba(104,110,232,0.22)] via-[rgba(104,110,232,0.10)] to-[var(--surface)]"
+                ? "opacity-80"
+                : ""
             }`}
           >
             <div
@@ -1378,7 +1381,7 @@ export default function TrackOrderPage() {
                     Order ID
                   </div>
 
-                  <div className="mt-1 text-2xl font-black sm:text-3xl">
+                  <div className="cv-tnum mt-1 text-2xl font-bold sm:text-3xl">
                     #CV
                     {String(
                       order.token
@@ -1398,7 +1401,7 @@ export default function TrackOrderPage() {
                     Total Amount
                   </div>
 
-                  <div className="mt-1 text-xl font-black sm:text-2xl">
+                  <div className="cv-tnum mt-1 text-xl font-bold sm:text-2xl">
                     ₹
                     {Number(
                       order.total || 0
@@ -1493,7 +1496,7 @@ export default function TrackOrderPage() {
               <div className="mt-7 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-center">
                 <XCircle className="mx-auto h-9 w-9 text-gray-600" />
 
-                <div className="mt-3 text-sm font-black text-gray-400">
+                <div className="mt-3 text-sm font-bold text-gray-400">
                   Order Cancelled
                 </div>
 
@@ -1655,7 +1658,7 @@ export default function TrackOrderPage() {
           <section className="mt-6">
             <div className="mb-4 flex items-end justify-between">
               <div>
-                <h2 className="text-lg font-black sm:text-xl">
+                <h2 className="text-lg font-bold sm:text-xl">
                   Stall Wise Tracking
                 </h2>
 
@@ -1758,7 +1761,7 @@ export default function TrackOrderPage() {
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <h3 className="truncate text-base font-black sm:text-lg">
+                                  <h3 className="truncate text-base font-bold sm:text-lg">
                                     {getStallName(
                                       stallState.stall_id
                                     )}
@@ -1801,8 +1804,8 @@ export default function TrackOrderPage() {
                             <div
                               className={`mt-4 rounded-2xl border p-4 ${
                                 isOverdue
-                                  ? "border-red-500/20 bg-red-500/[0.06]"
-                                  : "border-brand/20 bg-brand/[0.06]"
+                                  ? "border-[color-mix(in_srgb,var(--danger)_25%,transparent)] bg-[var(--danger-soft)]"
+                                  : "border-[var(--border)] bg-[var(--surface-secondary)]"
                               }`}
                             >
                               <div className="flex items-center justify-between gap-4">
@@ -1810,15 +1813,15 @@ export default function TrackOrderPage() {
                                   <div
                                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
                                       isOverdue
-                                        ? "bg-red-500/10"
-                                        : "bg-brand/10"
+                                        ? "bg-[var(--danger-soft)]"
+                                        : "bg-[var(--surface-tertiary)]"
                                     }`}
                                   >
                                     <Clock3
                                       className={`h-5 w-5 ${
                                         isOverdue
-                                          ? "text-red-400"
-                                          : "text-brand"
+                                          ? "text-[var(--danger)]"
+                                          : "text-[var(--text-secondary)]"
                                       }`}
                                     />
                                   </div>
@@ -1827,8 +1830,8 @@ export default function TrackOrderPage() {
                                     <div
                                       className={`text-xs font-bold sm:text-sm ${
                                         isOverdue
-                                          ? "text-red-300"
-                                          : "text-white"
+                                          ? "text-[var(--danger)]"
+                                          : "text-[var(--text-primary)]"
                                       }`}
                                     >
                                       {isOverdue
@@ -1836,7 +1839,7 @@ export default function TrackOrderPage() {
                                         : "Estimated preparation time"}
                                     </div>
 
-                                    <div className="mt-1 text-[10px] text-gray-600 sm:text-xs">
+                                    <div className="mt-1 text-[10px] text-[var(--text-muted)] sm:text-xs">
                                       {isOverdue
                                         ? "The vendor is still preparing your food."
                                         : stallState.estimatedPreparationMinutes >
@@ -1850,7 +1853,7 @@ export default function TrackOrderPage() {
                                 {!isOverdue &&
                                   remaining !==
                                     null && (
-                                    <div className="shrink-0 font-mono text-xl font-black tracking-tight text-brand sm:text-2xl">
+                                    <div className="cv-tnum shrink-0 font-mono text-xl font-bold tracking-tight text-[var(--text-primary)] sm:text-2xl">
                                       {formatCountdown(
                                         remaining
                                       )}
@@ -2054,7 +2057,7 @@ export default function TrackOrderPage() {
                                     {/* Price / cancellation */}
                                     <div className="shrink-0 text-right">
                                       <div
-                                        className={`text-xs font-black sm:text-sm ${
+                                        className={`text-xs font-bold sm:text-sm ${
                                           itemCancelled
                                             ? "text-gray-700 line-through"
                                             : "text-brand"

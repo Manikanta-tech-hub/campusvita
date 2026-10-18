@@ -63,7 +63,7 @@ export default function LoginHero() {
 
       <div
         aria-hidden="true"
-        className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-brand-hover/30 blur-3xl md:-left-32 md:-top-32 md:h-96 md:w-96"
+        className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[var(--accent)]/25 blur-3xl md:-left-32 md:-top-32 md:h-96 md:w-96"
       />
 
       {/* CONTENT */}
@@ -91,7 +91,7 @@ export default function LoginHero() {
               delay: 0.08,
               ease: EASE,
             }}
-            className="text-xs font-semibold uppercase tracking-[0.22em] text-brand!"
+            className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]!"
           >
             Smart campus food
           </motion.p>
@@ -109,7 +109,7 @@ export default function LoginHero() {
             From Classrooms
             <br />
             to{" "}
-            <span className="bg-gradient-to-r from-brand via-brand to-brand bg-clip-text text-transparent">
+            <span className="text-[var(--accent)]!">
               Cravings.
             </span>
           </motion.p>
@@ -150,7 +150,7 @@ export default function LoginHero() {
                   <Icon
                     size={14}
                     strokeWidth={2.2}
-                    className="text-brand!"
+                    className="text-[var(--accent)]!"
                   />
 
                   {label}

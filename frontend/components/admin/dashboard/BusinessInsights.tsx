@@ -61,7 +61,7 @@ type Props = {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8"
+        className="cv-glass-card cv-glass-edge rounded-3xl border border-[var(--glass-border)] p-8"
       >
         <div className="flex items-center gap-3">
           <IndianRupee
@@ -105,7 +105,7 @@ type Props = {
               transition={{
                 delay: index * 0.1,
               }}
-              className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6"
+              className="cv-glass-card cv-glass-edge rounded-3xl border border-[var(--glass-border)] p-6"
             >
               <div className="flex items-center justify-between">
 

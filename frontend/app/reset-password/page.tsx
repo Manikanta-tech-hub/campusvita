@@ -232,14 +232,14 @@ function ResetPasswordForm() {
 
           <div className="absolute left-[5%] top-1/2 -translate-y-1/2">
 
-            <h2 className="text-[clamp(42px,4.5vw,76px)] font-bold leading-none tracking-tight text-white drop-shadow-xl">
+            <h2 className="text-[clamp(42px,4.5vw,76px)] font-bold leading-none tracking-[-0.03em] text-white! drop-shadow-xl">
               Create New{" "}
-              <span className="text-brand">
+              <span className="text-[var(--accent)]">
                 Password
               </span>
             </h2>
 
-            <p className="mt-5 text-[clamp(16px,1.35vw,24px)] font-medium text-white/90 drop-shadow-lg">
+            <p className="mt-5 text-[clamp(16px,1.35vw,24px)] font-medium text-white/90! drop-shadow-lg">
               Choose a strong password to secure your account.
             </p>
 
@@ -247,15 +247,15 @@ function ResetPasswordForm() {
 
           {/* RESET PASSWORD CARD */}
 
-          <section className="absolute right-[6%] top-1/2 w-[min(42vw,590px)] -translate-y-1/2 rounded-[36px] border-[var(--border)] bg-card/95 p-8 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:p-10 xl:p-12">
+          <section className="cv-glass-elevated absolute right-[6%] top-1/2 w-[min(42vw,590px)] -translate-y-1/2 rounded-3xl p-8 lg:p-10 xl:p-12">
 
             {/* ICON */}
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-card shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--surface)] shadow-[var(--shadow-card)]">
               <ShieldCheck
                 size={40}
                 strokeWidth={1.8}
-                className="text-brand-hover"
+                className="text-[var(--accent-text)]"
               />
             </div>
 
@@ -263,14 +263,14 @@ function ResetPasswordForm() {
 
             <div className="mt-7 text-center">
 
-              <h2 className="text-[clamp(26px,2vw,36px)] font-bold tracking-tight text-zinc-900">
+              <h2 className="text-[clamp(26px,2vw,36px)] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 Reset Your{" "}
-                <span className="text-brand-hover">
+                <span className="text-[var(--accent-text)]">
                   Password
                 </span>
               </h2>
 
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500 md:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] md:text-base">
                 Create a new secure password for your
                 CampusVita account.
               </p>
@@ -291,7 +291,7 @@ function ResetPasswordForm() {
                 <LockKeyhole
                   size={23}
                   strokeWidth={1.8}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500"
+                  className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
                 />
 
                 <input
@@ -308,7 +308,7 @@ function ResetPasswordForm() {
                   disabled={loading}
                   autoComplete="new-password"
                   aria-label="New password"
-                  className="h-16 w-full rounded-2xl border border-zinc-200 bg-input pl-14 pr-14 text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-brand focus:ring-4 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-16 w-full rounded-2xl border border-[var(--input-border)] bg-[var(--input)] pl-14 pr-14 text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                 />
 
                 <button
@@ -324,7 +324,7 @@ function ResetPasswordForm() {
                       ? "Hide password"
                       : "Show password"
                   }
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 transition-colors hover:text-brand-hover disabled:cursor-not-allowed"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:cursor-not-allowed"
                 >
                   {showNewPassword ? (
                     <EyeOff
@@ -348,7 +348,7 @@ function ResetPasswordForm() {
                 <LockKeyhole
                   size={23}
                   strokeWidth={1.8}
-                  className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500"
+                  className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
                 />
 
                 <input
@@ -367,7 +367,7 @@ function ResetPasswordForm() {
                   disabled={loading}
                   autoComplete="new-password"
                   aria-label="Confirm new password"
-                  className="h-16 w-full rounded-2xl border border-zinc-200 bg-input pl-14 pr-14 text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-brand focus:ring-4 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-16 w-full rounded-2xl border border-[var(--input-border)] bg-[var(--input)] pl-14 pr-14 text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                 />
 
                 <button
@@ -383,7 +383,7 @@ function ResetPasswordForm() {
                       ? "Hide password"
                       : "Show password"
                   }
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-500 transition-colors hover:text-brand-hover disabled:cursor-not-allowed"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] disabled:cursor-not-allowed"
                 >
                   {showConfirmPassword ? (
                     <EyeOff
@@ -402,7 +402,7 @@ function ResetPasswordForm() {
 
               {/* PASSWORD REQUIREMENT */}
 
-              <p className="px-1 text-xs text-zinc-500">
+              <p className="px-1 text-xs text-[var(--text-muted)]">
                 Password must contain at least 6 characters.
               </p>
 
@@ -411,7 +411,7 @@ function ResetPasswordForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand via-brand to-brand-hover text-lg font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] hover:shadow-[0_16px_35px_rgba(104,110,232,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="cv-press group flex h-16 w-full items-center justify-center rounded-2xl bg-[var(--accent)] text-lg! font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:scale-[1.01] hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   "Resetting Password..."
@@ -494,14 +494,14 @@ function ResetPasswordForm() {
 
             <div className="absolute bottom-16 left-6 right-6">
 
-              <h2 className="text-[clamp(36px,10vw,48px)] font-bold leading-tight tracking-tight text-white drop-shadow-xl">
+              <h2 className="text-[clamp(36px,10vw,48px)] font-bold leading-tight tracking-[-0.03em] text-white! drop-shadow-xl">
                 Create New{" "}
-                <span className="text-brand">
+                <span className="text-[var(--accent)]">
                   Password
                 </span>
               </h2>
 
-              <p className="mt-2 text-base font-medium text-white/90 drop-shadow-lg">
+              <p className="mt-2 text-base font-medium text-white/90! drop-shadow-lg">
                 Secure your account with a new password.
               </p>
 
@@ -513,20 +513,20 @@ function ResetPasswordForm() {
 
         {/* MOBILE BOTTOM SHEET */}
 
-        <section className="relative z-20 -mt-8 flex min-h-[54dvh] w-full flex-1 flex-col rounded-t-[34px] bg-card px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_rgba(0,0,0,0.35)]">
+        <section className="cv-glass-elevated relative z-20 -mt-8 flex min-h-[54dvh] w-full flex-1 flex-col rounded-3xl px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3">
 
           {/* HANDLE */}
 
-          <div className="mx-auto h-1.5 w-14 shrink-0 rounded-full bg-zinc-300" />
+          <div className="mx-auto h-1.5 w-14 shrink-0 rounded-full bg-[var(--border-strong)]" />
 
           {/* ICON */}
 
-          <div className="mx-auto mt-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-card shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
+          <div className="mx-auto mt-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] shadow-[var(--shadow-card)]">
 
             <ShieldCheck
               size={32}
               strokeWidth={1.8}
-              className="text-brand-hover"
+              className="text-[var(--accent-text)]"
             />
 
           </div>
@@ -535,14 +535,14 @@ function ResetPasswordForm() {
 
           <div className="mt-4 text-center">
 
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
+            <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--text-primary)]">
               Reset Your{" "}
-              <span className="text-brand-hover">
+              <span className="text-[var(--accent-text)]">
                 Password
               </span>
             </h2>
 
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
               Create a new secure password for your account.
             </p>
 
@@ -562,7 +562,7 @@ function ResetPasswordForm() {
               <LockKeyhole
                 size={21}
                 strokeWidth={1.8}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
               />
 
               <input
@@ -579,7 +579,7 @@ function ResetPasswordForm() {
                 disabled={loading}
                 autoComplete="new-password"
                 aria-label="New password"
-                className="h-14 w-full rounded-xl border border-zinc-200 bg-input pl-12 pr-12 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-brand focus:ring-2 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-14 w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] pl-12 pr-12 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-50"
               />
 
               <button
@@ -595,7 +595,7 @@ function ResetPasswordForm() {
                     ? "Hide password"
                     : "Show password"
                 }
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
               >
                 {showNewPassword ? (
                   <EyeOff size={20} />
@@ -613,7 +613,7 @@ function ResetPasswordForm() {
               <LockKeyhole
                 size={21}
                 strokeWidth={1.8}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
               />
 
               <input
@@ -632,7 +632,7 @@ function ResetPasswordForm() {
                 disabled={loading}
                 autoComplete="new-password"
                 aria-label="Confirm new password"
-                className="h-14 w-full rounded-xl border border-zinc-200 bg-input pl-12 pr-12 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-500 focus:border-brand focus:ring-2 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-14 w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] pl-12 pr-12 text-sm text-[var(--text-primary)] outline-none transition-all placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-50"
               />
 
               <button
@@ -648,7 +648,7 @@ function ResetPasswordForm() {
                     ? "Hide password"
                     : "Show password"
                 }
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
               >
                 {showConfirmPassword ? (
                   <EyeOff size={20} />
@@ -661,7 +661,7 @@ function ResetPasswordForm() {
 
             {/* PASSWORD INFO */}
 
-            <p className="px-1 text-xs text-zinc-500">
+            <p className="px-1 text-xs text-[var(--text-muted)]">
               Password must contain at least 6 characters.
             </p>
 
@@ -670,7 +670,7 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading}
-              className="group flex h-14 w-full items-center justify-center rounded-xl bg-gradient-to-r from-brand via-brand to-brand-hover font-semibold text-white shadow-[0_10px_25px_rgba(104,110,232,0.32)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="cv-press group flex h-14 w-full items-center justify-center rounded-xl bg-[var(--accent)] font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 "Resetting Password..."
@@ -725,7 +725,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <main className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-[var(--background)]">
-          <div className="text-lg font-semibold text-white">
+          <div className="text-lg font-semibold text-[var(--text-primary)]">
             Loading...
           </div>
         </main>

@@ -376,14 +376,14 @@ function VerifyResetOTPForm() {
 
           <div className="absolute left-[5%] top-1/2 -translate-y-1/2">
 
-            <h2 className="text-[clamp(42px,4.5vw,76px)] font-bold leading-none tracking-tight text-white drop-shadow-xl">
+            <h2 className="text-[clamp(42px,4.5vw,76px)] font-bold leading-none tracking-[-0.03em] text-white! drop-shadow-xl">
               Verify Your{" "}
-              <span className="text-brand">
+              <span className="text-[var(--accent)]">
                 OTP
               </span>
             </h2>
 
-            <p className="mt-5 text-[clamp(16px,1.35vw,24px)] font-medium text-white/90 drop-shadow-lg">
+            <p className="mt-5 text-[clamp(16px,1.35vw,24px)] font-medium text-white/90! drop-shadow-lg">
               Enter the verification code sent to your email.
             </p>
 
@@ -391,15 +391,15 @@ function VerifyResetOTPForm() {
 
           {/* OTP CARD */}
 
-          <section className="absolute right-[6%] top-1/2 w-[min(42vw,590px)] -translate-y-1/2 rounded-[36px] border-[var(--border)] bg-card/95 p-8 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:p-10 xl:p-12">
+          <section className="cv-glass-elevated absolute right-[6%] top-1/2 w-[min(42vw,590px)] -translate-y-1/2 rounded-3xl p-8 lg:p-10 xl:p-12">
 
             {/* ICON */}
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-card shadow-[0_10px_30px_rgba(0,0,0,0.14)]">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[var(--surface)] shadow-[var(--shadow-card)]">
               <ShieldCheck
                 size={40}
                 strokeWidth={1.8}
-                className="text-brand-hover"
+                className="text-[var(--accent-text)]"
               />
             </div>
 
@@ -407,18 +407,18 @@ function VerifyResetOTPForm() {
 
             <div className="mt-7 text-center">
 
-              <h2 className="text-[clamp(26px,2vw,36px)] font-bold tracking-tight text-zinc-900">
+              <h2 className="text-[clamp(26px,2vw,36px)] font-bold tracking-[-0.02em] text-[var(--text-primary)]">
                 Verify{" "}
-                <span className="text-brand-hover">
+                <span className="text-[var(--accent-text)]">
                   OTP
                 </span>
               </h2>
 
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500 md:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-[var(--text-muted)] md:text-base">
                 We've sent a 6-digit verification code to
               </p>
 
-              <p className="mt-1 break-all text-sm font-semibold text-brand-hover md:text-base">
+              <p className="mt-1 break-all text-sm font-semibold text-[var(--accent-text)] md:text-base">
                 {email || "your email address"}
               </p>
 
@@ -483,7 +483,7 @@ function VerifyResetOTPForm() {
                     aria-label={`OTP digit ${
                       index + 1
                     }`}
-                    className="h-14 w-11 rounded-xl border border-zinc-200 bg-input text-center text-xl font-bold text-zinc-900 outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50 sm:h-16 sm:w-14"
+                    className="cv-tnum h-14 w-11 rounded-xl border border-[var(--input-border)] bg-[var(--input)] text-center text-xl font-bold text-[var(--text-primary)] outline-none transition-all focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-16 sm:w-14"
                   />
                 ))}
 
@@ -497,7 +497,7 @@ function VerifyResetOTPForm() {
                   loading ||
                   otpValue.length !== 6
                 }
-                className="group mt-8 flex h-16 w-full items-center justify-center rounded-2xl bg-gradient-to-r from-brand via-brand to-brand-hover text-lg font-semibold text-white shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:scale-[1.01] hover:shadow-[0_16px_35px_rgba(104,110,232,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="cv-press group mt-8 flex h-16 w-full items-center justify-center rounded-2xl bg-[var(--accent)] text-lg! font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:scale-[1.01] hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? (
                   "Verifying OTP..."
@@ -521,7 +521,7 @@ function VerifyResetOTPForm() {
 
             <div className="mt-6 text-center">
 
-              <p className="text-sm text-zinc-500">
+              <p className="text-sm text-[var(--text-muted)]">
                 Didn't receive the code?
               </p>
 
@@ -601,14 +601,14 @@ function VerifyResetOTPForm() {
 
             <div className="absolute bottom-16 left-6 right-6">
 
-              <h2 className="text-[clamp(36px,10vw,48px)] font-bold leading-tight tracking-tight text-white drop-shadow-xl">
+              <h2 className="text-[clamp(36px,10vw,48px)] font-bold leading-tight tracking-[-0.03em] text-white! drop-shadow-xl">
                 Verify Your{" "}
-                <span className="text-brand">
+                <span className="text-[var(--accent)]">
                   OTP
                 </span>
               </h2>
 
-              <p className="mt-2 text-base font-medium text-white/90 drop-shadow-lg">
+              <p className="mt-2 text-base font-medium text-white/90! drop-shadow-lg">
                 Enter the code sent to your email.
               </p>
 
@@ -620,19 +620,19 @@ function VerifyResetOTPForm() {
 
         {/* MOBILE BOTTOM SHEET */}
 
-        <section className="relative z-20 -mt-8 flex min-h-[54dvh] w-full flex-1 flex-col rounded-t-[34px] bg-card px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-20px_50px_rgba(0,0,0,0.35)]">
+        <section className="cv-glass-elevated relative z-20 -mt-8 flex min-h-[54dvh] w-full flex-1 flex-col rounded-3xl px-5 pb-[max(2rem,env(safe-area-inset-bottom))] pt-3">
 
           {/* HANDLE */}
 
-          <div className="mx-auto h-1.5 w-14 shrink-0 rounded-full bg-zinc-300" />
+          <div className="mx-auto h-1.5 w-14 shrink-0 rounded-full bg-[var(--border-strong)]" />
 
           {/* ICON */}
 
-          <div className="mx-auto mt-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-card shadow-[0_8px_22px_rgba(0,0,0,0.12)]">
+          <div className="mx-auto mt-5 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] shadow-[var(--shadow-card)]">
             <ShieldCheck
               size={32}
               strokeWidth={1.8}
-              className="text-brand-hover"
+              className="text-[var(--accent-text)]"
             />
           </div>
 
@@ -640,18 +640,18 @@ function VerifyResetOTPForm() {
 
           <div className="mt-4 text-center">
 
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
+            <h2 className="text-2xl font-bold tracking-[-0.02em] text-[var(--text-primary)]">
               Verify{" "}
-              <span className="text-brand-hover">
+              <span className="text-[var(--accent-text)]">
                 OTP
               </span>
             </h2>
 
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
               Enter the 6-digit code sent to
             </p>
 
-            <p className="mt-1 break-all text-xs font-semibold text-brand-hover">
+            <p className="mt-1 break-all text-xs font-semibold text-[var(--accent-text)]">
               {email || "your email address"}
             </p>
 
@@ -716,7 +716,7 @@ function VerifyResetOTPForm() {
                   aria-label={`OTP digit ${
                     index + 1
                   }`}
-                  className="h-12 w-10 rounded-lg border border-zinc-200 bg-input text-center text-lg font-bold text-zinc-900 outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="cv-tnum h-12 w-10 rounded-lg border border-[var(--input-border)] bg-[var(--input)] text-center text-lg font-bold text-[var(--text-primary)] outline-none transition-all focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                 />
               ))}
 
@@ -730,7 +730,7 @@ function VerifyResetOTPForm() {
                 loading ||
                 otpValue.length !== 6
               }
-              className="group mt-7 flex h-14 w-full items-center justify-center rounded-xl bg-gradient-to-r from-brand via-brand to-brand-hover font-semibold text-white shadow-[0_10px_25px_rgba(104,110,232,0.32)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="cv-press group mt-7 flex h-14 w-full items-center justify-center rounded-xl bg-[var(--accent)] font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 "Verifying OTP..."
@@ -754,7 +754,7 @@ function VerifyResetOTPForm() {
 
           <div className="mt-5 text-center">
 
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-[var(--text-muted)]">
               Didn't receive the code?
             </p>
 
@@ -806,7 +806,7 @@ export default function VerifyResetOTPPage() {
     <Suspense
       fallback={
         <main className="flex min-h-screen min-h-[100dvh] items-center justify-center bg-[var(--background)]">
-          <div className="text-lg font-semibold text-white">
+          <div className="text-lg font-semibold text-[var(--text-primary)]">
             Loading...
           </div>
         </main>

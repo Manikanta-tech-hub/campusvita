@@ -50,8 +50,8 @@ export default function BrandLogo({
         inline-flex
         items-center
         rounded-2xl
-        bg-white
-        shadow-[0_10px_28px_rgba(0,0,0,0.18)]
+        cv-glass-elevated
+        shadow-[var(--glass-shadow-elevated)]
       "
     >
       {image}
