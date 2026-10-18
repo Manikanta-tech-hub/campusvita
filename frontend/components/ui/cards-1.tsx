@@ -30,7 +30,7 @@ export default function StallCard({
   return (
     <Link
       href={`/stall/${_id}`}
-      className="group block overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2"
+      className="cv-glass-card cv-lift group block overflow-hidden rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
     >
       {/* Image */}
       <div className="relative aspect-[16/10] overflow-hidden bg-[var(--surface-secondary)]">
@@ -45,16 +45,16 @@ export default function StallCard({
         {/* Bookmark */}
         <button
           onClick={(e) => { e.preventDefault(); }}
-          aria-label="Bookmark"
-          className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--text-primary)] shadow-md transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+          aria-label={`Bookmark ${name}`}
+          className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-[var(--text-primary)] shadow-sm backdrop-blur-md transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-[var(--primary)] dark:bg-black/60 dark:text-white"
         >
-          <Bookmark size={16} strokeWidth={2} />
+          <Bookmark size={15} strokeWidth={2} />
         </button>
 
         {/* Rating badge */}
         {rating !== undefined && rating !== null && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-md bg-[#168447] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
-            <Star size={10} className="fill-white text-white" strokeWidth={2.5} /> {rating.toFixed(1)}
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-[rgba(17,17,17,0.78)] px-2.5 py-1 text-[11px] font-semibold text-[#fff] backdrop-blur-md">
+            <Star size={10} className="fill-[#fff] text-[#fff]" strokeWidth={2.5} /> {rating.toFixed(1)}
           </span>
         )}
       </div>
@@ -62,7 +62,7 @@ export default function StallCard({
       {/* Content */}
       <div className="p-5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-base font-bold leading-snug tracking-[-0.02em] text-[var(--text-primary)] line-clamp-1">{name}</h3>
+          <h3 className="text-base font-semibold leading-snug tracking-[-0.02em] text-[var(--text-primary)] line-clamp-1">{name}</h3>
         </div>
 
         {description && (
@@ -80,20 +80,20 @@ export default function StallCard({
         <div className="mt-3 flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)]">
             <Clock size={13} strokeWidth={2} />
-            <span>
+            <span className="cv-tnum">
               {preparationTime !== undefined && preparationTime !== null
                 ? `${preparationTime} min`
                 : "Prep time —"}
             </span>
           </div>
 
-          <span className="text-sm font-bold tracking-tight text-[var(--text-primary)]">{priceText()}</span>
+          <span className="cv-tnum text-sm font-semibold tracking-tight text-[var(--text-primary)]">{priceText()}</span>
         </div>
 
         {/* Availability */}
         <div className="mt-3 flex items-center gap-2">
-          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isOpen ? "bg-emerald-500" : "bg-red-400"}`} />
-          <span className={`text-[10px] font-semibold uppercase tracking-wider ${isOpen ? "text-emerald-600 dark:text-emerald-400" : "text-[var(--text-muted)]"}`}>
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${isOpen ? "bg-[var(--success)]" : "bg-[var(--text-subtle)]"}`} />
+          <span className={`text-[10px] font-semibold uppercase tracking-wider ${isOpen ? "text-[var(--success)]" : "text-[var(--text-muted)]"}`}>
             {isOpen ? "Open now" : "Closed"}
           </span>
         </div>

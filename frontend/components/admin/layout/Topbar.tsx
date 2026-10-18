@@ -17,10 +17,9 @@ export default function Topbar({ onMenuClick }: Props) {
         sticky
         top-0
         z-40
+        cv-glass-elevated
         border-b
         border-border
-        bg-card/90
-        backdrop-blur-xl
         transition-colors
         duration-200
       "

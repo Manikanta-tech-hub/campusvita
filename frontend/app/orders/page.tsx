@@ -214,10 +214,21 @@ export default function OrdersPage() {
   // LIVE ORDER UPDATES
   // ============================================================
 
-  useEffect(() => {
-    const socket = io(API_URL, {
-      transports: ["websocket", "polling"],
-    });
+
+useEffect(() => {
+  const token = getToken();
+
+  if (!token) {
+    return;
+  }
+
+  const socket = io(API_URL, {
+    auth: {
+      token,
+    },
+    transports: ["websocket", "polling"],
+  });
+
 
     socket.on("connect", () => {
       console.log("✅ Orders socket connected");
@@ -833,7 +844,7 @@ Total: ₹${order.total}
           {/* ================================================== */}
 
           {loading ? (
-            <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-[var(--shadow-card)]">
+            <div className="cv-glass-card cv-glass-edge mt-6 overflow-hidden rounded-2xl border border-[var(--glass-border)] p-8 text-center">
 
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-soft)]">
                 <RefreshCw
@@ -857,7 +868,7 @@ Total: ₹${order.total}
             /* EMPTY STATE */
             /* ================================================= */
 
-            <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-[var(--shadow-card)] sm:p-12">
+            <div className="cv-glass-card cv-glass-edge mt-6 rounded-2xl border border-[var(--glass-border)] p-8 text-center sm:p-12">
 
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--surface-secondary)] text-[var(--text-muted)]">
                 <PackageCheck size={42} />
@@ -931,7 +942,7 @@ Total: ₹${order.total}
                         order.order_id ||
                         `${order.token}-${index}`
                       }
-                      className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--brand)]/30"
+                      className="cv-glass-card cv-glass-edge overflow-hidden rounded-2xl border border-[var(--glass-border)] transition-all duration-200 hover:-translate-y-[1px] hover:border-[var(--brand)]/30"
                     >
 
                       {/* ====================================== */}
@@ -1381,7 +1392,7 @@ Total: ₹${order.total}
         orders[selectedOrder] && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
 
-            <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-[var(--text-primary)] shadow-2xl sm:rounded-3xl sm:p-8">
+            <div className="cv-glass-modal cv-glass-edge w-full max-w-md rounded-2xl border border-[var(--glass-border)] p-6 text-[var(--text-primary)] sm:rounded-3xl sm:p-8">
 
               <div className="flex items-center justify-between">
 
@@ -1458,7 +1469,7 @@ Total: ₹${order.total}
       {showRatingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
 
-          <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-[var(--text-primary)] shadow-2xl sm:rounded-3xl sm:p-8">
+          <div className="cv-glass-modal cv-glass-edge w-full max-w-md rounded-2xl border border-[var(--glass-border)] p-6 text-[var(--text-primary)] sm:rounded-3xl sm:p-8">
 
             <div className="flex items-center justify-between">
 

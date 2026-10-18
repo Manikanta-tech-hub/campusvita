@@ -27,18 +27,16 @@ export default function FoodCard({
   return (
     <article
       className="
+        cv-glass-card
+        cv-glass-edge
         group
         min-w-0
         overflow-hidden
         rounded-2xl
-        border
-        border-[var(--border)]
-        bg-[var(--surface)]
         transition-all
         duration-200
         hover:-translate-y-0.5
-        hover:border-[var(--border-strong)]
-        hover:shadow-[var(--shadow-soft)]
+        hover:shadow-[var(--shadow-card)]
       "
     >
       {/* IMAGE */}
@@ -129,7 +127,7 @@ export default function FoodCard({
 
         <div className="mt-3 flex items-center justify-between gap-2">
 
-          <span className="text-[15px] font-extrabold text-[var(--text-primary)]">
+          <span className="cv-tnum text-[15px] font-bold text-[var(--text-primary)]">
             ₹{price}
           </span>
 
@@ -140,11 +138,11 @@ export default function FoodCard({
                 h-9
                 items-center
                 overflow-hidden
-                rounded-lg
+                rounded-full
                 border
-                border-[var(--brand)]
-                bg-[var(--brand)]
-                text-white
+                border-[var(--primary)]
+                bg-[var(--primary)]
+                text-[var(--on-primary)]
               "
               aria-label={`${quantity} ${name} in cart`}
             >
@@ -159,8 +157,8 @@ export default function FoodCard({
                   items-center
                   justify-center
                   transition-colors
-                  hover:bg-[var(--brand-hover)]
-                  active:bg-[var(--brand-hover)]
+                  hover:bg-[var(--primary-hover)]
+                  active:bg-[var(--primary-hover)]
                   focus:outline-none
                 "
               >
@@ -170,7 +168,7 @@ export default function FoodCard({
                 />
               </button>
 
-              <span className="min-w-6 text-center text-xs font-extrabold">
+              <span className="cv-tnum min-w-6 text-center text-xs font-bold">
                 {quantity}
               </span>
 
@@ -185,8 +183,8 @@ export default function FoodCard({
                   items-center
                   justify-center
                   transition-colors
-                  hover:bg-[var(--brand-hover)]
-                  active:bg-[var(--brand-hover)]
+                  hover:bg-[var(--primary-hover)]
+                  active:bg-[var(--primary-hover)]
                   focus:outline-none
                 "
               >
@@ -202,24 +200,26 @@ export default function FoodCard({
               onClick={onAddToCart}
               aria-label={`Add ${name} to cart`}
               className="
+                cv-press
                 flex
                 h-9
                 min-w-9
                 items-center
                 justify-center
-                rounded-lg
+                rounded-full
                 border
-                border-[var(--brand)]
-                bg-[var(--surface)]
+                border-transparent
+                bg-[var(--accent)]
                 px-2.5
-                text-[var(--brand)]
+                text-[var(--on-accent)]
+                shadow-[var(--accent-shadow)]
                 transition-all
-                hover:bg-[var(--brand)]
-                hover:text-white
+                hover:bg-[var(--accent-hover)]
                 active:scale-95
                 focus:outline-none
                 focus-visible:ring-2
-                focus-visible:ring-[var(--brand)]
+                focus-visible:ring-[var(--accent)]
+                focus-visible:ring-offset-2
               "
             >
               <Plus

@@ -33,12 +33,16 @@ export function TelegramHeader({
 
   // Use the supplied image URL directly.
   const imageSrc = avatar?.trim() || "";
-  const showAvatarImage = Boolean(imageSrc) && !imageFailed;
+  const [previousImageSrc, setPreviousImageSrc] =
+    React.useState(imageSrc);
 
-  // Reset image fallback when the image URL changes.
-  React.useEffect(() => {
+  // Reset fallback state when the source changes, before rendering the new image.
+  if (imageSrc !== previousImageSrc) {
+    setPreviousImageSrc(imageSrc);
     setImageFailed(false);
-  }, [imageSrc]);
+  }
+
+  const showAvatarImage = Boolean(imageSrc) && !imageFailed;
 
   const initial = name.trim().charAt(0).toUpperCase() || "V";
 

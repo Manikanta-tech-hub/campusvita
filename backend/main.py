@@ -18,14 +18,13 @@ from fastapi.encoders import jsonable_encoder
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from contextlib import asynccontextmanager
 import logging
 import socketio
 import cloudinary
 import cloudinary.uploader
 import razorpay
-import requests
 import csv
 import io
 import json
@@ -482,6 +481,50 @@ sio = socketio.AsyncServer(
     cors_allowed_origins=ALLOWED_ORIGINS
 )
 
+@sio.event
+async def connect(sid, environ, auth):
+    """
+    Authenticate Socket.IO clients and join their private customer room.
+    The room identity comes from the verified database user,
+    never from an email supplied by the client.
+    """
+    try:
+        if not isinstance(auth, dict):
+            raise ConnectionRefusedError("Authentication required")
+
+        token = auth.get("token")
+
+        if not isinstance(token, str) or not token.strip():
+            raise ConnectionRefusedError("Authentication required")
+
+        payload = verify_token(token.strip())
+
+        if payload.get("type") != "access":
+            raise ConnectionRefusedError("Invalid token type")
+
+        email = normalize_email(str(payload.get("email") or ""))
+
+        if not email:
+            raise ConnectionRefusedError("Invalid identity")
+
+        user = users_collection.find_one({"email": email})
+
+        if not user or not user.get("is_active", True):
+            raise ConnectionRefusedError("Invalid or inactive account")
+
+        database_email = normalize_email(str(user.get("email") or ""))
+
+        if not database_email:
+            raise ConnectionRefusedError("Invalid identity")
+
+        await sio.enter_room(sid, f"customer_{database_email}")
+
+        logger.info("Authenticated Socket.IO connection established")
+
+    except Exception:
+        logger.warning("Rejected unauthenticated Socket.IO connection")
+        raise ConnectionRefusedError("Authentication failed")
+
 
 # =====================================
 # FASTAPI APP
@@ -585,10 +628,10 @@ def verify_token(token: str):
         return payload
 
     except Exception as e:
-        logger.warning(f"Token verification failed: {e}")
+        logger.warning("Token verification failed: %s", type(e).__name__)
         raise HTTPException(
             status_code=401,
-            detail=str(e),
+            detail="Invalid or expired token",
         )
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -1389,30 +1432,6 @@ def migrate_payment_schema():
 async def create_indexes():
     try:
         # ============================================================
-        # VENDOR INVITATIONS
-        #
-        # Kept in its own try/except at the TOP of this function so
-        # the required unique vendor_id index can never be skipped
-        # when an unrelated section below fails.
-        # ============================================================
-
-        try:
-            vendor_invitations_collection.create_index(
-                "vendor_id",
-                unique=True
-            )
-
-            vendor_invitations_collection.create_index("email")
-
-            logger.info(
-                "✅ Vendor invitations collection indexes created"
-            )
-        except Exception as e:
-            logger.warning(
-                f"⚠️ Vendor invitations index warning: {e}"
-            )
-
-        # ============================================================
         # USERS
         # ============================================================
 
@@ -1425,6 +1444,11 @@ async def create_indexes():
             "phone",
             unique=True
         )
+        vendor_invitations_collection.create_index(
+            "vendor_id",
+            unique=True,
+        )
+        vendor_invitations_collection.create_index("email")
 
         logger.info(
             "✅ Users collection indexes created"
@@ -1438,6 +1462,14 @@ async def create_indexes():
             "token",
             unique=True
         )
+        # A Razorpay order can result in at most one CampusVita order.
+        # Sparse keeps wallet and legacy orders (which have no value)
+        # outside the uniqueness constraint.
+        orders_collection.create_index(
+            "razorpay_order_id",
+            unique=True,
+            sparse=True,
+        )
 
         logger.info(
             "✅ Orders collection index created"
@@ -1450,6 +1482,11 @@ async def create_indexes():
         payments_collection.create_index(
             "payment_id",
             unique=True
+        )
+        payments_collection.create_index(
+            "razorpay_order_id",
+            unique=True,
+            sparse=True,
         )
         payments_collection.create_index("order_id")
         payments_collection.create_index("user_email")
@@ -1861,18 +1898,57 @@ def make_json_safe(value):
     return value
 
 
+
 async def safe_emit_order_update(order_data):
-    safe_order = make_json_safe(order_data)
-    asyncio.create_task(
-        sio.emit("order_update", safe_order)
+    """Send a minimal order update to the owning customer only."""
+    customer_email = normalize_email(
+        str(
+            order_data.get("email")
+            or order_data.get("user_email")
+            or ""
+        )
+    )
+
+    if not customer_email:
+        logger.warning(
+            "Skipping order socket update: missing customer email"
+        )
+        return
+
+    safe_order = make_json_safe({
+        "token": order_data.get("token"),
+        "status": order_data.get("status"),
+        "stall_orders": [
+            {
+                "stall_id": entry.get("stall_id"),
+                "status": entry.get("status"),
+                "picked_up": entry.get("picked_up", False),
+            }
+            for entry in order_data.get("stall_orders", [])
+        ],
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    await sio.emit(
+        "order_update",
+        safe_order,
+        room=f"customer_{customer_email}",
     )
 
 
 def emit_order_update_sync(order_data):
-    try:
-        asyncio.run(sio.emit("order_update", order_data))
-    except Exception as e:
-        logger.error(f"Socket emit error: {e}")
+    """
+    Legacy synchronous order-flow callback.
+
+    Do not broadcast order data globally. Real-time delivery
+    from this synchronous context needs a dedicated event-loop
+    bridge or message queue.
+    """
+    logger.debug(
+        "Skipped legacy synchronous socket emission; "
+        "clients should use authenticated polling fallback."
+    )
+
 
 
 # =====================================
@@ -1939,6 +2015,7 @@ class ResetPasswordData(BaseModel):
 class LoginData(BaseModel):
     email: EmailStr
     password: str
+    login_mode: Literal["USER", "ADMIN", "VENDOR"]
 
 class ForgotPasswordData(BaseModel):
     email: str
@@ -1947,8 +2024,60 @@ class RefreshTokenData(BaseModel):
     refresh_token: str
 
 class FCMTokenData(BaseModel):
+    # The authenticated user determines ownership.  Never accept an
+    # account identifier from the browser for device-token registration.
+    fcm_token: str = Field(min_length=1, max_length=4096)
+
+
+class VendorInvitationData(BaseModel):
+    business_name: str = Field(min_length=1, max_length=150)
+    owner_name: str = Field(min_length=1, max_length=100)
     email: EmailStr
-    fcm_token: str = Field(min_length=1)
+    phone: str = Field(min_length=10, max_length=10)
+    stall_ids: List[str] = []
+
+    @validator("business_name", "owner_name")
+    def vendor_invitation_name(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("This field is required")
+        return value
+
+    @validator("phone")
+    def vendor_invitation_phone(cls, value):
+        value = value.strip()
+        if not value.isdigit() or len(value) != 10 or value[0] not in "6789":
+            raise ValueError("Please enter a valid Indian mobile number")
+        return value
+
+    @validator("stall_ids")
+    def vendor_invitation_stalls(cls, values):
+        cleaned = []
+        for stall_id in values:
+            stall_id = str(stall_id).strip()
+            if not ObjectId.is_valid(stall_id):
+                raise ValueError("Invalid stall id")
+            if stall_id not in cleaned:
+                cleaned.append(stall_id)
+        return cleaned
+
+
+class VendorActivateVerifyData(BaseModel):
+    vendor_id: str = Field(min_length=1, max_length=64)
+    activation_code: str = Field(min_length=1, max_length=64)
+
+
+class VendorActivateData(VendorActivateVerifyData):
+    password: str = Field(min_length=8)
+
+    @validator("password")
+    def vendor_activation_password(cls, value):
+        if not validate_password_strength(value):
+            raise ValueError(
+                "Password must contain at least 8 characters, one uppercase, "
+                "one lowercase, one number, and one special character"
+            )
+        return value
 
 class ChangePasswordData(BaseModel):
     current_password: str
@@ -2088,108 +2217,6 @@ class AdminWalletAdjustData(BaseModel):
         return v
 
 
-class VendorInvitationData(BaseModel):
-    """Admin-created vendor invitation.
-
-    This is an INVITATION only: no `users` document, no password,
-    and no VENDOR account is created here. The vendor account is
-    created later during activation at /vendor/activate.
-    """
-    business_name: str = Field(min_length=1, max_length=150)
-    owner_name: str = Field(min_length=1, max_length=100)
-    email: EmailStr
-    phone: str = Field(min_length=10, max_length=10)
-    stall_ids: List[str] = []
-
-    @validator("business_name", "owner_name")
-    def validate_name_fields(cls, v):
-        v = v.strip()
-        if not v:
-            raise ValueError("This field is required")
-        return v
-
-    @validator("phone")
-    def validate_phone(cls, v):
-        v = v.strip()
-
-        if not v:
-            raise ValueError(
-                "Phone number is required"
-            )
-
-        if not v.isdigit():
-            raise ValueError(
-                "Phone number must contain only digits"
-            )
-
-        if len(v) != 10:
-            raise ValueError(
-                "Phone number must be exactly 10 digits"
-            )
-
-        if v[0] not in "6789":
-            raise ValueError(
-                "Please enter a valid Indian mobile number"
-            )
-
-        return v
-
-    @validator("stall_ids")
-    def validate_stall_ids(cls, v):
-        cleaned = []
-        for stall_id in v:
-            stall_id = str(stall_id).strip()
-            if not stall_id:
-                continue
-            if not ObjectId.is_valid(stall_id):
-                raise ValueError("Invalid stall id")
-            if stall_id not in cleaned:
-                cleaned.append(stall_id)
-        return cleaned
-
-
-class VendorActivateVerifyData(BaseModel):
-    """Public activation Step 1: check Vendor ID + code.
-
-    Public (the vendor has no account yet) - rate-limited on
-    the endpoint, generic error on every failure.
-    """
-    vendor_id: str = Field(min_length=1, max_length=64)
-    activation_code: str = Field(min_length=1, max_length=64)
-
-    @validator("vendor_id", "activation_code")
-    def strip_values(cls, v):
-        return v.strip()
-
-
-class VendorActivateData(BaseModel):
-    """Public activation Step 2: create the VENDOR account.
-
-    The invited email is intentionally NOT in this payload -
-    it always comes from the invitation document, so the
-    vendor can never substitute a different email.
-    """
-    vendor_id: str = Field(min_length=1, max_length=64)
-    activation_code: str = Field(min_length=1, max_length=64)
-    password: str = Field(min_length=8)
-
-    @validator("vendor_id", "activation_code")
-    def strip_values(cls, v):
-        return v.strip()
-
-    @validator("password")
-    def validate_password(cls, v):
-        # Same rules as signup - revalidated server-side even
-        # if the page already checked client-side.
-        if not validate_password_strength(v):
-            raise ValueError(
-                "Password must contain at least 8 characters, "
-                "one uppercase, one lowercase, one number, and "
-                "one special character"
-            )
-        return v
-
-
 class SavePaymentData(BaseModel):
     order_id: str
     payment_id: str
@@ -2284,7 +2311,13 @@ async def cancel_vendor_complete_order(
     # ---------------------------------------------------------
     # 4. Get vendor's allowed stalls
     # ---------------------------------------------------------
-    vendor_stall_ids = get_vendor_stall_ids(current_user)
+    # Administrators can moderate any stall.  Calling the vendor-only
+    # ownership helper for an admin would incorrectly reject this path.
+    vendor_stall_ids = (
+        get_vendor_stall_ids(current_user)
+        if role != UserRole.ADMIN
+        else []
+    )
 
     vendor_stall_ids = {
         str(value)
@@ -3093,14 +3126,41 @@ async def update_vendor_stall_order_status(
     # SAVE UPDATED STALL STATUS
     # ============================================================
 
-    orders_collection.update_one(
-        {"_id": order["_id"]},
+
+    # Update only the targeted stall and require its previous
+    # status to match, preventing concurrent lost updates.
+    target_stall = next(
+        entry
+        for entry in stall_orders
+        if entry["stall_id"] == stall_id
+    )
+
+    stall_fields = {
+        f"stall_orders.$.{key}": value
+        for key, value in target_stall.items()
+    }
+
+    result = orders_collection.update_one(
         {
-            "$set": {
-                "stall_orders": stall_orders,
-            }
+            "_id": order["_id"],
+            "stall_orders": {
+                "$elemMatch": {
+                    "stall_id": stall_id,
+                    "status": current_status,
+                }
+            },
+        },
+        {
+            "$set": stall_fields,
         },
     )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Concurrent update detected; retry.",
+        )
+
 
     # ============================================================
     # LOAD UPDATED ORDER
@@ -3149,11 +3209,123 @@ async def update_vendor_stall_order_status(
         ),
         "order": response_order,
     }
+
+
+@fastapi_app.post("/vendor/orders/{token}/pickup-confirm")
+async def confirm_pickup(
+    token: int,
+    stall_id: str,
+    pickup_code: str,
+    current_user: Dict[str, Any] = Depends(
+        require_role(UserRole.VENDOR)
+    ),
+):
+    # Verify that this vendor owns the requested stall.
+    owned_stalls = set(get_vendor_stall_ids(current_user))
+
+    if stall_id not in owned_stalls:
+        raise HTTPException(
+            status_code=403,
+            detail="Stall ownership required.",
+        )
+
+    order = orders_collection.find_one({"token": token})
+
+    if not order:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found.",
+        )
+
+    stall_state = next(
+        (
+            entry
+            for entry in order.get("stall_orders", [])
+            if entry.get("stall_id") == stall_id
+        ),
+        None,
+    )
+
+    if stall_state is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Stall not in order.",
+        )
+
+    if stall_state.get("status") != StallOrderStatus.READY:
+        raise HTTPException(
+            status_code=409,
+            detail="Stall not ready for pickup.",
+        )
+
+    # Validate the pickup code before returning duplicate success.
+    expected_code = str(order.get("pickup_code", "")).strip()
+    supplied_code = pickup_code.strip()
+
+    if not expected_code or not secrets.compare_digest(
+        expected_code,
+        supplied_code,
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid pickup code.",
+        )
+
+    if stall_state.get("picked_up"):
+        return {
+            "success": True,
+            "message": "Pickup already confirmed.",
+            "duplicate": True,
+        }
+
+    # Match the SAME stall's identity, readiness and pickup state.
+    result = orders_collection.update_one(
+        {
+            "_id": order["_id"],
+            "token": token,
+            "stall_orders": {
+                "$elemMatch": {
+                    "stall_id": stall_id,
+                    "status": StallOrderStatus.READY,
+                    "picked_up": {"$ne": True},
+                }
+            },
+        },
+        {
+            "$set": {
+                "stall_orders.$.picked_up": True,
+                "stall_orders.$.picked_up_at": datetime.now(
+                    timezone.utc
+                ).isoformat(),
+            }
+        },
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Concurrent update; retry.",
+        )
+
+    updated_order = orders_collection.find_one(
+        {"_id": order["_id"]}
+    )
+
+    if updated_order:
+        await safe_emit_order_update(updated_order)
+
+    return {
+        "success": True,
+        "message": "Pickup confirmed.",
+        "stall_id": stall_id,
+    }
+
 class GoogleLoginData(BaseModel):
     id_token: str
 
 class GoogleAuthData(BaseModel):
     id_token: str
+    login_mode: Literal["USER", "ADMIN", "VENDOR"]
 # =====================================
 # HOME ROUTE
 # =====================================
@@ -3349,9 +3521,18 @@ def signup(
 # =====================================
 
 @fastapi_app.post("/save-fcm-token")
-def save_fcm_token(data: FCMTokenData):
+def save_fcm_token(
+    data: FCMTokenData,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
     try:
-        email = normalize_email(data.email)
+        email = normalize_email(str(current_user.get("email") or ""))
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authenticated user email not found",
+            )
 
         result = users_collection.update_one(
             {"email": email},
@@ -3485,15 +3666,23 @@ def login(
         role = existing_user.get(
             "role",
             UserRole.USER
-    )
+        )
 
         # ============================================================
-        # ROLE AUTHORIZATION
+        # LOGIN MODE AUTHORIZATION
         #
-        # The role is read exclusively from the stored MongoDB
-        # user record. The client never supplies a role and the
-        # login request contains only credentials.
+        # The frontend selection never grants a role.
+        # The stored database role is the source of truth.
         # ============================================================
+
+        if user.login_mode != role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"This account is registered as {role}. "
+                    f"Please select {role} login."
+                )
+            )
 
         # ============================================================
         # CREATE TOKEN DATA
@@ -3911,13 +4100,20 @@ def google_authentication(
             )
 
             # ========================================================
-            # ROLE AUTHORIZATION
+            # LOGIN MODE AUTHORIZATION
             #
-            # The role is determined by trusted backend rules
-            # (ADMIN_EMAILS allowlist) and stored on the user
-            # document. Google login never grants VENDOR; vendor
-            # accounts are created only through vendor activation.
+            # The selected login mode never grants a role.
+            # The actual role is determined by trusted backend rules.
             # ========================================================
+
+            if data.login_mode != role:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=(
+                        f"This Google account is registered as {role}. "
+                        f"Please select {role} login."
+                    )
+                )
 
             new_user = {
                 "name": full_name,
@@ -3975,6 +4171,21 @@ def google_authentication(
                 "role",
                 UserRole.USER
             )
+
+            # ========================================================
+            # LOGIN MODE AUTHORIZATION
+            #
+            # Existing user's stored role is the source of truth.
+            # ========================================================
+
+            if data.login_mode != role:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=(
+                        f"This account is registered as {role}. "
+                        f"Please select {role} login."
+                    )
+                )
 
             users_collection.update_one(
                 {"_id": user["_id"]},
@@ -6616,22 +6827,35 @@ def retry_refund(
         }
 
 
+
 @fastapi_app.get("/track-order/{token}")
-def get_order_by_token(token: int, current_user: Optional[Dict[str, Any]] = Depends(get_current_user_optional)):
+def get_order_by_token(
+    token: int,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
     try:
         order = orders_collection.find_one({"token": token})
 
         if not order:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Order not found"
+                detail="Order not found",
             )
 
-        if current_user and current_user.get("role") != UserRole.ADMIN:
-            if order.get("email") != current_user["email"]:
+        user_role = str(current_user.get("role", "")).upper()
+
+        if user_role != str(UserRole.ADMIN).upper():
+            order_email = normalize_email(
+                str(order.get("email") or "")
+            )
+            user_email = normalize_email(
+                str(current_user.get("email") or "")
+            )
+
+            if not order_email or order_email != user_email:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied"
+                    detail="Access denied",
                 )
 
         order["order_id"] = str(order["_id"])
@@ -6641,11 +6865,12 @@ def get_order_by_token(token: int, current_user: Optional[Dict[str, Any]] = Depe
 
     except HTTPException:
         raise
+
     except Exception as e:
         logger.error(f"Get order by token error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
+            detail="Internal Server Error",
         )
 
 
@@ -6949,7 +7174,7 @@ async def place_order(
 async def update_order_status(
     order_id: str,
     data: StatusUpdate,
-    current_user: Dict[str, Any] = Depends(get_current_user),
+    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
 ):
     # The body is bound to `data: StatusUpdate` (not a bare `status: str`
     # parameter) specifically so this function's local scope never shadows
@@ -6961,13 +7186,6 @@ async def update_order_status(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Order not found"
             )
-
-        if current_user.get("role") != UserRole.ADMIN:
-            if order.get("email") != current_user["email"]:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You can only update your own orders"
-                )
 
         orders_collection.update_one(
             {"_id": order["_id"]},
@@ -8592,7 +8810,10 @@ def delete_category(
 # =====================================
 
 @fastapi_app.post("/upload-image")
-async def upload_image(file: UploadFile = File(...), current_user: Optional[Dict[str, Any]] = Depends(get_current_user_optional)):
+async def upload_image(
+    file: UploadFile = File(...),
+    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+):
     try:
         if file.content_type not in ALLOWED_IMAGE_TYPES:
             raise HTTPException(
@@ -8600,7 +8821,7 @@ async def upload_image(file: UploadFile = File(...), current_user: Optional[Dict
                 detail=f"Only image files are allowed. Supported: {', '.join(ALLOWED_IMAGE_TYPES)}"
             )
 
-        filename = file.filename.lower()
+        filename = (file.filename or "").lower()
         if not any(filename.endswith(ext) for ext in ALLOWED_IMAGE_EXTENSIONS):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -8608,13 +8829,42 @@ async def upload_image(file: UploadFile = File(...), current_user: Optional[Dict
             )
 
         file_content = await file.read()
+        if not file_content:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Image file is empty",
+            )
         if len(file_content) > MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit"
             )
 
-        result = cloudinary.uploader.upload(file_content)
+        # Content-Type and extensions are client controlled.  Verify a
+        # supported image signature before forwarding bytes to Cloudinary.
+        image_signatures = {
+            "image/jpeg": (b"\xff\xd8\xff",),
+            "image/jpg": (b"\xff\xd8\xff",),
+            "image/png": (b"\x89PNG\r\n\x1a\n",),
+            "image/gif": (b"GIF87a", b"GIF89a"),
+            "image/webp": (b"RIFF",),
+        }
+        signatures = image_signatures.get(file.content_type, ())
+        if not any(file_content.startswith(signature) for signature in signatures):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File contents do not match the declared image type",
+            )
+        if file.content_type == "image/webp" and file_content[8:12] != b"WEBP":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File contents do not match the declared image type",
+            )
+
+        result = cloudinary.uploader.upload(
+            file_content,
+            resource_type="image",
+        )
 
         logger.info(f"📷 Image uploaded: {result['secure_url']}")
 
@@ -8629,9 +8879,217 @@ async def upload_image(file: UploadFile = File(...), current_user: Optional[Dict
             detail="Internal Server Error"
         )
 
+
+# ============================================================
+# VENDOR INVITATION AND ACTIVATION
+# ============================================================
+
+VENDOR_INVITATION_TTL_HOURS = 24
+VENDOR_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+VENDOR_ACTIVATION_INVALID_MESSAGE = "Invalid or expired activation credentials."
+
+
+def generate_vendor_id() -> str:
+    return "VEN-" + "".join(
+        secrets.choice(VENDOR_CODE_ALPHABET) for _ in range(6)
+    )
+
+
+def generate_activation_code() -> str:
+    return "".join(
+        secrets.choice(VENDOR_CODE_ALPHABET) for _ in range(6)
+    )
+
+
+def verify_activation_credentials(
+    vendor_id: str,
+    activation_code: str,
+) -> Dict[str, Any]:
+    def invalid():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=VENDOR_ACTIVATION_INVALID_MESSAGE,
+        )
+
+    invitation = vendor_invitations_collection.find_one(
+        {"vendor_id": vendor_id.strip().upper()}
+    )
+    if (
+        not invitation
+        or invitation.get("used")
+        or not isinstance(invitation.get("expires_at"), datetime)
+        or invitation["expires_at"] <= datetime.utcnow()
+    ):
+        invalid()
+
+    try:
+        valid_code = verify_password(
+            activation_code.strip().upper(),
+            invitation.get("activation_code_hash", ""),
+        )
+    except Exception:
+        valid_code = False
+    if not valid_code:
+        invalid()
+    return invitation
+
+
+@fastapi_app.post("/admin/vendors/invitations")
+def create_vendor_invitation(
+    data: VendorInvitationData,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
+):
+    now = datetime.utcnow()
+    email = normalize_email(str(data.email))
+    if vendor_invitations_collection.find_one(
+        {"email": email, "used": False, "expires_at": {"$gt": now}}
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An active vendor invitation already exists for this email.",
+        )
+
+    code = generate_activation_code()
+    document = {
+        "email": email,
+        "business_name": data.business_name,
+        "owner_name": data.owner_name,
+        "phone": data.phone,
+        "stall_ids": data.stall_ids,
+        "activation_code_hash": hash_password(code),
+        "expires_at": now + timedelta(hours=VENDOR_INVITATION_TTL_HOURS),
+        "used": False,
+        "created_by": current_user.get("email", ""),
+        "created_at": now,
+    }
+    for _ in range(5):
+        document["vendor_id"] = generate_vendor_id()
+        try:
+            vendor_invitations_collection.insert_one(document)
+            logger.info(
+                "Vendor invitation created: %s by %s",
+                document["vendor_id"],
+                current_user.get("email", ""),
+            )
+            # The code is intentionally returned only to the authenticated
+            # administrator; there is no automatic email/SMS/WhatsApp send.
+            return {
+                "success": True,
+                "vendor_id": document["vendor_id"],
+                "activation_code": code,
+                "expires_at": document["expires_at"].isoformat() + "Z",
+                "business_name": document["business_name"],
+                "owner_name": document["owner_name"],
+                "email": email,
+            }
+        except DuplicateKeyError:
+            continue
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Failed to create a unique vendor invitation",
+    )
+
+
+@fastapi_app.post("/vendor/activate/verify")
+@limiter.limit("5/minute")
+def verify_vendor_activation(
+    request: Request,
+    data: VendorActivateVerifyData,
+):
+    invitation = verify_activation_credentials(
+        data.vendor_id, data.activation_code
+    )
+    return {
+        "valid": True,
+        "vendor_id": invitation.get("vendor_id", ""),
+        "business_name": invitation.get("business_name", ""),
+        "owner_name": invitation.get("owner_name", ""),
+        "email": invitation.get("email", ""),
+    }
+
+
+@fastapi_app.post("/vendor/activate")
+@limiter.limit("5/minute")
+def activate_vendor_account(
+    request: Request,
+    data: VendorActivateData,
+):
+    invitation = verify_activation_credentials(
+        data.vendor_id, data.activation_code
+    )
+    email = normalize_email(str(invitation.get("email", "")))
+    phone = str(invitation.get("phone", "")).strip()
+    if users_collection.find_one({"email": email}) or (
+        phone and users_collection.find_one({"phone": phone})
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email or phone is already associated with an account.",
+        )
+
+    # Atomic claim: concurrent requests cannot both consume an invitation.
+    claim = vendor_invitations_collection.find_one_and_update(
+        {
+            "_id": invitation["_id"],
+            "used": False,
+            "expires_at": {"$gt": datetime.utcnow()},
+        },
+        {"$set": {"used": True, "used_at": datetime.utcnow()}},
+    )
+    if not claim:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=VENDOR_ACTIVATION_INVALID_MESSAGE,
+        )
+
+    vendor = {
+        "name": invitation.get("owner_name") or invitation.get("business_name"),
+        "email": email,
+        "password": hash_password(data.password),
+        "phone": phone,
+        "vendor_id": invitation.get("vendor_id"),
+        "role": UserRole.VENDOR,
+        "auth_provider": "password",
+        "profile_image": "",
+        "wallet": 0,
+        "wallet_history": [],
+        "favorite_foods": [],
+        "notifications": True,
+        "fcm_token": "",
+        "theme": "dark",
+        "total_orders": 0,
+        "total_spent": 0,
+        "created_at": datetime.utcnow().isoformat(),
+        "is_active": True,
+    }
+    try:
+        users_collection.insert_one(vendor)
+    except DuplicateKeyError:
+        vendor_invitations_collection.update_one(
+            {"_id": invitation["_id"], "used": True},
+            {"$set": {"used": False, "used_at": None}},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email or phone is already associated with an account.",
+        )
+
+    for stall_id in invitation.get("stall_ids", []):
+        stalls_collection.update_one(
+            {
+                "_id": ObjectId(stall_id),
+                "$or": [
+                    {"owner_email": {"$in": ["", None]}},
+                    {"owner_email": email},
+                ],
+            },
+            {"$set": {"owner_email": email}},
+        )
+    logger.info("Vendor account activated: %s", invitation.get("vendor_id"))
+    return {"success": True, "message": "Vendor account activated successfully."}
+
+
 class CartSummaryItem(BaseModel):
-    """Same identity as OrderItemRequest: food is identified by
-    name + stall_id. Price is never accepted from the client."""
 
     name: str = Field(..., min_length=1)
 
@@ -8674,7 +9132,6 @@ def get_cart_summary(
                 {
                     "name": item.name,
                     "quantity": item.quantity,
-                    "stall_id": item.stall_id,
                 }
                 for item in order_items
             ],
@@ -8934,80 +9391,7 @@ def create_payment_order(
         raise
 
     # ============================================================
-    # RAZORPAY ANSWERED BUT REJECTED THE REQUEST
-    #
-    # These SDK errors are raised only after Razorpay itself
-    # replied, which means the endpoint, payload and network path
-    # are correct. The most common cause is an invalid, rotated or
-    # revoked RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET.
-    #
-    # The gateway description never contains credentials, so it is
-    # safe to log and to return to the caller.
-    # ============================================================
-
-    except razorpay.errors.BadRequestError as e:
-        description = str(e).strip() or "Bad request"
-
-        logger.error(
-            "❌ Razorpay rejected food order creation: %s",
-            description,
-        )
-
-        if "authentication" in description.lower():
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=(
-                    "Payment gateway authentication failed: "
-                    "RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are "
-                    "invalid or revoked."
-                ),
-            )
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(
-                "Payment gateway rejected the payment order: "
-                f"{description}"
-            ),
-        )
-
-    except (
-        razorpay.errors.GatewayError,
-        razorpay.errors.ServerError,
-    ) as e:
-        logger.error(
-            "❌ Razorpay gateway error: %s",
-            e,
-        )
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(
-                "Payment gateway is temporarily unavailable. "
-                "Please try again."
-            ),
-        )
-
-    # ============================================================
-    # RAZORPAY UNREACHABLE (DNS / TLS / timeouts)
-    # ============================================================
-
-    except requests.exceptions.RequestException as e:
-        logger.error(
-            "❌ Cannot reach Razorpay: %s",
-            e,
-        )
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=(
-                "Unable to reach the payment gateway. "
-                "Please check connectivity and try again."
-            ),
-        )
-
-    # ============================================================
-    # UNEXPECTED SERVER ERRORS
+    # RAZORPAY / SERVER ERRORS
     # ============================================================
 
     except Exception as e:
@@ -9179,9 +9563,16 @@ async def verify_payment(
         # 7. SAVE ORDER
         # ========================================================
 
-        result = orders_collection.insert_one(
-            order
-        )
+        try:
+            result = orders_collection.insert_one(order)
+        except DuplicateKeyError:
+            # The unique Razorpay-order index is the concurrency boundary
+            # for double submits.  Do not create a second order, increment
+            # customer statistics, or add a second payment record.
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This payment is already being processed",
+            )
 
         saved_order = orders_collection.find_one(
             {
@@ -9349,17 +9740,9 @@ def get_admin_orders(
     search: str = "",
     status_filter: str = "ALL",
     payment_status: str = "ALL",
+    _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN)),
 ):
     try:
-        # ============================================================
-        # ADMIN AUTHORIZATION
-        # ============================================================
-
-        # Keep your existing admin dependency.
-        # If your project already has this dependency, use it here.
-        # Example:
-        # _: Dict[str, Any] = Depends(require_role(UserRole.ADMIN))
-
         query = {}
 
         # ============================================================
@@ -11176,519 +11559,6 @@ def update_user_role(email: str, role: str, _: Dict[str, Any] = Depends(require_
         )
 
 
-# ============================================================
-# ADMIN - VENDOR INVITATIONS
-#
-# First half of vendor onboarding:
-#   admin creates invitation
-#   -> system generates Vendor ID + one-time activation code
-#   -> admin hands the credentials to the vendor
-#   -> vendor activates later at /vendor/activate
-#      (separate task - NOT implemented here)
-#
-# This endpoint only writes an INVITATION document. It never
-# creates a `users` account, never sets a password, and never
-# modifies existing USER/VENDOR accounts.
-# ============================================================
-
-VENDOR_INVITATION_TTL_HOURS = 24
-
-# Unambiguous alphabet (no O/0, I/1) for human-transcribed
-# Vendor IDs and activation codes.
-VENDOR_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-
-
-def generate_vendor_id() -> str:
-    """Server-side unique Vendor ID, e.g. VEN-7KQF3M.
-
-    Uniqueness is enforced by the unique MongoDB index on
-    `vendor_id` plus a bounded retry loop on DuplicateKeyError.
-    """
-    suffix = "".join(
-        secrets.choice(VENDOR_CODE_ALPHABET)
-        for _ in range(6)
-    )
-    return f"VEN-{suffix}"
-
-
-def generate_activation_code() -> str:
-    """Cryptographically secure one-time activation code.
-
-    SECURITY: the raw code is returned exactly once (this
-    creation response) and is never stored or logged - only
-    its bcrypt hash goes to MongoDB.
-    """
-    return "".join(
-        secrets.choice(VENDOR_CODE_ALPHABET)
-        for _ in range(6)
-    )
-
-
-def deliver_vendor_invitation(
-    invitation: Dict[str, Any],
-    activation_code: str,
-) -> None:
-    """Future delivery hook (email / SMS / WhatsApp / automation).
-
-    Kept provider-agnostic so a delivery channel can be plugged
-    in later without touching invitation creation.
-
-    SECURITY: never log `activation_code`. The raw code is
-    passed in memory only.
-    """
-    # Delivery is intentionally NOT implemented yet.
-    return None
-
-
-@fastapi_app.post("/admin/vendors/invitations")
-def create_vendor_invitation(
-    data: VendorInvitationData,
-    current_user: Dict[str, Any] = Depends(
-        require_role(UserRole.ADMIN)
-    ),
-):
-    try:
-        now = datetime.utcnow()
-
-        email = normalize_email(data.email)
-
-        # --------------------------------------------------------
-        # DUPLICATE SAFETY
-        #
-        # Reject a second ACTIVE invitation for the same email
-        # instead of silently stacking invitations.
-        #
-        # Existing USER/VENDOR accounts are never read-modified
-        # here - account conflict rules belong to the later
-        # activation step.
-        # --------------------------------------------------------
-
-        active_invitation = vendor_invitations_collection.find_one({
-            "email": email,
-            "used": False,
-            "expires_at": {"$gt": now},
-        })
-
-        if active_invitation:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "An active vendor invitation already exists "
-                    "for this email. Wait for it to expire or be "
-                    "used before creating another."
-                ),
-            )
-
-        # --------------------------------------------------------
-        # GENERATE CREDENTIALS (server-side only)
-        # --------------------------------------------------------
-
-        activation_code = generate_activation_code()
-        activation_code_hash = hash_password(activation_code)
-
-        expires_at = now + timedelta(
-            hours=VENDOR_INVITATION_TTL_HOURS
-        )
-
-        vendor_id = None
-        invitation_doc = None
-
-        for _ in range(5):
-            candidate = generate_vendor_id()
-
-            invitation_doc = {
-                "vendor_id": candidate,
-                "email": email,
-                "business_name": data.business_name.strip(),
-                "owner_name": data.owner_name.strip(),
-                "phone": data.phone.strip(),
-                "stall_ids": data.stall_ids,
-                "activation_code_hash": activation_code_hash,
-                "expires_at": expires_at,
-                "used": False,
-                "created_by": str(
-                    current_user.get("email", "")
-                ),
-                "created_at": now,
-            }
-
-            try:
-                vendor_invitations_collection.insert_one(
-                    invitation_doc
-                )
-                vendor_id = candidate
-                break
-            except DuplicateKeyError:
-                # Collision on the unique vendor_id index - retry.
-                vendor_id = None
-                continue
-
-        if not vendor_id:
-            raise HTTPException(
-                status_code=(
-                    status.HTTP_500_INTERNAL_SERVER_ERROR
-                ),
-                detail=(
-                    "Failed to generate a unique Vendor ID. "
-                    "Please retry."
-                ),
-            )
-
-        # --------------------------------------------------------
-        # FUTURE: single integration point for email/SMS
-        # delivery of {vendor_id, activation_code}.
-        # --------------------------------------------------------
-
-        deliver_vendor_invitation(
-            invitation_doc,
-            activation_code,
-        )
-
-        # Log metadata only - NEVER the raw activation code.
-        logger.info(
-            f"🎟️ Vendor invitation created: {vendor_id} "
-            f"for {email} by {current_user.get('email', '')}"
-        )
-
-        return {
-            "success": True,
-            "vendor_id": vendor_id,
-            "activation_code": activation_code,
-            "expires_at": (
-                expires_at.isoformat() + "Z"
-            ),
-            "business_name": invitation_doc["business_name"],
-            "owner_name": invitation_doc["owner_name"],
-            "email": email,
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Create vendor invitation error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error"
-        )
-
-
-# ============================================================
-# PUBLIC VENDOR ACTIVATION (second half of vendor onboarding)
-#
-#   POST /vendor/activate/verify  - Step 1: check credentials
-#   POST /vendor/activate         - Step 2: create account
-#
-# SECURITY RULES (do not relax):
-# - Both endpoints are public (the vendor has no JWT yet) and
-#   rate-limited via slowapi.
-# - EVERY failure returns the single generic message below, so
-#   probing cannot reveal whether a Vendor ID exists, the code
-#   is wrong, or the invitation expired / was already used.
-# - The raw code and its bcrypt hash are never echoed in
-#   responses or written to logs.
-# - The invited email/phone come from the invitation document,
-#   never from the request body.
-# - Consumption is one atomic `used: false -> true` conditional
-#   update (plus the unique email/phone indexes on users), so
-#   two concurrent activations can never both succeed.
-# - Existing USER/VENDOR accounts are read-only: if the invited
-#   email/phone already belongs to an account, activation stops
-#   and the invitation stays unused (admin resolves it).
-# ============================================================
-
-VENDOR_ACTIVATION_INVALID_MESSAGE = (
-    "Invalid or expired activation credentials."
-)
-
-
-def verify_activation_credentials(
-    vendor_id: str,
-    activation_code: str,
-) -> Dict[str, Any]:
-    """Validate activation credentials.
-
-    Raises HTTPException(400) with the ONE generic message for
-    every failure mode: unknown Vendor ID, already-used
-    invitation, expired invitation, or wrong code.
-    """
-    def invalid() -> HTTPException:
-        return HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=VENDOR_ACTIVATION_INVALID_MESSAGE,
-        )
-
-    invitation = vendor_invitations_collection.find_one(
-        {"vendor_id": vendor_id.strip().upper()}
-    )
-
-    if not invitation:
-        raise invalid()
-
-    if invitation.get("used"):
-        raise invalid()
-
-    expires_at = invitation.get("expires_at")
-    if (
-        not isinstance(expires_at, datetime)
-        or expires_at <= datetime.utcnow()
-    ):
-        raise invalid()
-
-    code_hash = invitation.get("activation_code_hash", "")
-    if not code_hash:
-        raise invalid()
-
-    try:
-        code_ok = verify_password(
-            activation_code.strip().upper(),
-            code_hash,
-        )
-    except Exception:
-        # Malformed stored hash - treat exactly like a wrong
-        # code (generic error, no internals leaked).
-        code_ok = False
-
-    if not code_ok:
-        raise invalid()
-
-    return invitation
-
-
-@fastapi_app.post("/vendor/activate/verify")
-@limiter.limit("5/minute")
-def verify_vendor_activation(
-    request: Request,
-    data: VendorActivateVerifyData,
-):
-    """Step 1 (public): prove the Vendor ID + code pair.
-
-    Returns only the display fields needed for the Step 2
-    confirmation screen - never the code, hash, _id or raw
-    invitation internals. Does NOT consume the invitation.
-    """
-    try:
-        invitation = verify_activation_credentials(
-            data.vendor_id,
-            data.activation_code,
-        )
-
-        return {
-            "valid": True,
-            "vendor_id": invitation.get("vendor_id", ""),
-            "business_name": invitation.get(
-                "business_name", ""
-            ),
-            "owner_name": invitation.get("owner_name", ""),
-            "email": invitation.get("email", ""),
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Vendor activation verify error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error",
-        )
-
-
-@fastapi_app.post("/vendor/activate")
-@limiter.limit("5/minute")
-def activate_vendor_account(
-    request: Request,
-    data: VendorActivateData,
-):
-    """Step 2 (public): create the VENDOR account."""
-    try:
-        # --------------------------------------------------
-        # STEP 1 REVALIDATED - this is a separate request
-        # from /vendor/activate/verify, so credentials are
-        # fully checked again here.
-        # --------------------------------------------------
-        invitation = verify_activation_credentials(
-            data.vendor_id,
-            data.activation_code,
-        )
-
-        email = normalize_email(
-            str(invitation.get("email", ""))
-        )
-        phone = str(invitation.get("phone", "")).strip()
-        vendor_id = str(invitation.get("vendor_id", ""))
-
-        if not email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=VENDOR_ACTIVATION_INVALID_MESSAGE,
-            )
-
-        # --------------------------------------------------
-        # EXISTING-ACCOUNT SAFETY - checked BEFORE the
-        # invitation is consumed, so a rejected activation
-        # never burns the invitation. Existing accounts are
-        # never modified.
-        # --------------------------------------------------
-        if users_collection.find_one({"email": email}):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "This email is already associated with "
-                    "an account. Please contact the "
-                    "administrator."
-                ),
-            )
-
-        if phone and users_collection.find_one(
-            {"phone": phone}
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "This phone number is already associated "
-                    "with an account. Please contact the "
-                    "administrator."
-                ),
-            )
-
-        # --------------------------------------------------
-        # ATOMIC CLAIM - exactly one request can flip
-        # used: false -> true. A concurrent activation loses
-        # the race here and gets the same generic error.
-        # --------------------------------------------------
-        claim = (
-            vendor_invitations_collection.find_one_and_update(
-                {
-                    "vendor_id": vendor_id,
-                    "used": False,
-                    "expires_at": {"$gt": datetime.utcnow()},
-                },
-                {
-                    "$set": {
-                        "used": True,
-                        "used_at": datetime.utcnow(),
-                    }
-                },
-            )
-        )
-
-        if not claim:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=VENDOR_ACTIVATION_INVALID_MESSAGE,
-            )
-
-        # --------------------------------------------------
-        # CREATE the VENDOR user using the same document
-        # shape as signup, plus vendor_id.
-        # --------------------------------------------------
-        owner_name = str(
-            invitation.get("owner_name", "")
-        ).strip()
-        business_name = str(
-            invitation.get("business_name", "")
-        ).strip()
-
-        new_vendor = {
-            "name": owner_name or business_name,
-            "email": email,
-            "password": hash_password(data.password),
-            "phone": phone,
-            "vendor_id": vendor_id,
-            "role": UserRole.VENDOR,
-            "auth_provider": "password",
-            "profile_image": "",
-            "wallet": 0,
-            "wallet_history": [],
-            "favorite_foods": [],
-            "notifications": True,
-            "fcm_token": "",
-            "theme": "dark",
-            "total_orders": 0,
-            "total_spent": 0,
-            "created_at": datetime.utcnow().isoformat(),
-            "is_active": True,
-        }
-
-        try:
-            users_collection.insert_one(new_vendor)
-        except DuplicateKeyError:
-            # Unique email/phone index lost a race with a
-            # concurrent account - roll the claim back so
-            # the invitation is NOT burned.
-            vendor_invitations_collection.update_one(
-                {
-                    "_id": invitation["_id"],
-                    "used": True,
-                },
-                {
-                    "$set": {
-                        "used": False,
-                        "used_at": None,
-                    }
-                },
-            )
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    "This email or phone is already "
-                    "associated with an account. Please "
-                    "contact the administrator."
-                ),
-            )
-
-        # --------------------------------------------------
-        # STALL ASSOCIATION follows the existing
-        # architecture: stalls link to vendors through
-        # owner_email. Only unclaimed (or already-matching)
-        # stalls are assigned - never stolen from another
-        # vendor. Best effort: a stall glitch must not
-        # invalidate an account that already exists.
-        # --------------------------------------------------
-        for stall_id in invitation.get("stall_ids", []) or []:
-            try:
-                stalls_collection.update_one(
-                    {
-                        "_id": ObjectId(stall_id),
-                        "$or": [
-                            {
-                                "owner_email": {
-                                    "$in": ["", None]
-                                }
-                            },
-                            {"owner_email": email},
-                        ],
-                    },
-                    {"$set": {"owner_email": email}},
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Stall assignment failed during "
-                    f"activation for {vendor_id}: {e}"
-                )
-
-        # Metadata only - NEVER the code or its hash.
-        logger.info(
-            f"✅ Vendor account activated: {vendor_id} "
-            f"({email})"
-        )
-
-        return {
-            "success": True,
-            "message": (
-                "Vendor account activated successfully."
-            ),
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Vendor activation error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal Server Error",
-        )
-
-
 @fastapi_app.post("/admin/wallet/adjust")
 def admin_adjust_wallet(data: AdminWalletAdjustData, current_user: Dict[str, Any] = Depends(require_role(UserRole.ADMIN))):
     try:
@@ -11810,10 +11680,39 @@ logger.info(
 )
 
 @fastapi_app.websocket("/ws/admin/orders")
-
 async def admin_orders_socket(websocket: WebSocket):
+    # Browsers cannot attach an Authorization header to a native
+    # WebSocket handshake.  The access token is therefore carried as the
+    # second negotiated subprotocol and is never placed in a URL or log.
+    protocol_values = [
+        value.strip()
+        for value in websocket.headers.get(
+            "sec-websocket-protocol", ""
+        ).split(",")
+        if value.strip()
+    ]
+    if len(protocol_values) != 2 or protocol_values[0] != "campusvita-v1":
+        await websocket.close(code=1008)
+        return
 
-    await manager.connect(websocket)
+    try:
+        payload = verify_token(protocol_values[1])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+
+        email = normalize_email(str(payload.get("email") or ""))
+        user = users_collection.find_one({"email": email}) if email else None
+        if (
+            not user
+            or not user.get("is_active", True)
+            or str(user.get("role", "")).upper() != UserRole.ADMIN
+        ):
+            raise HTTPException(status_code=403, detail="Admin access required")
+    except HTTPException:
+        await websocket.close(code=1008)
+        return
+
+    await manager.connect(websocket, subprotocol="campusvita-v1")
 
     try:
 

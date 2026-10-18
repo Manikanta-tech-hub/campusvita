@@ -58,7 +58,7 @@ export default function DashboardHero({adminName}: DashboardHeroprops) {
 
       {/* Bottom Status */}
 
-      <div className="relative mt-10 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)]/70 px-6 py-5 backdrop-blur-xl">
+      <div className="cv-glass-subtle cv-glass-edge relative mt-10 flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[var(--glass-border)] px-6 py-5">
 
         <div>
 

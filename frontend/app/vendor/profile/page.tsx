@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  startTransition,
   useCallback,
   useEffect,
   useRef,
@@ -100,19 +101,21 @@ export default function VendorProfilePage() {
       return;
     }
 
-    setVendor(session.user);
-    setProfileImage(session.user.profile_image || "");
+    startTransition(() => {
+      setVendor(session.user);
+      setProfileImage(session.user.profile_image || "");
+    });
 
     const savedTheme = localStorage.getItem("theme");
 
     if (savedTheme === "light" || savedTheme === "dark") {
-      setTheme(savedTheme);
+      startTransition(() => setTheme(savedTheme));
     } else {
-      setTheme(
+      const initialTheme =
         document.documentElement.classList.contains("dark")
           ? "dark"
-          : "light",
-      );
+          : "light";
+      startTransition(() => setTheme(initialTheme));
     }
   }, [router]);
 

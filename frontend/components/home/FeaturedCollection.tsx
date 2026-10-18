@@ -25,7 +25,7 @@ export default function FeaturedCollection() {
 
   return (
     <section
-      className="relative mb-8 overflow-hidden rounded-[28px] shadow-[var(--shadow-card)]"
+      className="relative mb-8 overflow-hidden rounded-[28px] border border-[var(--border)] shadow-[var(--shadow-card)]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
@@ -44,15 +44,15 @@ export default function FeaturedCollection() {
         ))}
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-center px-8 sm:px-12 lg:px-14">
-          <h2 className="max-w-2xl text-3xl font-black leading-[1.05] tracking-[-0.04em] text-[#d6b8ff] sm:text-5xl">
-            Your next <span className="text-[#d5544b]">craving</span> starts here.
+          <h2 className="max-w-2xl text-3xl font-bold leading-[1.08] tracking-[-0.03em] text-[#fff] sm:text-5xl">
+            Your next <span className="text-[var(--accent)]">craving</span> starts here.
           </h2>
-          <p className="mt-3 max-w-md text-sm leading-6 text-white/90 sm:text-base">
+          <p className="mt-3 max-w-md text-sm leading-6 text-white/85 sm:text-base">
             From irresistible biryani to late-night bites—find the flavors everyone’s craving.
           </p>
           <a
             href="/orders"
-            className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-[var(--brand)] px-6 py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-[var(--brand-hover)] focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2"
+            className="cv-press mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[var(--text-primary)] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             Find your next favorite <ArrowRight size={18} strokeWidth={2.5} />
           </a>

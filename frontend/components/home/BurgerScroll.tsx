@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 
-const FRAME_COUNT = 84;
+const FRAME_COUNT = 108;
 
 // How much of the original frame to crop horizontally.
 // Increase this if you want the burger larger.
@@ -33,7 +34,7 @@ export default function BurgerScroll() {
       const image = new Image();
 
       image.src =
-        `/burger-frames/frame_${String(i).padStart(3, "0")}.jpg`;
+        `/burger-scroll-frames/frame_${String(i).padStart(3, "0")}.jpg`;
 
       images.push(image);
     }
@@ -126,10 +127,10 @@ export default function BurgerScroll() {
        * This guarantees there is no empty
        * space on the left or right.
        */
-      const scale = Math.max(
-        scaleX,
-        scaleY
-      );
+const SIZE_FACTOR = 0.80; // 75% of the current size
+
+const scale =
+  Math.max(scaleX, scaleY) * SIZE_FACTOR;
 
       const drawWidth =
         sourceCropWidth * scale;
@@ -285,7 +286,7 @@ export default function BurgerScroll() {
       style={{
         position: "relative",
         width: "100%",
-        height: "180vh",
+        height: "220vh",
       }}
     >
       <div
@@ -298,8 +299,9 @@ export default function BurgerScroll() {
           height: "100vh",
 
           overflow: "hidden",
-
-          background: "#e5e5e5",
+          
+background:
+  "linear-gradient(90deg, #fafcf9 0%, #fafcf9 50%, #6e6ee9 50%, #6e6ee9 100%)",   
         }}
       >
         <canvas
@@ -341,12 +343,14 @@ export default function BurgerScroll() {
         />
 
 <div
+  className="burger-scroll-copy"
   style={{
     position: "absolute",
     left: "1%",
     top: "50%",
     transform: "translateY(-50%)",
-    width: "36%",
+    width: "min(44%, 560px)",
+    minWidth: "280px",
     maxWidth: "520px",
     zIndex: 2,
     pointerEvents: "none",
@@ -364,7 +368,7 @@ export default function BurgerScroll() {
       color: "#525252",
     }}
   >
-    CampusVita · Your campus, your food
+    CampusVita · campus food, reimagined
   </p>
 
   {/* MAIN HEADING */}
@@ -378,9 +382,9 @@ export default function BurgerScroll() {
       color: "#171717",
     }}
   >
-    Good food.
+    Cravings don&apos;t wait.
     <br />
-    Better campus days.
+    <span style={{ color: "var(--brand)" }}>Neither should you.</span>
   </h1>
 
   {/* DESCRIPTION */}
@@ -394,24 +398,13 @@ export default function BurgerScroll() {
       color: "#525252",
     }}
   >
-    Discover what&apos;s cooking around you, find your
-    favorites, and make every campus break worth it.
+    Discover campus food, order ahead, and pick up when it&apos;s ready.
   </p>
 
   {/* CTA */}
-  <div
-    style={{
-      marginTop: "2rem",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "0.5rem",
-      fontSize: "0.95rem",
-      fontWeight: 700,
-      color: "#171717",
-    }}
-  >
-    <span>Explore food</span>
-    <span style={{ fontSize: "1.2rem" }}>→</span>
+  <div style={{ marginTop: "2rem", display: "flex", gap: "0.75rem", pointerEvents: "auto", flexWrap: "wrap" }}>
+    <Link href="#campus-cravings-heading" style={{ borderRadius: "999px", background: "#171717", color: "white", padding: "0.75rem 1.1rem", fontSize: "0.9rem", fontWeight: 700 }}>Explore campus food</Link>
+    <Link href="#how-it-works" style={{ borderRadius: "999px", border: "1px solid rgba(0,0,0,.18)", color: "#171717", padding: "0.75rem 1.1rem", fontSize: "0.9rem", fontWeight: 700 }}>How it works</Link>
   </div>
 </div>
 
@@ -419,3 +412,6 @@ export default function BurgerScroll() {
     </section>
   );
 }
+
+
+

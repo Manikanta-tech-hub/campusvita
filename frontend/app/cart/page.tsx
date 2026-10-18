@@ -1235,7 +1235,7 @@ export default function CartPage() {
               onClick={() =>
                 router.push("/")
               }
-              className="mt-7 flex items-center gap-2 rounded-2xl bg-[var(--brand)] px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:brightness-95 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
+              className="cv-press mt-7 flex items-center gap-2 rounded-2xl bg-[var(--accent)] px-6 py-3.5 text-sm font-bold text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition hover:bg-[var(--accent-hover)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
             >
               Explore Food
               <ArrowRight
@@ -1363,7 +1363,7 @@ export default function CartPage() {
                         key={
                           group.stallId
                         }
-                        className="overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
+                        className="cv-glass-card cv-glass-edge overflow-hidden rounded-[24px] border border-[var(--glass-border)]"
                       >
                         {/* STALL HEADER */}
 
@@ -1655,7 +1655,7 @@ export default function CartPage() {
             {/* ORDER SUMMARY */}
 
             <aside className="h-fit lg:sticky lg:top-24">
-              <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-card)]">
+              <div className="cv-glass-card cv-glass-edge rounded-[24px] border border-[var(--glass-border)] p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
@@ -1827,7 +1827,7 @@ export default function CartPage() {
                     "WALLET" &&
                     !walletCanPay)
                 }
-                className="mt-3 hidden min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] px-5 text-sm font-bold text-white shadow-lg transition hover:brightness-95 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] lg:flex"
+                className="mt-3 hidden min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-bold text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition hover:bg-[var(--accent-hover)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] lg:flex"
               >
                 {loading ? (
                   <>
@@ -1913,7 +1913,7 @@ export default function CartPage() {
                 "WALLET" &&
                 !walletCanPay)
             }
-            className="flex min-h-12 flex-[1.45] items-center justify-center gap-1.5 rounded-xl bg-[var(--brand)] px-3 text-xs font-bold text-white shadow-lg transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] sm:text-sm"
+            className="flex min-h-12 flex-[1.45] items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-xs font-bold text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)] sm:text-sm"
           >
             {loading ? (
               <>
@@ -1950,7 +1950,7 @@ export default function CartPage() {
           }
         >
           <div
-            className="absolute inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-[28px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl sm:mx-auto sm:bottom-4 sm:max-w-xl sm:rounded-[28px]"
+            className="cv-glass-modal cv-glass-edge absolute inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-[28px] border border-[var(--glass-border)] p-5 sm:mx-auto sm:bottom-4 sm:max-w-xl sm:rounded-[28px]"
             style={{
               paddingBottom:
                 "calc(1.25rem + env(safe-area-inset-bottom))",
@@ -2153,7 +2153,7 @@ export default function CartPage() {
                   "WALLET" &&
                   !walletCanPay)
               }
-              className="mt-4 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] px-4 text-sm font-bold text-white transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
+              className="mt-4 flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-4 text-sm font-bold text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
             >
               Continue with{" "}
               {paymentMethod ===

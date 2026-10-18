@@ -114,7 +114,7 @@ export default function RecentOrdersTable() {
   };
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-card)] transition-colors duration-200">
+    <div className="cv-glass-card cv-glass-edge rounded-3xl border border-[var(--glass-border)] p-6 transition-colors duration-200">
       <div className="mb-6 flex flex-col gap-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>

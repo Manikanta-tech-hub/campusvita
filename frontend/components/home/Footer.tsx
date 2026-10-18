@@ -1,20 +1,20 @@
 import Link from "next/link";
 
 const explore = [
-  { label: "Browse Food", href: "/" },
-  { label: "Categories", href: "/#" },
-  { label: "Stalls", href: "/" },
+  { label: "Home", href: "/" },
+  { label: "All Campus Stalls", href: "/stalls" },
+  { label: "How It Works", href: "/#how-it-works" },
 ];
 
 const campus = [
+  { label: "Login", href: "/login" },
   { label: "My Orders", href: "/orders" },
-  { label: "Profile", href: "/profile" },
-  { label: "Cart", href: "/cart" },
+  { label: "Track Order", href: "/track-order" },
 ];
 
 const support = [
-  { label: "Help Center", href: "/about" },
-  { label: "Contact", href: "/about" },
+  { label: "Help / Contact", href: "/about" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export default function Footer() {
@@ -23,11 +23,11 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-10">
         <div className="grid gap-10 md:grid-cols-4">
           <div>
-            <Link href="/" className="text-xl font-black tracking-tight text-[var(--text-primary)]">
+            <Link href="/" className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
               CampusVita
             </Link>
-            <p className="mt-3 text-sm text-[var(--text-secondary)] leading-6">
-              Smart campus food ordering.
+            <p className="mt-3 max-w-xs text-sm text-[var(--text-secondary)] leading-6">
+              Discover participating campus stalls, order ahead, and spend less time waiting in line.
             </p>
           </div>
           <div>
@@ -39,7 +39,7 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">Campus</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">Account</h3>
             <ul className="space-y-2">
               {campus.map((l) => (
                 <li key={l.label}><Link href={l.href} className="text-sm text-[var(--text-secondary)] hover:text-[var(--brand)] transition-colors">{l.label}</Link></li>

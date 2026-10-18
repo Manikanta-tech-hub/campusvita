@@ -12,12 +12,14 @@
 
 /* =========================================================
    CAMPUSVITA DESIGN SYSTEM
-   70 / 20 / 10 THEME
+   PREMIUM LIQUID GLASS — 90 NEUTRAL / 10 ACCENT
 
-   BRAND:    indigo  #686ee8 (light) / #8691f0 (dark)
-   NEUTRAL:  #e6e7eb (light) / #303746 (dark)
-   SOFT:     #e2e8fd (light) / #3a4150 (dark)
-   ACCENT:   #d5544b (warm red — errors / destructive / accent)
+   NEUTRAL:  white #FFFFFF · canvas #F5F5F7 · soft #FAFAFA
+   INK:      #111111 · secondary #555555 · muted #737373
+   BRAND:    canonical CampusVita indigo #686EE8
+
+   Dark mode stays fully supported: charcoal neutrals with a
+   brighter indigo brand accent for contrast.
 ========================================================= */
 
 *,
@@ -33,31 +35,31 @@
 :root {
   color-scheme: light;
 
-  /* 70% — Primary canvas */
+  /* 70% — Primary canvas (page background) */
   --background: #e6e7eb;
   --foreground: #1a1b23;
 
-  /* 20% — Surfaces */
+  /* Surfaces */
   --surface: #ffffff;
-  --surface-secondary: #e2e8fd;
-  --surface-tertiary: #dcdfe8;
+  --surface-secondary: #fafafa;
+  --surface-tertiary: #efeff1;
 
   /* Text */
-  --text-primary: #1a1b23;
-  --text-secondary: #4d5160;
-  --text-muted: #6b7080;
-  --text-subtle: #9499a8;
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --text-muted: #737373;
+  --text-subtle: #9a9a9f;
 
   /* Borders */
-  --border: #d5d8e0;
-  --border-strong: #c4c8d3;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
 
-  /* 10% — Brand / primary */
+  /* 10% — Brand / primary (indigo) */
   --primary: #686ee8;
   --primary-hover: #5a60dd;
-  --primary-active: #4c52cc;
-  --primary-soft: #e2e8fd;
-  --primary-soft-strong: #d0d8fb;
+  --primary-active: #4e54cb;
+  --primary-soft: rgba(104, 110, 232, 0.1);
+  --primary-soft-strong: rgba(104, 110, 232, 0.18);
 
   /* Legacy aliases */
   --brand: var(--primary);
@@ -66,54 +68,55 @@
   --brand-soft: var(--primary-soft);
   --brand-soft-strong: var(--primary-soft-strong);
 
-  /* Text on solid brand surfaces */
+  /* Text that sits on solid brand surfaces */
   --on-primary: #ffffff;
 
-  /* Warm accent / danger */
-  --accent: #d5544b;
-  --accent-hover: #c1483f;
-  --accent-active: #a93c34;
-  --accent-soft: rgba(213, 84, 75, 0.1);
+  /* Brand accent — intentionally the same logo indigo, never orange. */
+  --accent: #686ee8;
+  --accent-hover: #5a60dd;
+  --accent-active: #4e54cb;
+  --accent-soft: rgba(104, 110, 232, 0.1);
+  --accent-soft-strong: rgba(104, 110, 232, 0.18);
+  --on-accent: #ffffff;
+  --accent-text: #4e54cb;
+  --accent-shadow: 0 8px 24px rgba(104, 110, 232, 0.28);
 
-  /* Status */
-  --success: #16a34a;
-  --success-soft: rgba(22, 163, 74, 0.12);
+  /* Status — semantic, AA-legible on light canvas */
+  --success: #15803d;
+  --success-soft: rgba(21, 128, 61, 0.1);
 
-  --warning: #d97706;
-  --warning-soft: rgba(217, 119, 6, 0.14);
+  --warning: #b45309;
+  --warning-soft: rgba(180, 83, 9, 0.12);
 
-  --danger: #d5544b;
-  --danger-soft: rgba(213, 84, 75, 0.12);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.1);
 
-  --info: #2563eb;
-  --info-soft: rgba(37, 99, 235, 0.12);
+  --info: #1d4ed8;
+  --info-soft: rgba(29, 78, 216, 0.1);
 
   /* Cards */
   --card: #ffffff;
-  --card-hover: #f7f8fc;
+  --card-hover: #fafafa;
 
   /* Inputs */
   --input: #ffffff;
-  --input-hover: #f7f8fc;
-  --input-border: #ccd0db;
+  --input-hover: #fafafa;
+  --input-border: rgba(0, 0, 0, 0.12);
   --input-focus: var(--primary);
 
-  /* Navbar */
+  /* Navbar (floating / translucent) */
   --navbar: rgba(255, 255, 255, 0.88);
   --navbar-border: rgba(206, 210, 220, 0.9);
 
   /* Overlay */
-  --overlay: rgba(20, 22, 32, 0.5);
+  --overlay: rgba(17, 17, 17, 0.4);
 
   /* Shadows */
   --shadow-soft: 0 1px 2px rgba(24, 26, 45, 0.05);
-
   --shadow-card:
     0 8px 30px rgba(24, 26, 45, 0.07);
-
   --shadow-elevated:
     0 18px 50px rgba(24, 26, 45, 0.11);
-
   --shadow-brand:
     0 6px 18px rgba(104, 110, 232, 0.3);
 
@@ -123,6 +126,30 @@
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
   --radius-2xl: 1.5rem;
+  --radius-3xl: 1.75rem;
+
+  /* Glass materials (light) */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.86);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.58);
+  --glass-bg-solid: #ffffff;
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-hairline: rgba(0, 0, 0, 0.06);
+  --glass-blur: 20px;
+  --glass-blur-heavy: 28px;
+  --glass-saturate: 150%;
+  --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --glass-shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.84);
+  --glass-inner-highlight: rgba(255, 255, 255, 0.58);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 140ms;
+  --duration-base: 180ms;
+  --duration-slow: 260ms;
 }
 
 /* =========================================================
@@ -132,31 +159,31 @@
 .dark {
   color-scheme: dark;
 
-  /* 70% — Primary canvas */
+  /* 70% — Primary canvas (page background) */
   --background: #303746;
   --foreground: #e9ebf3;
 
-  /* 20% — Surfaces */
-  --surface: #3a4150;
-  --surface-secondary: #434b5d;
-  --surface-tertiary: #4c5568;
+  /* Surfaces */
+  --surface: #161619;
+  --surface-secondary: #1c1c20;
+  --surface-tertiary: #232329;
 
   /* Text */
-  --text-primary: #f0f2f7;
-  --text-secondary: #c6cbd8;
-  --text-muted: #9ba2b4;
-  --text-subtle: #798195;
+  --text-primary: #f5f5f7;
+  --text-secondary: #b3b3b8;
+  --text-muted: #8e8e93;
+  --text-subtle: #6e6e73;
 
   /* Borders */
-  --border: #474f61;
-  --border-strong: #576078;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
 
-  /* 10% — Brand / primary */
+  /* 10% — Brand / primary (bright indigo) */
   --primary: #8691f0;
   --primary-hover: #9aa3f4;
   --primary-active: #727ee9;
-  --primary-soft: #3a4150;
-  --primary-soft-strong: #434b5d;
+  --primary-soft: rgba(134, 145, 240, 0.16);
+  --primary-soft-strong: rgba(134, 145, 240, 0.26);
 
   /* Legacy aliases */
   --brand: var(--primary);
@@ -167,8 +194,8 @@
 
   /*
      Text on solid brand surfaces.
-     Dark mode uses a brighter primary, so dark foreground
-     improves contrast against the primary brand color.
+     Dark mode uses a brighter primary, so a dark
+     foreground keeps contrast strong (Material-3 style).
   */
   --on-primary: #232637;
 
@@ -179,46 +206,54 @@
   --accent-soft: rgba(213, 84, 75, 0.16);
 
   /* Status */
-  --success: #22c55e;
-  --success-soft: rgba(34, 197, 94, 0.16);
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
 
-  --warning: #f59e0b;
-  --warning-soft: rgba(245, 158, 11, 0.16);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
 
-  --danger: #d5544b;
-  --danger-soft: rgba(213, 84, 75, 0.16);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
 
   --info: #60a5fa;
   --info-soft: rgba(96, 165, 250, 0.14);
 
   /* Cards */
-  --card: #3a4150;
-  --card-hover: #414a5c;
+  --card: #161619;
+  --card-hover: #1c1c20;
 
   /* Inputs */
-  --input: #3a4150;
-  --input-hover: #414a5c;
-  --input-border: #576078;
+  --input: #1c1c20;
+  --input-hover: #232329;
+  --input-border: rgba(255, 255, 255, 0.14);
   --input-focus: var(--primary);
 
-  /* Navbar */
+  /* Navbar (floating / translucent) */
   --navbar: rgba(48, 55, 70, 0.88);
   --navbar-border: rgba(74, 83, 101, 0.9);
 
   /* Overlay */
-  --overlay: rgba(12, 14, 20, 0.7);
+  --overlay: rgba(0, 0, 0, 0.6);
 
   /* Shadows */
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.36);
+  --shadow-elevated: 0 20px 60px rgba(0, 0, 0, 0.52);
+  --shadow-brand: 0 6px 18px rgba(134, 145, 240, 0.24);
+  --shadow-accent: var(--accent-shadow);
 
-  --shadow-card:
-    0 8px 30px rgba(0, 0, 0, 0.26);
-
-  --shadow-elevated:
-    0 20px 60px rgba(0, 0, 0, 0.42);
-
-  --shadow-brand:
-    0 6px 18px rgba(134, 145, 240, 0.28);
+  /* Glass materials (dark) */
+  --glass-bg: rgba(28, 28, 32, 0.66);
+  --glass-bg-strong: rgba(28, 28, 32, 0.84);
+  --glass-bg-subtle: rgba(28, 28, 32, 0.52);
+  --glass-bg-solid: #1c1c20;
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-hairline: rgba(255, 255, 255, 0.06);
+  --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.52);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --glass-inner-highlight: rgba(255, 255, 255, 0.08);
 }
 
 /* =========================================================
@@ -244,6 +279,22 @@ html {
   text-size-adjust: 100%;
 }
 
+@media (max-width: 767px) {
+  .burger-scroll-copy {
+    left: 1.25rem !important;
+    right: 1.25rem !important;
+    top: auto !important;
+    bottom: 2.5rem !important;
+    transform: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .burger-scroll-copy h1 {
+    font-size: clamp(2.5rem, 12vw, 4.25rem) !important;
+  }
+}
+
 body {
   width: 100%;
   min-width: 100%;
@@ -255,11 +306,13 @@ body {
 
   overflow-x: clip;
 
-  background: var(--background);
+  background:
+    radial-gradient(ellipse 70% 42% at 12% -8%, rgba(104, 110, 232, 0.09), transparent 70%),
+    radial-gradient(ellipse 55% 35% at 92% 6%, rgba(255, 255, 255, 0.72), transparent 72%),
+    var(--background);
   color: var(--foreground);
 
-  /* Global CampusVita font */
-  font-family: var(--font-jakarta), sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 
   transition:
     background-color 180ms ease,
@@ -298,6 +351,8 @@ body {
   --color-accent-hover: var(--accent-hover);
   --color-accent-active: var(--accent-active);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
 
   --color-success: var(--success);
   --color-warning: var(--warning);
@@ -321,7 +376,6 @@ body {
   --color-warning-soft: var(--warning-soft);
   --color-info-soft: var(--info-soft);
 
-  /* Tailwind font configuration */
   --font-sans: var(--font-jakarta), sans-serif;
   --font-mono: var(--font-geist-mono);
 }
@@ -336,7 +390,10 @@ h3,
 h4,
 h5,
 h6 {
+  font-family: var(--font-heading);
   color: var(--text-primary);
+  line-height: var(--cv-leading-heading);
+  letter-spacing: -0.02em;
 }
 
 p {
@@ -344,8 +401,15 @@ p {
 }
 
 ::selection {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Tabular numerals for prices, analytics, order ids */
+.cv-tnum,
+[class*="cv-tnum"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 /* =========================================================
@@ -404,12 +468,675 @@ button:disabled {
 }
 
 /* =========================================================
+   LIQUID GLASS MATERIAL SYSTEM
+   Variants: subtle · card · elevated · modal · dark
+   Opaque fallback provided for browsers without backdrop-filter.
+========================================================= */
+
+.cv-glass,
+.cv-glass-card,
+.cv-glass-subtle,
+.cv-glass-elevated,
+.cv-glass-modal,
+.cv-glass-dark {
+  position: relative;
+  isolation: isolate;
+
+  /* Fallback: opaque surface when backdrop-filter is unsupported */
+  background: var(--glass-bg-solid);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .cv-glass {
+    background:
+      linear-gradient(135deg, var(--glass-highlight), transparent 34%),
+      linear-gradient(315deg, rgba(104, 110, 232, 0.055), transparent 48%),
+      var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      var(--glass-shadow),
+      var(--glass-inner);
+  }
+
+  .cv-glass-subtle {
+    background:
+      linear-gradient(135deg, var(--glass-highlight), transparent 42%),
+      var(--glass-bg-subtle);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
+    backdrop-filter: blur(12px) saturate(130%);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .cv-glass-card {
+    background:
+      linear-gradient(135deg, var(--glass-highlight), transparent 30%),
+      linear-gradient(315deg, rgba(104, 110, 232, 0.065), transparent 58%),
+      var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      var(--glass-shadow),
+      var(--glass-inner),
+      inset 0 -1px 0 rgba(104, 110, 232, 0.07);
+  }
+
+  .cv-glass-elevated {
+    background:
+      linear-gradient(140deg, var(--glass-highlight), transparent 34%),
+      linear-gradient(315deg, rgba(104, 110, 232, 0.1), transparent 66%),
+      var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(var(--glass-blur-heavy)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur-heavy)) saturate(var(--glass-saturate));
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      var(--glass-shadow-elevated),
+      var(--glass-inner);
+  }
+
+  .cv-glass-modal {
+    background:
+      linear-gradient(140deg, var(--glass-highlight), transparent 34%),
+      linear-gradient(315deg, rgba(104, 110, 232, 0.1), transparent 66%),
+      var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    backdrop-filter: blur(32px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      0 24px 80px rgba(0, 0, 0, 0.18),
+      var(--glass-inner);
+  }
+
+  .cv-glass-dark {
+    background: rgba(22, 22, 25, 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f5f5f7;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Hairline highlight used on glass edges */
+.cv-glass-edge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 var(--glass-inner-highlight),
+    inset 1px 0 0 rgba(255, 255, 255, 0.14);
+}
+
+/* ---------------------------------------------------------
+   FLOATING POPOVER SURFACE
+   Used by the sort menu and advanced filter panel.
+   Deliberately declares NO `position` so Tailwind's
+   absolute/fixed utilities always win (unlayered rules
+   override layered utilities — the root cause of the
+   old popovers rendering in normal document flow).
+--------------------------------------------------------- */
+
+.cv-floating-popover {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 18px;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .cv-floating-popover {
+    background: rgba(255, 255, 255, 0.88);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+  }
+}
+
+.dark .cv-floating-popover {
+  background: rgba(22, 22, 25, 0.86);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dark .cv-floating-popover {
+    background: rgba(22, 22, 25, 0.86);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.dark .cv-glass-edge::after {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* =========================================================
+   SMOKED GLASS MATERIAL — LIQUID GLASS STALL CARD
+   Inspired by Apple's Liquid Glass aesthetic:
+   - Deep charcoal smoked-glass body (dark)
+   - Milky translucent glass body (light)
+   - Dimensional elliptical reflections
+   - Polished rim lighting on all four edges
+   - Floating layered shadows
+   - Hover / press / focus interaction states
+   ========================================================= */
+
+/* --- LIGHT MODE: translucent, softly tinted glass --- */
+.cv-glass-smoked {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  background:
+    radial-gradient(ellipse 75% 36% at 25% 0%, rgba(255, 255, 255, 0.18), transparent 78%),
+    linear-gradient(155deg, rgba(255, 255, 255, 0.49), rgba(245, 245, 255, 0.38));
+  box-shadow:
+    0 5px 14px rgba(33, 37, 75, 0.045),
+    0 18px 38px rgba(46, 47, 94, 0.075),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 1px 0 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(70, 69, 116, 0.11);
+  transition:
+    transform var(--duration-base) var(--ease-out-fluid),
+    box-shadow var(--duration-base) var(--ease-out-fluid),
+    border-color var(--duration-base) var(--ease-standard);
+}
+
+/* Specular reflection overlay — curved highlight on upper surface */
+.cv-glass-smoked::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: 45%;
+  border-radius: inherit;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 110% at 18% -48%, rgba(255, 255, 255, 0.34), transparent 72%),
+    radial-gradient(ellipse 48% 75% at 82% -30%, rgba(255, 255, 255, 0.13), transparent 72%),
+    linear-gradient(172deg, rgba(255, 255, 255, 0.15), transparent 68%);
+  opacity: 0.74;
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+/* Rim highlight ring — creates impression of glass thickness */
+.cv-glass-smoked::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18),
+    inset 1px 0 0 rgba(255, 255, 255, 0.3),
+    inset -1px 0 0 rgba(118, 119, 160, 0.12),
+    inset 0 -1px 0 rgba(42, 45, 76, 0.12);
+}
+
+/* Optical background is separate so text and food photography stay crisp. */
+.cv-glass-smoked > * {
+  position: relative;
+  z-index: 2;
+}
+
+.cv-glass-smoked > .cv-liquid-glass__optical {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: rgba(104, 110, 232, 0.035);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+}
+
+.cv-glass-smoked > .cv-liquid-glass__filters {
+  position: absolute;
+  z-index: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* --- HOVER: slight elevation + highlight intensification --- */
+.cv-glass-smoked:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 8px 18px rgba(25, 28, 54, 0.055),
+    0 22px 42px rgba(25, 28, 54, 0.095),
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 1px 0 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(51, 55, 117, 0.12);
+}
+
+.cv-glass-smoked:hover::before {
+  opacity: 1;
+}
+
+/* --- PRESS: subtle compression --- */
+.cv-glass-smoked:active {
+  transform: translateY(0px) scale(0.985);
+  box-shadow:
+    0 2px 8px rgba(25, 28, 54, 0.06),
+    0 6px 16px rgba(25, 28, 54, 0.06),
+    inset 0 1px 2px rgba(30, 33, 64, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -1px 0 rgba(51, 55, 117, 0.08);
+}
+
+/* --- BACKDROP FILTER (when supported) --- */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .cv-glass-smoked > .cv-liquid-glass__optical {
+    -webkit-backdrop-filter: blur(18px) saturate(155%);
+    backdrop-filter: blur(18px) saturate(155%);
+  }
+}
+
+/* === DARK MODE: deep charcoal smoked glass === */
+.dark .cv-glass-smoked {
+  border-color: rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(ellipse 72% 38% at 25% 0%, rgba(255, 255, 255, 0.07), transparent 78%),
+    linear-gradient(155deg, rgba(38, 39, 52, 0.68), rgba(22, 23, 31, 0.62));
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.22),
+    0 22px 48px rgba(0, 0, 0, 0.28),
+    0 8px 36px rgba(104, 110, 232, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.38);
+}
+
+.dark .cv-glass-smoked::before {
+  background:
+    radial-gradient(ellipse 70% 110% at 18% -44%, rgba(255, 255, 255, 0.2), transparent 72%),
+    radial-gradient(ellipse 50% 80% at 78% -18%, rgba(255, 255, 255, 0.08), transparent 70%),
+    linear-gradient(172deg, rgba(255, 255, 255, 0.08), transparent 68%);
+  opacity: 0.78;
+}
+
+.dark .cv-glass-smoked::after {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 2px 0 rgba(255, 255, 255, 0.06),
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
+    inset -1px 0 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.42);
+}
+
+/* --- DARK HOVER --- */
+.dark .cv-glass-smoked:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.25),
+    0 24px 48px rgba(0, 0, 0, 0.34),
+    0 10px 42px rgba(104, 110, 232, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.29),
+    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.42);
+}
+
+.dark .cv-glass-smoked:hover::before {
+  opacity: 1;
+}
+
+/* --- DARK PRESS --- */
+.dark .cv-glass-smoked:active {
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.24),
+    0 6px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 3px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dark .cv-glass-smoked > .cv-liquid-glass__optical {
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+
+/* =========================================================
+   SMOKED GLASS — RESPONSIVE + MOTION
+   ========================================================= */
+
+@media (max-width: 767px) {
+  .cv-glass-smoked > .cv-liquid-glass__optical {
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: blur(12px) saturate(120%);
+  }
+
+  .cv-glass-smoked > .cv-liquid-glass__optical[data-distortion="true"] {
+    filter: none !important;
+  }
+
+  .cv-glass-smoked::before {
+    height: 32%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-glass-smoked,
+  .cv-glass-smoked::before {
+    transition: none;
+  }
+
+  .cv-glass-smoked:hover {
+    transform: none;
+  }
+}
+
+.dark body {
+  background:
+    radial-gradient(ellipse 70% 42% at 12% -8%, rgba(134, 145, 240, 0.13), transparent 70%),
+    radial-gradient(ellipse 55% 35% at 92% 6%, rgba(83, 91, 166, 0.09), transparent 72%),
+    var(--background);
+}
+
+/* Press feedback used by interactive glass surfaces */
+.cv-press {
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard);
+}
+
+.cv-press:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Gentle card lift used on food / stall cards */
+.cv-lift {
+  transition:
+    transform var(--duration-base) var(--ease-out-fluid),
+    box-shadow var(--duration-base) var(--ease-out-fluid),
+    border-color var(--duration-base) var(--ease-standard);
+}
+
+.cv-lift:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand) 28%, var(--glass-border));
+  box-shadow:
+    0 14px 34px rgba(17, 21, 52, 0.12),
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+/* Showcase-only optical finish. Kept out of production components until
+   the visual direction is approved. */
+.cv-showcase-gloss {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-image:
+    radial-gradient(ellipse 78% 44% at 14% -8%, rgba(255, 255, 255, 0.9), transparent 72%),
+    radial-gradient(ellipse 55% 36% at 100% 0%, rgba(255, 255, 255, 0.48), transparent 78%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 46%);
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    inset 1px 0 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(65, 71, 150, 0.1);
+  transition:
+    transform var(--duration-base) var(--ease-out-fluid),
+    box-shadow var(--duration-base) var(--ease-standard),
+    background-position 320ms var(--ease-standard);
+}
+
+.cv-showcase-gloss::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: 48%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 62% 85% at 18% -18%, rgba(255, 255, 255, 0.72), transparent 72%),
+    linear-gradient(168deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.12) 18%, transparent 42%);
+  opacity: 0.62;
+  transition: opacity var(--duration-base) var(--ease-standard), transform 320ms var(--ease-out-fluid);
+}
+
+.cv-showcase-gloss::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 1px 0 0 rgba(255, 255, 255, 0.36),
+    inset -1px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(52, 57, 127, 0.12);
+}
+
+.cv-showcase-gloss > * {
+  position: relative;
+  z-index: 2;
+}
+
+.cv-showcase-gloss:hover {
+  transform: translateY(-1px);
+  background-position: 5px 0, -4px 0, 0 0;
+  box-shadow:
+    0 16px 42px rgba(38, 43, 105, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 1px 0 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(65, 71, 150, 0.1);
+}
+
+.cv-showcase-gloss:hover::before {
+  opacity: 0.84;
+  transform: translateX(1.5%);
+}
+
+.cv-showcase-gloss:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow:
+    0 5px 16px rgba(38, 43, 105, 0.12),
+    inset 0 1px 3px rgba(51, 55, 117, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.dark .cv-showcase-gloss {
+  background-image:
+    radial-gradient(ellipse 78% 44% at 14% -8%, rgba(255, 255, 255, 0.24), transparent 72%),
+    radial-gradient(ellipse 55% 36% at 100% 0%, rgba(134, 145, 240, 0.2), transparent 78%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 46%);
+  box-shadow:
+    var(--glass-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+}
+
+.dark .cv-showcase-gloss::before {
+  background:
+    radial-gradient(ellipse 62% 85% at 18% -18%, rgba(255, 255, 255, 0.25), transparent 72%),
+    linear-gradient(168deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 18%, transparent 42%);
+}
+
+.dark .cv-showcase-gloss::after {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
+    inset -1px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-showcase-gloss,
+  .cv-showcase-gloss::before {
+    transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .cv-glass-card,
+  .cv-glass-elevated,
+  .cv-glass-modal {
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+    backdrop-filter: blur(14px) saturate(130%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-lift,
+  .cv-press {
+    transition: none;
+  }
+}
+
+/* =========================================================
    ACCESSIBILITY
 ========================================================= */
+
+/* Isolated A/B lab: both materials see the same local image and crop. */
+.cv-glass-lab__environment {
+  position: relative;
+  display: flex;
+  min-height: 390px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 30px;
+  padding: 2.5rem 1rem 1rem;
+  background-image:
+    linear-gradient(180deg, rgba(13, 15, 20, 0.18), rgba(13, 15, 20, 0.38)),
+    url("/images/cinematic-cafe-bg.webp");
+  background-position: center, center;
+  background-size: cover;
+}
+
+.cv-glass-lab__label {
+  position: absolute;
+  z-index: 5;
+  top: 1rem;
+  left: 1rem;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.cv-glass-lab__surface {
+  display: block;
+  width: 100%;
+  min-height: 250px;
+  border-radius: 28px;
+}
+
+.cv-glass-lab__campus-surface {
+  overflow: hidden;
+}
+
+.cv-weather-glass {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.16);
+}
+
+.cv-weather-glass__filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.cv-weather-glass__backdrop,
+.cv-weather-glass__face,
+.cv-weather-glass__rim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cv-weather-glass__backdrop {
+  z-index: 0;
+}
+
+.cv-weather-glass__face {
+  z-index: 1;
+}
+
+.cv-weather-glass__rim {
+  z-index: 2;
+}
+
+.cv-weather-glass__content {
+  position: relative;
+  z-index: 3;
+}
+
+.cv-card22__controls {
+  opacity: 1;
+}
+
+.cv-card22__status-badge,
+.cv-card22__category-badge,
+.cv-card22__carousel-button {
+  color: #fff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cv-card22__controls {
+    opacity: 0;
+  }
+
+  .cv-card22__image:hover .cv-card22__controls,
+  .cv-card22__image:focus-within .cv-card22__controls {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .cv-glass-lab__environment {
+    min-height: 330px;
+  }
+}
 
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
+}
+
+@keyframes cv-typewriter-cursor-blink {
+  50% { opacity: 0; }
+}
+
+.cv-typewriter-cursor {
+  animation: cv-typewriter-cursor-blink 600ms steps(1, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-typewriter-cursor {
+    animation: none;
+  }
 }
 
 /* =========================================================
@@ -480,6 +1207,10 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .cv-lift:hover {
+    transform: none;
   }
 }
 
@@ -554,8 +1285,12 @@ html:not(.dark) .text-white {
   color: var(--text-primary) !important;
 }
 
-/* Brand surfaces: maintain appropriate text contrast */
-
+/*
+   Keep text readable on solid brand / accent fills.
+   --on-primary is white in light mode and dark ink in dark
+   mode so contrast stays strong on the brighter dark primary.
+   Self and descendant forms are both listed.
+*/
 html:not(.dark) .bg-brand.text-white,
 html:not(.dark) .bg-primary.text-white,
 html:not(.dark) [class*="bg-brand"].text-white,
@@ -575,6 +1310,14 @@ html:not(.dark) [class*="from-brand"] .text-white,
 .dark [class*="bg-[var(--brand)]"] .text-white,
 .dark [class*="from-brand"] .text-white {
   color: var(--on-primary) !important;
+}
+
+/* Accent fills always keep high-contrast labels */
+html:not(.dark) [class*="bg-accent"].text-white,
+html:not(.dark) [class*="bg-accent"] .text-white,
+.dark [class*="bg-accent"].text-white,
+.dark [class*="bg-accent"] .text-white {
+  color: var(--on-accent) !important;
 }
 
 /* Status and orange fills: retain white text */

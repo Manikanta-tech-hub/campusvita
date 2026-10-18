@@ -67,6 +67,8 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginMode, setLoginMode] =
+  useState<"USER" | "ADMIN" | "VENDOR">("USER");
 
   const [showPassword, setShowPassword] =
     useState(false);
@@ -104,6 +106,7 @@ export default function LoginPage() {
           body: JSON.stringify({
             email: email.trim(),
             password,
+            login_mode: loginMode,
           }),
         }
       );
@@ -271,12 +274,11 @@ export default function LoginPage() {
               headers: {
                 "Content-Type":
                   "application/json",
+                Authorization:
+                  `Bearer ${data.access_token}`,
               },
 
               body: JSON.stringify({
-                email:
-                  data.user.email,
-
                 fcm_token:
                   fcmToken,
               }),
@@ -544,12 +546,11 @@ export default function LoginPage() {
               headers: {
                 "Content-Type":
                   "application/json",
+                Authorization:
+                  `Bearer ${data.access_token}`,
               },
 
               body: JSON.stringify({
-                email:
-                  data.user.email,
-
                 fcm_token:
                   fcmToken,
               }),
@@ -653,7 +654,7 @@ export default function LoginPage() {
             LOGIN PANEL
         ====================================================== */}
 
-        <section className="relative z-10 -mt-6 flex min-h-0 w-full flex-1 flex-col overflow-y-auto rounded-t-[2rem] bg-background px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-8 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] sm:px-8 md:mt-0 md:rounded-none md:px-10 md:py-12 md:shadow-none lg:px-16">
+        <section className="cv-glass-elevated relative z-10 -mt-6 flex min-h-0 w-full flex-1 flex-col overflow-y-auto rounded-3xl px-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-8 sm:px-8 md:mt-0 md:px-10 md:py-12 lg:px-16">
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -668,13 +669,13 @@ export default function LoginPage() {
 
             {/* HEADING */}
 
-            <p className="text-sm font-semibold tracking-[0.04em] text-brand! sm:text-[15px]">
+            <p className="text-sm font-semibold tracking-[0.04em] text-[var(--accent-text)]! sm:text-[15px]">
               From Classrooms to Cravings.
             </p>
 
-            <h1 className="mt-2.5 text-[28px] font-bold tracking-tight sm:text-[34px]">
+            <h1 className="mt-2.5 text-[28px] font-bold tracking-[-0.03em] sm:text-[34px]">
               Welcome{" "}
-              <span className="text-brand!">
+              <span className="text-[var(--accent-text)]!">
                 Back!
               </span>
             </h1>
@@ -685,6 +686,32 @@ export default function LoginPage() {
               onSubmit={handleLogin}
               className="mt-8 space-y-5"
             >
+            <div>
+  <label
+    htmlFor="login-mode"
+    className="mb-2 block text-sm font-medium text-text-primary"
+  >
+    Login as
+  </label>
+
+  <select
+    id="login-mode"
+    value={loginMode}
+    onChange={(e) =>
+      setLoginMode(
+        e.target.value as "USER" | "ADMIN" | "VENDOR"
+      )
+    }
+    disabled={loading}
+    className="h-12 w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)]"
+  >
+    <option value="USER">Student / User</option>
+    <option value="ADMIN">Admin</option>
+    <option value="VENDOR">Vendor</option>
+  </select>
+</div>
+
+            
 
               {/* EMAIL */}
 
@@ -707,7 +734,7 @@ export default function LoginPage() {
                   disabled={loading}
                   autoComplete="email"
                   aria-label="Email"
-                  className="h-12 w-full rounded-xl border border-input-border bg-input px-4 outline-none transition focus:ring-4 focus:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-12 w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
 
@@ -759,7 +786,7 @@ export default function LoginPage() {
                   disabled={loading}
                   autoComplete="current-password"
                   aria-label="Password"
-                  className="h-12 w-full rounded-xl border border-input-border bg-input px-4 outline-none transition focus:ring-4 focus:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-12 w-full rounded-xl border border-[var(--input-border)] bg-[var(--input)] px-4 outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary-soft-strong)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
 
@@ -795,7 +822,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand via-brand to-brand-hover font-semibold! text-white! shadow-[0_12px_30px_rgba(104,110,232,0.35)] transition-all hover:shadow-[0_16px_38px_rgba(104,110,232,0.45)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="cv-press group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] font-semibold! text-[var(--on-accent)] shadow-[var(--accent-shadow)] transition-all hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
               >
 
                 {loading ? (
@@ -835,7 +862,7 @@ export default function LoginPage() {
               type="button"
               disabled={loading}
               onClick={handleGoogleLogin}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-card font-semibold! text-text-primary! shadow-sm transition hover:bg-card-hover active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              className="cv-press flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] font-semibold! text-text-primary! shadow-[var(--shadow-card)] transition hover:bg-[var(--surface-secondary)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50"
             >
 
               <GoogleIcon />

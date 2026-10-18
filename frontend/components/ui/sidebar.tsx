@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Link, { type LinkProps } from "next/link";
-import React, { useState } from "react";
+import React from "react";
 
 export const Sidebar = ({
   open,
@@ -17,7 +17,7 @@ export const Sidebar = ({
 }) => {
   return (
     <>
-      <DesktopSidebar open={open} setOpen={setOpen}>
+      <DesktopSidebar open={open}>
         {children}
       </DesktopSidebar>
 
@@ -71,11 +71,9 @@ export const SidebarLink = ({
 
 const DesktopSidebar = ({
   open,
-  setOpen,
   children,
 }: {
   open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   children: React.ReactNode;
 }) => {
   return (

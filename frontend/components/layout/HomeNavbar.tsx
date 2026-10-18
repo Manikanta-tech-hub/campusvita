@@ -16,19 +16,17 @@ useReducedMotion,
 } from "framer-motion";
 
 import {
-ClipboardList,
-Heart,
 Home,
 Menu,
 ShoppingCart,
-User,
-Wallet,
 X,
 } from "lucide-react";
 
 import clsx from "clsx";
 
 import { useCart } from "../../context/CartContext";
+import BrandLogo from "@/components/branding/BrandLogo";
+import { getSession } from "@/app/lib/auth/session";
 
 // ============================================================
 // NAVIGATION ITEMS
@@ -46,24 +44,14 @@ href: "/",
 icon: Home,
 },
 {
-label: "Orders",
-href: "/orders",
-icon: ClipboardList,
+label: "Explore Stalls",
+href: "/stalls",
+icon: ShoppingCart,
 },
 {
-label: "Wallet",
-href: "/wallet",
-icon: Wallet,
-},
-{
-label: "Favorites",
-href: "/favorites",
-icon: Heart,
-},
-{
-label: "Profile",
-href: "/profile",
-icon: User,
+label: "How It Works",
+href: "/#how-it-works",
+icon: Home,
 },
 ];
 
@@ -108,6 +96,7 @@ const reduceMotion = useReducedMotion();
 
 const [expanded, setExpanded] = useState(true);
 const [menuOpen, setMenuOpen] = useState(false);
+const [signedIn, setSignedIn] = useState(false);
 
 const headerRef = useRef<HTMLElement | null>(null);
 const lastScrollY = useRef(0);
@@ -174,6 +163,10 @@ return () => {
 };
 
 
+}, []);
+
+useEffect(() => {
+  setSignedIn(Boolean(getSession("USER")));
 }, []);
 
 // ============================================================
@@ -287,7 +280,7 @@ FLOATING PILL
       layout={!reduceMotion}
       transition={SPRING}
       className={clsx(
-        "relative mt-2 flex h-12 items-center rounded-full border border-[var(--navbar-border)] bg-[var(--navbar)] shadow-[var(--shadow-elevated)] backdrop-blur-xl transition-colors duration-200",
+        "cv-glass-elevated relative mt-2 flex h-12 items-center rounded-full transition-colors duration-200",
         expanded
           ? "gap-1 px-2 py-1"
           : "w-12 justify-center p-0"
@@ -295,6 +288,9 @@ FLOATING PILL
     >
       {expanded ? (
         <>
+          <Link href="/" aria-label="CampusVita home" className="ml-1 hidden h-9 items-center pr-2 md:flex">
+            <BrandLogo className="h-7" />
+          </Link>
           {/* ====================================================
               DESKTOP LINKS
               ==================================================== */}
@@ -323,8 +319,8 @@ FLOATING PILL
                     className={clsx(
                       "flex items-center gap-2 rounded-full px-3 py-2 text-[13px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand)]",
                       active
-                        ? "bg-[var(--brand)] font-semibold text-white shadow-[0_6px_16px_rgba(104,110,232,0.28)]"
-                        : "font-medium text-[var(--text-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]"
+                        ? "bg-[var(--primary)] font-semibold text-[var(--on-primary)] shadow-[0_4px_14px_rgba(0,0,0,0.16)]"
+                        : "font-medium text-[var(--text-secondary)] hover:bg-[var(--primary-soft)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     <Icon
@@ -374,8 +370,8 @@ FLOATING PILL
                 text-[var(--text-secondary)]
                 transition-colors
                 duration-200
-                hover:bg-[var(--brand-soft)]
-                hover:text-[var(--brand)]
+                hover:bg-[var(--primary-soft)]
+                hover:text-[var(--text-primary)]
                 focus-visible:outline-none
                 focus-visible:ring-2
                 focus-visible:ring-[var(--brand)]
@@ -401,12 +397,12 @@ FLOATING PILL
                     items-center
                     justify-center
                     rounded-full
-                    bg-[var(--brand)]
+                    bg-[var(--accent)]
                     px-1
                     text-[9px]
                     font-black
                     leading-none
-                    text-white
+                    text-[var(--on-accent)]
                     shadow-sm
                   "
                 >
@@ -417,6 +413,14 @@ FLOATING PILL
               )}
             </Link>
           )}
+
+          <Link href="/track-order" className="hidden rounded-full px-3 py-2 text-[13px] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--primary-soft)] hover:text-[var(--text-primary)] md:inline-flex">
+            Track order
+          </Link>
+
+          <Link href={signedIn ? "/profile" : "/login"} className="hidden rounded-full bg-[var(--primary)] px-3.5 py-2 text-[13px] font-semibold text-[var(--on-primary)] md:inline-flex">
+            {signedIn ? "Account" : "Log in"}
+          </Link>
 
           {/* ====================================================
               MOBILE MENU BUTTON
@@ -485,12 +489,12 @@ FLOATING PILL
             items-center
             justify-center
             rounded-full
-            bg-[var(--brand)]
-            text-white
-            shadow-[0_8px_20px_rgba(104,110,232,0.4)]
+            bg-[var(--primary)]
+            text-[var(--on-primary)]
+            shadow-[0_8px_20px_rgba(0,0,0,0.2)]
             transition-colors
             duration-200
-            hover:bg-[var(--brand-hover)]
+            hover:bg-[var(--primary-hover)]
             focus-visible:outline-none
             focus-visible:ring-2
             focus-visible:ring-[var(--brand)]
@@ -561,17 +565,14 @@ FLOATING PILL
               }
         }
         className="
+          cv-glass-elevated
           absolute
           left-1/2
           top-full
           mt-2
           w-[min(19rem,calc(100vw-1.5rem))]
           rounded-2xl
-          border
-          border-[var(--border)]
-          bg-[var(--surface)]
           p-2
-          shadow-[var(--shadow-elevated)]
           md:hidden
         "
       >
@@ -601,8 +602,8 @@ FLOATING PILL
                   className={clsx(
                     "flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand)]",
                     active
-                      ? "bg-[var(--brand)] font-semibold text-white"
-                      : "font-medium text-[var(--text-secondary)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand)]"
+                      ? "bg-[var(--primary)] font-semibold text-[var(--on-primary)]"
+                      : "font-medium text-[var(--text-secondary)] hover:bg-[var(--primary-soft)] hover:text-[var(--text-primary)]"
                   )}
                 >
                   <Icon
@@ -654,8 +655,8 @@ FLOATING PILL
                 text-[var(--text-secondary)]
                 transition-colors
                 duration-150
-                hover:bg-[var(--brand-soft)]
-                hover:text-[var(--brand)]
+                hover:bg-[var(--primary-soft)]
+                hover:text-[var(--text-primary)]
                 focus-visible:outline-none
                 focus-visible:ring-2
                 focus-visible:ring-inset
@@ -690,12 +691,12 @@ FLOATING PILL
                       items-center
                       justify-center
                       rounded-full
-                      bg-[var(--brand)]
+                      bg-[var(--accent)]
                       px-1
                       text-[9px]
                       font-black
                       leading-none
-                      text-white
+                      text-[var(--on-accent)]
                     "
                   >
                     {cartCount > 99
